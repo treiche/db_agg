@@ -1,4 +1,4 @@
 db_agg
 ======
 
-Join multiple datasources with a single query
+join multiple datasources with a single query
