@@ -1,2 +1,2 @@
-db-agg
+db_agg
 ======
