@@ -1,0 +1,5 @@
+#define DBAGG_PREFIX "@prefix@"
+#define DBAGG_SYSCONFIGDIR "@sysconfdir@/db_agg"
+#define DBAGG_EXEC_PREFIX "@exec_prefix@"
+#define DBAGG_BINDIR "@bindir@"
+#define DBAGG_LIBDIR "@libdir@"

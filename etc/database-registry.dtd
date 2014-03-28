@@ -1,0 +1,29 @@
+<!ELEMENT registry (system*,database-definition*)>
+<!ATTLIST registry databaseNamingStrategy CDATA #IMPLIED>
+
+<!ELEMENT system (host*)>
+<!ATTLIST system name CDATA #IMPLIED>
+
+<!ELEMENT host (server*)>
+<!ATTLIST host name CDATA #IMPLIED>
+
+<!ELEMENT server (database-instance*)>
+<!ATTLIST server
+          port    CDATA   #IMPLIED>
+
+<!ELEMENT database-instance EMPTY>
+<!ATTLIST database-instance
+          id      IDREF  #REQUIRED
+          name    CDATA   #IMPLIED
+          shard   CDATA   #IMPLIED
+          worker  CDATA   #IMPLIED>
+
+<!ELEMENT database-definition (namespace*)>
+<!ATTLIST database-definition
+          name      ID     #REQUIRED
+          sharder   CDATA  #IMPLIED>
+
+<!ELEMENT namespace EMPTY>
+<!ATTLIST namespace
+          name    CDATA   #REQUIRED>
+

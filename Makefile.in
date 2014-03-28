@@ -1,0 +1,63 @@
+CXX=@CXX@
+INCLUDES=-Isrc -Isrc/lib -Isrc/bin @INCLUDES@
+CXXFLAGS=-c -std=c++11 $(INCLUDES)
+
+LIBS=@LIBS@
+LDFLAGS=$(LIBS)
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+bindir=@bindir@
+
+LIB_SRC = $(wildcard src/lib/*.cpp src/lib/*/*.cpp)
+LIB_OBJ = $(subst src/,build/,$(LIB_SRC:.cpp=.o))
+
+TEST_SRC = $(wildcard tests/*.h)
+TEST_OBJ = $(subst tests/,build/tests/,$(TEST_SRC:.h=.o))
+
+BIN_SRC = $(wildcard src/bin/*/*.cpp)
+BIN_OBJ = $(subst src/,build/,$(BIN_SRC:.cpp=.o))
+
+
+all: $(LIB_OBJ) $(TEST_OBJ) $(BIN_OBJ) \
+  build/bin/testrunner.o build/bin/testrunner \
+  build/bin/db_agg.o build/bin/parseConfig.o build/bin/db_agg
+
+build/%.o : src/%.cpp
+	@echo "compile $(^F)"
+	@mkdir -p $(@D)
+	@$(CXX) $(CXXFLAGS) $< -o $@
+
+build/tests/%.cpp : tests/%.h
+	@echo "generate test $@"
+	@mkdir -p $(@D)
+	@cxxtestgen --error-printer --part $< -o $@
+
+build/lib/libdb_agg.a: $(LIB_OBJ)
+	@echo "create library $@"
+	@mkdir -p $(@D)
+	@ar rs $@ $?
+
+build/bin/testrunner: build/bin/testrunner.o $(TEST_OBJ) build/lib/libdb_agg.a 
+	@echo "generate testrunner"
+	@$(CXX) $^ $(LDFLAGS) -o $@
+
+build/bin/db_agg: $(BIN_OBJ) build/bin/parseConfig.o build/bin/db_agg.o build/lib/libdb_agg.a 
+	@echo "generate testrunner"
+	@$(CXX) $^ $(LDFLAGS) -o $@
+
+
+check:
+	@echo "skip checking ${exec_prefix}"
+	#build/bin/testrunner ApplicationTest
+
+install:
+	@@INSTALL@ -d $(DESTDIR)@bindir@
+	@@INSTALL@ -t $(DESTDIR)@bindir@ build/bin/db_agg
+	@@INSTALL@ -d $(DESTDIR)@sysconfdir@/db_agg
+	@@INSTALL@ -t $(DESTDIR)@sysconfdir@/db_agg etc/*
+	@@INSTALL@ -d $(DESTDIR)@libdir@
+	libtool --mode=install install -c build/lib/libdb_agg.a $(DESTDIR)@libdir@/libdb_agg.a
+	ranlib $(DESTDIR)@libdir@/libdb_agg.a
+
+clean:
+	@rm -rf build/*
