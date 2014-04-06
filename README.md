@@ -63,7 +63,10 @@ a very simple example could look like this:
 </registry>
 ``` 
 this tells db_agg to connect to host1 on port 5432 when it finds the namespace ns1 in a sub query.
-it could be used for a query like:
+
+Usage
+-----
+with the configuration given above db_agg could be used for a query like this:
 ```sql
 with data_on_db1 as (
     select *
@@ -74,11 +77,10 @@ with data_on_db1 as (
       join ns2.data
         on column_x = column_y
 ```
-
-Usage
------
-run db_agg -h to get help about available command line options
-
-Examples
---------
-db_agg -e local -S myquery.sql
+with this query saved in a file test_query.sql db_agg could be run on the command line
+using the follwing line:
+'''sh
+/usr/local/bin/db_agg -e local test_query.sql
+'''
+the results of running db_agg can be then found in the working directory under
+./test_query/local
