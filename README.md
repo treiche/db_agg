@@ -79,8 +79,8 @@ with data_on_db1 as (
 ```
 with this query saved in a file test_query.sql db_agg could be run on the command line
 using the follwing line:
-'''sh
+```sh
 /usr/local/bin/db_agg -e local test_query.sql
-'''
+```
 the results of running db_agg can be then found in the working directory under
 ./test_query/local
