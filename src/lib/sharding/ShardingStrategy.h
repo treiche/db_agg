@@ -13,7 +13,7 @@ class ShardingStrategy {
 public:
     virtual ~ShardingStrategy() = default;
     virtual int getShardId(std::string shardKey) = 0;
-    virtual int getShardKeyIndex(std::vector<std::pair<std::string,uint32_t>> columns) = 0;
+    virtual void setShardCount(int shardCount) = 0;
 };
 
 class InvalidShardKeyException : public std::runtime_error {

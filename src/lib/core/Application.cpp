@@ -131,12 +131,13 @@ void Application::handleEvent(Event& event) {
     LOG4CPLUS_DEBUG(LOG, "fired event");
 }
 
-void Application::run() {
+bool Application::run() {
     LOG4CPLUS_DEBUG(LOG, "run application");
     try {
         queryProcessor->process(query, environment);
         Event event{EventType::APPLICATION_FINISHED,""};
         fireEvent(event);
+        return true;
     } catch(CancelException& ce) {
         Event event{EventType::APPLICATION_CANCELED,""};
         fireEvent(event);
@@ -147,6 +148,7 @@ void Application::run() {
         ApplicationFailedEvent event{""};
         fireEvent(event);
     }
+    return false;
 }
 }
 

@@ -24,7 +24,7 @@ struct RegExpQueryParser::XImpl {
 };
 
 static RegExp CTE_EXTRACT(R"((WITH\s+|,\s*)([a-z_0-9]+)\$?([0-9]{0,1})\$?([a-z]*)\s+AS\s+\((.+?)\n\))");
-static RegExp NS_EXTRACT(R"((?<!distinct )(from|join)\s+([a-z_0-9]+)\.[a-z_]+\s*)");
+static RegExp NS_EXTRACT(R"((?<!distinct )(table|from|join)\s+([a-z_0-9]+)\.[a-z_]+\s*)");
 
 RegExpQueryParser::RegExpQueryParser() {
     pImpl = new XImpl();

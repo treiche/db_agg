@@ -19,9 +19,10 @@ using namespace std;
 namespace db_agg {
 
 
-CommandLineParser::CommandLineParser(string program, vector<OptionGroup> optionGroups) {
+CommandLineParser::CommandLineParser(string program, vector<Argument> arguments, vector<OptionGroup> optionGroups) {
     this->program = program;
     this->optionGroups = optionGroups;
+    this->arguments = arguments;
 }
 
 vector<string> CommandLineParser::parse(int argc, char**argv) {
@@ -67,7 +68,7 @@ vector<string> CommandLineParser::parse(std::vector<std::string> args) {
             if (options[option_index].hasArgs) {
                 val = optarg;
             }
-            arguments[options[option_index].longOption].push_back(val);
+            values[options[option_index].longOption].push_back(val);
         } else {
             for (size_t idx=0; idx<options.size(); idx++) {
                 if (options[idx].shortOption == c) {
@@ -75,7 +76,7 @@ vector<string> CommandLineParser::parse(std::vector<std::string> args) {
                     if (options[idx].hasArgs) {
                         val = optarg;
                     }
-                    arguments[options[idx].longOption].push_back(val);
+                    values[options[idx].longOption].push_back(val);
                 }
             }
         }
@@ -88,28 +89,21 @@ vector<string> CommandLineParser::parse(std::vector<std::string> args) {
         }
     }
 
-    for (auto& optionGroup:optionGroups) {
-        if (optionGroup.name == "arguments") {
-            if (optionGroup.options.size() != posArgs.size()) {
-                throw runtime_error("wrong number of positional arguments");
-            }
-            int argLen = posArgs.size();
-            for (int cnt=0;cnt<argLen;cnt++) {
-                auto& option = optionGroup.options[cnt];
-                // cout << "set position arg " << option.longOption << " to " << posArgs[cnt] << endl;
-                arguments[option.longOption].push_back(posArgs[cnt]);
-            }
-        }
+    if (posArgs.size() != arguments.size()) {
+        throw runtime_error("wrong number of positional arguments");
     }
 
+    for (int cnt=0; cnt<posArgs.size(); cnt++) {
+        values[arguments[cnt].name].push_back(posArgs[cnt]);
+    }
     return posArgs;
 }
 
 bool CommandLineParser::hasOption(std::string name) {
-    if (arguments.find(name)==arguments.end()) {
+    if (values.find(name)==values.end()) {
         return false;
     }
-    if (arguments[name].empty()) {
+    if (values[name].empty()) {
         return false;
     }
     return true;
@@ -126,11 +120,11 @@ vector<Option> CommandLineParser::getOptions() {
 }
 
 string CommandLineParser::getOptionValue(string optName) {
-    return arguments[optName].at(0);
+    return values[optName].at(0);
 }
 
 vector<string> CommandLineParser::getOptionListValue(string optName) {
-    return arguments[optName];
+    return values[optName];
 }
 
 map<string, string> CommandLineParser::getOptionMapValue(std::string optName) {
@@ -149,12 +143,22 @@ map<string, string> CommandLineParser::getOptionMapValue(std::string optName) {
 }
 
 bool CommandLineParser::getFlag(string optName) {
-    return arguments.find(optName) != arguments.end();
+    return values.find(optName) != values.end();
 }
 
 string CommandLineParser::getUsage() {
     stringstream usage;
-    usage << "usage: " << program << " [OPTIONS]" << endl;
+    usage << "usage: " << program << " [OPTIONS]";
+    for (auto& argument:arguments) {
+        usage << " <" << argument.name << ">";
+    }
+    usage << endl << endl;
+    usage << "ARGUMENTS:" << endl;
+    for (auto& argument:arguments) {
+        usage << "  " << argument.name << ": " << argument.description << endl;
+    }
+    usage << endl;
+    usage << "OPTIONS:" << endl;
     for (auto& group:optionGroups) {
         usage << "  " << group.name << ":" << endl;
         for (auto& option:group.options) {

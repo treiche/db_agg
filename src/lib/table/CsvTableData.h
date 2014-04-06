@@ -39,6 +39,7 @@ public:
     virtual void *getRawRow(uint32_t row, uint32_t& size) override;
     virtual void save(std::string filePath) override;
     virtual std::string calculateMD5Sum() override;
+    virtual std::string getValue(uint64_t row, uint32_t col) override;
 };
 }
 

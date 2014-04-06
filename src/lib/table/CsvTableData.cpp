@@ -11,7 +11,9 @@
 #include "utils/md5.h"
 #include "type/oids.h"
 #include "utils/utility.h"
+#include "utils/File.h"
 #include "type/TypeRegistry.h"
+#include "TableIndex.h"
 
 using namespace std;
 using namespace log4cplus;
@@ -28,7 +30,8 @@ namespace db_agg {
         size_t rowCount = 0;
         size_t colCount = 0;
         uint64_t ptr;
-        vector<int> index;
+        //vector<int> index;
+        TableIndex index;
         string fileName;
     };
 
@@ -128,7 +131,7 @@ namespace db_agg {
     void CsvTableData::readValue(uint32_t row, uint32_t col, TypedValue& value) {
         loadOnDemand("readValue");
         value.setTypeId(pImpl->columns[col].second);
-        uint32_t ptr = pImpl->index[row*col+col];
+        uint32_t ptr = pImpl->index.getOffset(row,col);
         value.value.stringVal = pImpl->data + ptr;
         char stopChar = '\t';
         uint32_t size = 0;
@@ -207,9 +210,16 @@ namespace db_agg {
         pImpl->currentRow = 0;
         pImpl->currentColumn = 0;
         LOG4CPLUS_TRACE(LOG, "calculate row count");
-        calculateRowCount();
-        LOG4CPLUS_TRACE(LOG, "build index");
-        buildIndex();
+        File indexFile{pImpl->fileName + ".idx"};
+        if (indexFile.exists()) {
+            pImpl->index.load(indexFile.abspath());
+            assert(pImpl->colCount == pImpl->index.getColCount());
+            pImpl->rowCount = pImpl->index.getRowCount();
+        } else {
+            calculateRowCount();
+            LOG4CPLUS_TRACE(LOG, "build index");
+            buildIndex();
+        }
         LOG4CPLUS_TRACE(LOG, "loading file done");
         LOG4CPLUS_DEBUG(LOG, "load file " << pImpl->fileName << " done");
     }
@@ -239,9 +249,15 @@ namespace db_agg {
         }
         pImpl->data = (char*)realloc(pImpl->data, pImpl->size + size);
         memcpy(pImpl->data + pImpl->size, data, size);
+        for (uint64_t idx=0; idx < size; idx++) {
+            char c = ((char*)data)[idx];
+            if (c == '\t' || c == '\n') {
+                pImpl->index.addOffset(pImpl->size+idx);
+            }
+        }
         pImpl->size += size;
-        calculateRowCount();
-        buildIndex();
+        //calculateRowCount();
+        //buildIndex();
     }
 
     void CsvTableData::readColumns(string firstLine) {
@@ -298,15 +314,18 @@ namespace db_agg {
         os << endl;
         os.write(pImpl->data, pImpl->size);
         os.close();
+        pImpl->index.save(filePath+".idx");
     }
 
     void CsvTableData::buildIndex() {
         pImpl->index.clear();
+        pImpl->index.setRowCount(pImpl->rowCount);
+        pImpl->index.setColCount(pImpl->colCount);
         uint32_t ptr = 0;
         uint32_t lastPtr = 0;
         while (ptr < pImpl->size) {
             if (pImpl->data[ptr] == '\t' || pImpl->data[ptr] == '\n') {
-                pImpl->index.push_back(lastPtr);
+                pImpl->index.addOffset(lastPtr);
                 lastPtr = ptr + 1;
             }
             ptr++;
@@ -315,7 +334,7 @@ namespace db_agg {
 
     void * CsvTableData::getRawRow(uint32_t row, uint32_t& size) {
         loadOnDemand("getRawRow");
-        uint32_t ptr = pImpl->index[row * pImpl->colCount];
+        uint32_t ptr = pImpl->index.getOffset(row,0);
         //cout << "row = " << row << " ptr = " << ptr << endl;
         size = 0;
         char *rowData = pImpl->data + ptr;
@@ -335,5 +354,14 @@ namespace db_agg {
             LOG4CPLUS_DEBUG(LOG, "load on demand -> " << reason);
             readData();
         }
+    }
+
+    string CsvTableData::getValue(uint64_t row, uint32_t col) {
+        int startIndex = pImpl->index.getOffset(row,col);
+        int len = 0;
+        while (pImpl->data[startIndex+len] != '\n' && pImpl->data[startIndex+len] != '\t' && startIndex+len < pImpl->size) {
+            len++;
+        }
+        return string(pImpl->data+startIndex,len);
     }
 }

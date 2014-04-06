@@ -3,10 +3,11 @@
 
 namespace db_agg {
 
+static vector<Argument> arguments = {
+   {"query-file", "path to the db_agg query file" }
+};
+
 static vector<OptionGroup> optionGroups = {
-    {"arguments",{
-        { 'r', "query-file", true, "path to the db_agg query file" } 
-    }},
     {"general",{
         { 'e', "environment", true, "select default environment" } ,
         { 'h', "help", false, "show help" } ,
@@ -131,7 +132,7 @@ void dumpConfiguration(Configuration& config) {
 
 
     void parse(int argc, char **argv, Configuration& config) {
-        CommandLineParser parser{"db_agg", optionGroups};
+        CommandLineParser parser{"db_agg", arguments, optionGroups};
         vector<string> posArgs = parser.parse(argc,argv);
         if (posArgs.size() != 1) {
             cout << "missing query file argument" << endl;

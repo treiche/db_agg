@@ -13,16 +13,18 @@
 #include <vector>
 
 #include "cli/Option.h"
+#include "cli/Argument.h"
 #include "cli/OptionGroup.h"
 #include "cli/ArgumentConverter.h"
 
 namespace db_agg {
 class CommandLineParser {
     std::string program;
-    std::map<std::string, std::vector<std::string>> arguments;
+    std::map<std::string, std::vector<std::string>> values;
     std::vector<OptionGroup> optionGroups;
+    std::vector<Argument> arguments;
 public:
-    CommandLineParser(std::string program,std::vector<OptionGroup> optionGroups);
+    CommandLineParser(std::string program, std::vector<Argument> arguments, std::vector<OptionGroup> optionGroups);
     std::vector<std::string> parse(int argc, char **argv);
     std::vector<std::string> parse(std::vector<std::string> args);
     std::vector<Option> getOptions();
@@ -35,7 +37,7 @@ public:
     template<typename T>
     void getOptionValue(std::string name, T& value) {
         ArgumentConverter<T> ac;
-        value = ac.convert(arguments[name].at(0));
+        value = ac.convert(values[name].at(0));
     }
 };
 }

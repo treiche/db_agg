@@ -64,9 +64,9 @@ void CursesListener::handleEvent(Event& event) {
         size_t cnt = 2;
         size_t statusOffset = 0;
         for (auto& query:queries) {
-            attron(A_BOLD|A_UNDERLINE|A_BLINK);
+            attron(A_BOLD|A_UNDERLINE);
             mvaddstr(cnt,2,query.getName().c_str());
-            attroff(A_BOLD|A_UNDERLINE|A_BLINK);
+            attroff(A_BOLD|A_UNDERLINE);
             if (query.getName().size()+2 > statusOffset) {
                 statusOffset = query.getName().size()+2;
             }

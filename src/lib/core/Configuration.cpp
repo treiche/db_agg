@@ -94,26 +94,27 @@ namespace db_agg {
 
     string Configuration::findConfigurationFile(string name, bool createIfNeeded, bool isDir) {
 		LOG4CPLUS_INFO(LOG, "find configuration file '" << name << "'");
+		string effectiveFile;
         if (name.find("~") == 0) {
             string homeLocation = getHomeDir() + "/.db_agg/" + name.substr(1);
             File homeFile{homeLocation};
             if (homeFile.exists()) {
-            	return homeLocation;
+            	effectiveFile = homeFile.abspath();
+            } else {
+                string prefixLocation = getSysConfigDir() + "/" + name.substr(1);
+                File prefixFile{prefixLocation};
+                effectiveFile = prefixLocation;
             }
-            string prefixLocation = getSysConfigDir() + "/" + name.substr(1);
-            File prefixFile{prefixLocation};
-            if (prefixFile.exists()) {
-            	return prefixLocation;
-            }
-            if (createIfNeeded) {
-            	if (isDir) {
-            		LOG4CPLUS_INFO(LOG, "create configuration directory '" << homeLocation << "'");
-            		homeFile.mkdirs();
-            	}
-            }
-            return homeLocation;
+        } else {
+            effectiveFile = name;
         }
-        return name;
+        File ef{effectiveFile};
+        if (!ef.exists() && createIfNeeded) {
+            if (isDir) {
+                ef.mkdirs();
+            }
+        }
+        return effectiveFile;
     }
     bool Configuration::getDisableCache() {
         return disableCache;

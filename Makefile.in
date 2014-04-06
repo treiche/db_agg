@@ -1,6 +1,6 @@
 CXX=@CXX@
 INCLUDES=-Isrc -Isrc/lib -Isrc/bin @INCLUDES@
-CXXFLAGS=-c -std=c++11 $(INCLUDES)
+CXXFLAGS=@CXXFLAGS@ -c $(INCLUDES) -fPIC -rdynamic
 
 LIBS=@LIBS@
 LDFLAGS=$(LIBS)

@@ -12,7 +12,7 @@
 #include <string>
 
 #include "extension/Extension.h"
-#include "core/ShardingStrategy.h"
+#include "sharding/ShardingStrategy.h"
 
 namespace db_agg {
 

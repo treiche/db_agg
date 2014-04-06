@@ -36,7 +36,7 @@ namespace db_agg {
             virtual ~Application();
             virtual void handleEvent(Event& event) override;
             void bootstrap(Configuration& config);
-            void run();
+            bool run();
             QueryParser& getQueryParser() {
                 return *queryParser;
             }

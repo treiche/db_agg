@@ -18,25 +18,10 @@
 #include "table/TableData.h"
 #include "core/Transition.h"
 #include "event/Event.h"
+#include "injection/DependencyInjector.h"
 
 namespace db_agg {
 class Transition;
-
-class ExecutionStep {
-private:
-    std::string query;
-    TableData *dependency = nullptr;
-public:
-    ExecutionStep(std::string query, TableData *dependency):
-        query(query),
-        dependency(dependency) {}
-    std::string getQuery() {
-        return query;
-    }
-    TableData *getDependency() {
-        return dependency;
-    }
-};
 
 class QueryExecution: public ExecutionHandler {
     private:
@@ -50,13 +35,13 @@ class QueryExecution: public ExecutionHandler {
         bool scheduled = false;
         bool done = false;
         std::map<std::string,TableData*> dependencies;
-        std::deque<ExecutionStep> steps;
+        DependencyInjector *dependencyInjector = nullptr;
         std::chrono::system_clock::time_point startTime;
         std::chrono::system_clock::time_point endTime;
         public:
         static std::string toSqlValues(TableData& data);
         QueryExecution();
-        QueryExecution(std::string name, std::string id, std::string connectionUrl, std::string sql, std::vector<std::string> depName);
+        QueryExecution(std::string name, std::string id, std::string connectionUrl, std::string sql, std::vector<std::string> depName, DependencyInjector *dependencyInjector);
         virtual ~QueryExecution() override;
 
         std::string getId() { return id; }

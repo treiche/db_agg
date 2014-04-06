@@ -6,6 +6,7 @@
 #include "table/CsvTableData.h"
 #include "core/ExecutionHandler.h"
 #include "type/TypedValue.h"
+#include "utils/RegExp.h"
 
 using namespace std;
 using namespace log4cplus;
@@ -24,11 +25,24 @@ static TableData *join(vector<QueryExecution*> sources) {
     return td;
 }
 
-vector<TableData*> split(TableData *src, int dstSize, ShardingStrategy *sharder) {
+int findShardColIndex(vector<pair<string,uint32_t>> columns, string searchExpr) {
+    RegExp re(searchExpr);
+    for (size_t idx=0;idx<columns.size();idx++) {
+        string colName = columns[idx].first;
+        vector<RegExp::match> matches = re.exec(colName);
+        if (matches.size()>0) {
+            return idx;
+        }
+    }
+    throw runtime_error("unable to find shard key column");
+}
+
+vector<TableData*> split(TableData *src, int dstSize, ShardingStrategy *sharder, string shardColSearchExpr) {
     LOG4CPLUS_DEBUG(LOG, "split(" << src << "," << dstSize << "," << sharder << ")");
+    sharder->setShardCount(dstSize);
     vector<TableData*> splitted(dstSize);
     vector<string> splittedData(dstSize);
-    uint32_t rows = src->getRowCount();
+    uint64_t rows = src->getRowCount();
     uint32_t cols = src->getColCount();
     size_t reserveSize = src->getSize() / dstSize;
     LOG4CPLUS_DEBUG(LOG, "reserve " << reserveSize << " bytes for each shard ");
@@ -37,7 +51,7 @@ vector<TableData*> split(TableData *src, int dstSize, ShardingStrategy *sharder)
         splittedData[cnt].reserve(reserveSize);
     }
     LOG4CPLUS_DEBUG(LOG, "get shard key index");
-    size_t shardKeyIndex = sharder->getShardKeyIndex(src->getColumns());
+    size_t shardKeyIndex = findShardColIndex(src->getColumns(),shardColSearchExpr); // sharder->getShardKeyIndex(src->getColumns());
     if (shardKeyIndex >= cols) {
         LOG4CPLUS_ERROR(LOG, "no shard key index found:\n  available columns");
         for (auto& col:src->getColumns()) {
@@ -46,24 +60,17 @@ vector<TableData*> split(TableData *src, int dstSize, ShardingStrategy *sharder)
         throw runtime_error("no shard key index found");
     }
     LOG4CPLUS_DEBUG(LOG,"shardKeyIndex is " << shardKeyIndex);
-    for (uint32_t row = 0; row < rows; row++) {
+    for (uint64_t row = 0; row < rows; row++) {
         LOG4CPLUS_TRACE(LOG, "split row " << row);
-        for (uint32_t col = 0;col<cols;col++) {
-            TypedValue tv;
-            src->readValue(tv);
-            if (col==shardKeyIndex) {
-                string shardKey = string(tv.value.stringVal,tv.getSize());
-                try {
-                    int shardId = sharder->getShardId(shardKey);
-                    LOG4CPLUS_TRACE(LOG,"shard id of " << shardKey << " = " << shardId);
-                    uint32_t rowSize;
-                    void *rowData = src->getRawRow(row,rowSize);
-                    //splitted[shardId-1]->appendRaw(rowData, rowSize);
-                    splittedData[shardId-1].append(string((const char*)rowData,rowSize));
-                } catch(InvalidShardKeyException& ise) {
-                    continue;
-                }
-            }
+        string shardKey = src->getValue(row,shardKeyIndex);
+        try {
+            int shardId = sharder->getShardId(shardKey);
+            // cout << "shardId of '" << shardKey << "' is " << shardId << endl;
+            uint32_t rowSize;
+            void *rowData = src->getRawRow(row,rowSize);
+            splittedData[shardId-1].append(string((const char*)rowData,rowSize));
+        } catch(InvalidShardKeyException& ise) {
+            continue;
         }
     }
 
@@ -75,6 +82,7 @@ vector<TableData*> split(TableData *src, int dstSize, ShardingStrategy *sharder)
     LOG4CPLUS_DEBUG(LOG, "return splitted result");
     return splitted;
 }
+
 
 Transition::Transition(string name, vector<QueryExecution*> sources, vector<QueryExecution*> targets, ShardingStrategy *sharder) :
     name(name),
@@ -96,7 +104,7 @@ Transition::~Transition() {
 void Transition::doTransition() {
     if (done) {
         string message = "transition '" + name +"' already done !";
-        LOG4CPLUS_ERROR(LOG, message);
+        LOG4CPLUS_WARN(LOG, message);
         return;
     }
     int srcSize = sources.size();
@@ -146,7 +154,7 @@ void Transition::doTransition() {
         } else {
             // split
             LOG4CPLUS_DEBUG(LOG, "start splitting " << src);
-            vector<TableData*> splitted = split(src,dstSize, sharder);
+            vector<TableData*> splitted = split(src,dstSize, sharder,shardColSearchExpr);
             for (auto data:splitted) {
                 createdData.push_back(data);
             }
@@ -161,7 +169,7 @@ void Transition::doTransition() {
     } else if (srcSize>1 && dstSize>1) {
         LOG4CPLUS_DEBUG(LOG, "start many to many");
         TableData *joined = join(sources);
-        vector<TableData*> splitted = split(joined,dstSize,sharder);
+        vector<TableData*> splitted = split(joined,dstSize,sharder,shardColSearchExpr);
         for (int cnt=0;cnt<dstSize;cnt++) {
             targets[cnt]->addDependency(name, splitted[cnt]);
         }

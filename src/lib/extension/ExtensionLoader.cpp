@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "utils/File.h"
+#include "Builtin.h"
 
 using namespace std;
 using namespace log4cplus;
@@ -52,6 +53,7 @@ namespace db_agg {
             extensions[child] = getExtension();
             libraries[child] = handle;
         }
+        extensions["builtin"] = new Builtin();
     }
 
     ShardingStrategy *ExtensionLoader::getShardingStrategy(string name) {

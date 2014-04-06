@@ -17,6 +17,9 @@
 #include "utils/File.h"
 #include "table/CsvTableData.h"
 
+#include "injection/DefaultDependencyInjector.h"
+#include "injection/NoResultInjector.h"
+
 #include "postgres/PGConnection.h"
 
 using namespace std;
@@ -195,7 +198,10 @@ void QueryProcessor::populateUrls(string environment) {
             if (urls.size() > 1) {
                 linkPath += "_" + to_string(idx + 1);
             }
-            query.addQueryExecution(QueryExecution(linkPath, resultId, url.getUrl() + " user="+c.first+" password="+c.second,query.getQuery(),deps));
+            // TODO: decide here which injection type must be used
+            // based on a regexp on the query
+            DependencyInjector *di = new DefaultDependencyInjector();
+            query.addQueryExecution(QueryExecution(linkPath, resultId, url.getUrl() + " user="+c.first+" password="+c.second,query.getQuery(),deps,di));
         }
     }
     for (auto& query:queryParser.getQueries()) {
@@ -203,6 +209,7 @@ void QueryProcessor::populateUrls(string environment) {
             throw runtime_error("empty query executions");
         }
     }
+
     LOG4CPLUS_TRACE(LOG, "populate urls done");
 }
 
@@ -244,9 +251,11 @@ void QueryProcessor::populateTransitions() {
                     LOG4CPLUS_TRACE(LOG, "build many-to-many sharded");
                     Transition t(dep.locator.getQName());
                     string shardingStrategyName = databaseRegistry.getShardingStrategyName(targetQuery.getDatabaseId());
+                    string shardColSearchExpr = databaseRegistry.getShardColumn(targetQuery.getDatabaseId());
                     ShardingStrategy *sharder = extensionLoader.getShardingStrategy(shardingStrategyName);
                     LOG4CPLUS_TRACE(LOG,"set sharder to " << sharder);
                     t.setSharder(sharder);
+                    t.setShardColSearchExpr(shardColSearchExpr);
                     for (size_t cnt=0; cnt< srcSize; cnt++) {
                         t.addSource(sourceQuery.getQueryExecution(cnt));
                     }
@@ -465,7 +474,10 @@ void QueryProcessor::dumpExecutionPlan() {
     out << "}" << endl;
     out.close();
     string cmd = "dot -q1 -Tpng -o " + outputDir+"/executionPlan.png "+ outputDir+"/executionPlan.dot";
-    system(cmd.c_str());
+    int exitCode = system(cmd.c_str());
+    if (exitCode != 0) {
+        LOG4CPLUS_ERROR(LOG, "failed to create image from executionPlan.dot");
+    }
     LOG4CPLUS_DEBUG(LOG, "dump execution plan done");
 }
 

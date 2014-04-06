@@ -8,6 +8,10 @@
 #ifndef DB_AGG_H_
 #define DB_AGG_H_
 
+#include "utils/md5.h"
+
+#include "extension/Extension.h"
+
 #include "installation.h"
 
 #include <log4cplus/logger.h>

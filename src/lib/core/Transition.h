@@ -6,7 +6,7 @@
 #include <vector>
 
 #include "core/QueryExecution.h"
-#include "core/ShardingStrategy.h"
+#include "sharding/ShardingStrategy.h"
 
 namespace db_agg {
 class QueryExecution;
@@ -19,6 +19,7 @@ class Transition {
     std::vector<QueryExecution*> targets;
     bool done = false;
     ShardingStrategy *sharder = nullptr;
+    std::string shardColSearchExpr;
     std::vector<TableData*> createdData;
 public:
     Transition() {}
@@ -42,6 +43,9 @@ public:
     }
     void setSharder(ShardingStrategy *sharder) {
         this->sharder = sharder;
+    }
+    void setShardColSearchExpr(std::string shardColSearchExpr) {
+        this->shardColSearchExpr = shardColSearchExpr;
     }
     void setName(std::string name) {
         this->name = name;

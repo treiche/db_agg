@@ -26,6 +26,9 @@ public:
     virtual void *getRawRow(uint32_t row, uint32_t& size) = 0;
     virtual void save(std::string filePath) = 0;
     virtual std::string calculateMD5Sum() = 0;
+    virtual std::string toSqlValues();
+    virtual std::string toColumnDefinitions();
+    virtual std::string getValue(uint64_t row, uint32_t col) = 0;
 };
 }
 

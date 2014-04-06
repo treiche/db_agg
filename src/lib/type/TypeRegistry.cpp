@@ -21,7 +21,7 @@ TypeInfo::TypeInfo(long oid,string name,char category,short length) {
 }
 
 bool TypeInfo::needsQuoting() {
-    if (this->category == 'S' || this->category == 'D' || this->category == 'T') {
+    if (this->category == 'S' || this->category == 'D' || this->category == 'T' || this->category == 'A') {
         return true;
     }
     return false;
