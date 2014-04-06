@@ -139,12 +139,15 @@ bool Application::run() {
         fireEvent(event);
         return true;
     } catch(CancelException& ce) {
+        LOG4CPLUS_ERROR(LOG, "application canceled");
         Event event{EventType::APPLICATION_CANCELED,""};
         fireEvent(event);
     } catch(runtime_error& re) {
+        LOG4CPLUS_ERROR(LOG, "caught exception:" << re.what());
         ApplicationFailedEvent event{re.what()};
         fireEvent(event);
     } catch(...) {
+        LOG4CPLUS_ERROR(LOG, "application failed");
         ApplicationFailedEvent event{""};
         fireEvent(event);
     }

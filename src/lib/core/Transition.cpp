@@ -5,7 +5,6 @@
 #include <stdexcept>
 #include "table/CsvTableData.h"
 #include "core/ExecutionHandler.h"
-#include "type/TypedValue.h"
 #include "utils/RegExp.h"
 
 using namespace std;
@@ -38,6 +37,7 @@ int findShardColIndex(vector<pair<string,uint32_t>> columns, string searchExpr) 
 }
 
 vector<TableData*> split(TableData *src, int dstSize, ShardingStrategy *sharder, string shardColSearchExpr) {
+    assert(sharder != nullptr);
     LOG4CPLUS_DEBUG(LOG, "split(" << src << "," << dstSize << "," << sharder << ")");
     sharder->setShardCount(dstSize);
     vector<TableData*> splitted(dstSize);

@@ -285,12 +285,17 @@ void QueryProcessor::populateTransitions() {
                 }
                 targetQuery.getQueryExecution(0)->addIncomingTransition(&transitions.back());
             } else if (dstSize > 1 && srcSize == 1) {
-                // one to many
+                LOG4CPLUS_DEBUG(LOG, "prepare one-to-many transition");
                 Transition t(dep.locator.getQName());
                 string shardingStrategyName = databaseRegistry.getShardingStrategyName(targetQuery.getDatabaseId());
-                ShardingStrategy *sharder = extensionLoader.getShardingStrategy(shardingStrategyName);
-                LOG4CPLUS_TRACE(LOG,"set sharder to " << sharder);
-                t.setSharder(sharder);
+                if (shardingStrategyName.empty()) {
+                    LOG4CPLUS_WARN(LOG, "no sharding strategy for database " << targetQuery.getDatabaseId());
+                } else {
+                    LOG4CPLUS_DEBUG(LOG, "sharder name " << shardingStrategyName);
+                    ShardingStrategy *sharder = extensionLoader.getShardingStrategy(shardingStrategyName);
+                    LOG4CPLUS_TRACE(LOG,"set sharder to " << sharder);
+                    t.setSharder(sharder);
+                }
                 t.addSource(sourceQuery.getQueryExecution(0));
                 for (size_t cnt=0;cnt<dstSize; cnt++) {
                     t.addTarget(targetQuery.getQueryExecution(cnt));

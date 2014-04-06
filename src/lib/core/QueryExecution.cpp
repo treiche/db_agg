@@ -61,59 +61,6 @@ namespace db_agg {
         return dependencyInjector->inject(query,dependencies,copyThreshold);
     }
 
-    string QueryExecution::toSqlValues(TableData& data) {
-        string values;
-        size_t rows = data.getRowCount();
-        size_t cols = data.getColCount();
-        vector<TypeInfo*> typeInfos(cols);
-        for (uint32_t col = 0;col<cols;col++) {
-            auto colDef = data.getColumns()[col];
-            TypeInfo *ti = TypeRegistry::getInstance().getTypeInfo(colDef.second);
-            typeInfos[col] = ti;
-        }
-        for (size_t row=0; row<data.getRowCount(); row++) {
-            values.append("(");
-            TypedValue tv;
-            for (uint32_t col = 0;col<cols;col++) {
-                data.readValue(tv);
-                string colValue = string(tv.value.stringVal,tv.getSize());
-                bool isNull = false;
-                // TODO: should be done in TypedValue to string
-                if (colValue == "\\N") {
-                    isNull = true;
-                    colValue = "null";
-                } else if (typeInfos[col]->category == 'B') {
-                    if (colValue == "t") {
-                        colValue="true";
-                    } else if (colValue == "f") {
-                        colValue="false";
-                    } else {
-                        throw runtime_error("invalid boolean value '" + colValue + "'");
-                    }
-                }
-                if (!isNull && typeInfos[col]->needsQuoting()) {
-                    values.append("E'");
-                }
-                values.append(colValue);
-                if (!isNull && typeInfos[col]->needsQuoting()) {
-                    values.append("'");
-                }
-                if (row==0) {
-                    values.append("::");
-                    values.append(typeInfos[col]->name);
-                }
-                if (col<cols-1) {
-                    values.append(",");
-                }
-            }
-            values.append(")");
-            if (row<rows-1) {
-                values.append(",");
-            }
-        }
-        return values;
-    }
-
     uint64_t QueryExecution::getRowCount(size_t stepNo) {
         ExecutionStep& step = dependencyInjector->getStep(stepNo);
         return step.getDependency()->getRowCount();

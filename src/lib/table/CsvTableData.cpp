@@ -128,43 +128,6 @@ namespace db_agg {
 
     }
 
-    void CsvTableData::readValue(uint32_t row, uint32_t col, TypedValue& value) {
-        loadOnDemand("readValue");
-        value.setTypeId(pImpl->columns[col].second);
-        uint32_t ptr = pImpl->index.getOffset(row,col);
-        value.value.stringVal = pImpl->data + ptr;
-        char stopChar = '\t';
-        uint32_t size = 0;
-        while(pImpl->data[ptr+size] != stopChar) {
-            LOG4CPLUS_TRACE(LOG, "read byte " << pImpl->data[pImpl->ptr]);
-            size++;
-        }
-        value.setSize(size);
-    }
-
-    void CsvTableData::readValue(TypedValue& value) {
-        loadOnDemand("readValue");
-        LOG4CPLUS_TRACE(LOG, "readValue [" << pImpl->currentRow << "," << pImpl->currentColumn << "]");
-        value.setTypeId(pImpl->columns[pImpl->currentColumn].second);
-        value.value.stringVal = pImpl->data + pImpl->ptr;
-        size_t size = 0;
-        char stopChar = '\t';
-        if (pImpl->currentColumn == pImpl->colCount -1 ) {
-            stopChar = '\n';
-        }
-        while(pImpl->data[pImpl->ptr] != stopChar) {
-            pImpl->ptr++;
-            size++;
-        }
-        value.setSize(size);
-        pImpl->currentColumn++;
-        pImpl->ptr++;
-        if (pImpl->currentColumn == pImpl->columns.size()) {
-            pImpl->currentColumn = 0;
-            pImpl->currentRow++;
-        }
-    }
-
     void CsvTableData::loadColumns() {
         LOG4CPLUS_DEBUG(LOG, "read columns from file '" << pImpl->fileName << "'");
         ifstream is{pImpl->fileName,ios::in | ios::binary | ios::ate};
@@ -335,7 +298,6 @@ namespace db_agg {
     void * CsvTableData::getRawRow(uint32_t row, uint32_t& size) {
         loadOnDemand("getRawRow");
         uint32_t ptr = pImpl->index.getOffset(row,0);
-        //cout << "row = " << row << " ptr = " << ptr << endl;
         size = 0;
         char *rowData = pImpl->data + ptr;
         while (pImpl->data[ptr] != '\n' && ptr < pImpl->size) {
@@ -345,7 +307,6 @@ namespace db_agg {
         if (pImpl->data[ptr]=='\n') {
             size++;
         }
-        //cout << "data = " << string(rowData,size) << " size = " << size << endl;
         return rowData;
     }
 

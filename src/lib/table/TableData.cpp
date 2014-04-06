@@ -32,10 +32,8 @@ string TableData::toSqlValues() {
     }
     for (size_t row=0; row<getRowCount(); row++) {
         values.append("(");
-        TypedValue tv;
         for (uint32_t col = 0;col<cols;col++) {
-            readValue(tv);
-            string colValue = string(tv.value.stringVal,tv.getSize());
+            string colValue = getValue(row,col);
             bool isNull = false;
             // TODO: should be done in TypedValue to string
             if (colValue == "\\N") {
@@ -47,7 +45,7 @@ string TableData::toSqlValues() {
                 } else if (colValue == "f") {
                     colValue="false";
                 } else {
-                    throw runtime_error("invalid boolean value '" + colValue + "'");
+                    throw runtime_error("2invalid boolean value '" + colValue + "'");
                 }
             }
             if (!isNull && typeInfos[col]->needsQuoting()) {

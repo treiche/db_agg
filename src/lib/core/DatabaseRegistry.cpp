@@ -141,8 +141,8 @@ namespace db_agg {
             return "";
         }
         xmlNodeSetPtr nodes = xpathObj->nodesetval;
-        if (nodes->nodeNr!=1) {
-            throw runtime_error("unexpected result count "+nodes->nodeNr);
+        if (nodes->nodeNr != 1) {
+            throw runtime_error("unexpected result count " + nodes->nodeNr);
         }
         xmlNodePtr node = nodes->nodeTab[0];
         xmlChar * sval = xmlXPathCastNodeToString(node);
@@ -155,7 +155,11 @@ namespace db_agg {
 
 
     string DatabaseRegistry::getShardingStrategyName(std::string databaseId) {
-        return evaluateXPath("/registry/database-definition[@name='" + databaseId + "']/@sharder");
+        try {
+            return evaluateXPath("/registry/database-definition[@name='" + databaseId + "']/@sharder");
+        } catch(runtime_error& re) {
+            return "";
+        }
     }
 
     string DatabaseRegistry::getShardColumn(std::string databaseId) {
