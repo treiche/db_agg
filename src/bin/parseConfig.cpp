@@ -134,12 +134,12 @@ void dumpConfiguration(Configuration& config) {
     void parse(int argc, char **argv, Configuration& config) {
         CommandLineParser parser{"db_agg", arguments, optionGroups};
         vector<string> posArgs = parser.parse(argc,argv);
-        if (posArgs.size() != 1) {
-            cout << "missing query file argument" << endl;
+        if (parser.getFlag("help")) {
             cout << parser.getUsage();
             exit(0);
         }
-        if (parser.getFlag("help")) {
+        if (posArgs.size() != 1) {
+            cout << "missing query file argument" << endl;
             cout << parser.getUsage();
             exit(0);
         }

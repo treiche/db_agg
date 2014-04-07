@@ -89,9 +89,11 @@ vector<string> CommandLineParser::parse(std::vector<std::string> args) {
         }
     }
 
+    /* this does not work when only -h is given
     if (posArgs.size() != arguments.size()) {
         throw runtime_error("wrong number of positional arguments");
     }
+    */
 
     for (int cnt=0; cnt<posArgs.size(); cnt++) {
         values[arguments[cnt].name].push_back(posArgs[cnt]);
