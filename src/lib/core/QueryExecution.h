@@ -19,6 +19,7 @@
 #include "table/TableData.h"
 #include "core/Transition.h"
 #include "event/Event.h"
+#include "Connection.h"
 #include "injection/DependencyInjector.h"
 
 namespace db_agg {
@@ -28,7 +29,7 @@ class QueryExecution: public ExecutionHandler {
     private:
         std::shared_ptr<TableData> data;
         std::string id;
-        std::string connectionUrl;
+        Connection connectionUrl;
         std::string sql;
         std::string name;
         std::vector<Transition*> transitions;
@@ -40,9 +41,8 @@ class QueryExecution: public ExecutionHandler {
         std::chrono::system_clock::time_point startTime;
         std::chrono::system_clock::time_point endTime;
         public:
-        static std::string toSqlValues(TableData& data);
         QueryExecution();
-        QueryExecution(std::string name, std::string id, std::string connectionUrl, std::string sql, std::vector<std::string> depName, DependencyInjector *dependencyInjector);
+        QueryExecution(std::string name, std::string id, Connection connectionUrl, std::string sql, std::vector<std::string> depName, DependencyInjector *dependencyInjector);
         virtual ~QueryExecution() override;
 
         bool allTransitionsDone();

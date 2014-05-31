@@ -22,7 +22,7 @@ namespace db_agg {
 
     QueryExecution::QueryExecution() {}
 
-    QueryExecution::QueryExecution(std::string name, std::string id, std::string connectionUrl, std::string sql, std::vector<std::string> depNames, DependencyInjector *dependencyInjector):
+    QueryExecution::QueryExecution(std::string name, std::string id, Connection connectionUrl, std::string sql, std::vector<std::string> depNames, DependencyInjector *dependencyInjector):
             id(id),
             connectionUrl(connectionUrl),
             sql(sql),
@@ -39,6 +39,21 @@ namespace db_agg {
             data.reset();
         }
     }
+
+    bool QueryExecution::allTransitionsDone() {
+        bool isDone = true;
+        for (auto t:transitions) {
+            isDone &= t->isDone();
+        }
+        return isDone;
+    }
+
+    void QueryExecution::release() {
+        LOG4CPLUS_TRACE(LOG, "use count before release = " << data.use_count());
+        data.reset();
+        LOG4CPLUS_TRACE(LOG, "use count after release = " << data.use_count());
+    }
+
 
     void QueryExecution::addTransition(Transition *t) {
         transitions.push_back(t);

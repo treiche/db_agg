@@ -172,7 +172,7 @@ void QueryProcessor::populateUrls(string environment) {
                   "[environment = " << query.getEnvironment() << "]"
                 );
                 for (auto& url:urls) {
-                    LOG4CPLUS_DEBUG(LOG, "    " << url.getUrl());
+                    LOG4CPLUS_DEBUG(LOG, "    " << url.getUrl(true,true,true));
                 }
             }
         }
@@ -191,7 +191,7 @@ void QueryProcessor::populateUrls(string environment) {
 
         for (size_t idx=0; idx<urls.size(); idx++) {
             Connection url = urls[idx];
-            string resultId = md5hex(url.getUrl() + query.getQuery());
+            string resultId = md5hex(url.getUrl(false,false,false) + query.getQuery());
             pair<string,string> c = passwordManager.getCredential(url);
             // calculate link path
             string linkPath = query.getLocator().getQName();
@@ -201,7 +201,9 @@ void QueryProcessor::populateUrls(string environment) {
             // TODO: decide here which injection type must be used
             // based on a regexp on the query
             DependencyInjector *di = new DefaultDependencyInjector();
-            query.addQueryExecution(QueryExecution(linkPath, resultId, url.getUrl() + " user="+c.first+" password="+c.second,query.getQuery(),deps,di));
+            url.setUser(c.first);
+            url.setPassword(c.second);
+            query.addQueryExecution(QueryExecution(linkPath, resultId, url ,query.getQuery(),deps,di));
         }
     }
     for (auto& query:queryParser.getQueries()) {
@@ -343,10 +345,10 @@ void QueryProcessor::checkConnections() {
         if (!query.isExternal()) {
             for (QueryExecution& exec:query.getQueryExecutions()) {
                 if (!exec.isDone()) {
-                    LOG4CPLUS_INFO(LOG, "check connection "+maskPassword(exec.getConnectionUrl()));
+                    LOG4CPLUS_INFO(LOG, "check connection " + exec.getConnectionUrl().getUrl(true,true,true));
                     ExecutionStateChangeEvent event{exec.getId(),"PING"};
                     fireEvent(event);
-                    PGConnection::ping(exec.getConnectionUrl());
+                    PGConnection::ping(exec.getConnectionUrl().getUrl(true,false,true));
                     event.state = "OK";
                     fireEvent(event);
                 }
@@ -356,7 +358,8 @@ void QueryProcessor::checkConnections() {
 }
 
 void QueryProcessor::calculateExecutionId(QueryExecution& exec, string& md5data) {
-    md5data.append(exec.getConnectionUrl() + exec.getSql());
+    string url = exec.getConnectionUrl().getHost() + ":" + to_string(exec.getConnectionUrl().getPort()) + ":" + exec.getConnectionUrl().getDatabase();
+    md5data.append(url + exec.getSql());
     vector<Transition*> inc = exec.getIncomingTransitions();
     for (Transition *t:inc) {
         for (QueryExecution *src:t->getSources()) {
@@ -397,10 +400,15 @@ void QueryProcessor::handleEvent(Event& event) {
         LOG4CPLUS_DEBUG(LOG, "PROCESSED: " << result.getSql());
         result.setDone();
         if (result.getData()==nullptr) {
+            LOG4CPLUS_ERROR(LOG, "result not ready");
             throw runtime_error("result not ready");
         }
+        LOG4CPLUS_DEBUG(LOG, "doTransitions");
         result.doTransitions();
         cacheItem(event.resultId);
+        if (result.allTransitionsDone()) {
+            result.release();
+        }
     }
     vector<QueryExecution*> exec = findExecutables();
     if (!exec.empty()) {
@@ -408,7 +416,7 @@ void QueryProcessor::handleEvent(Event& event) {
         for (auto result:exec) {
             LOG4CPLUS_DEBUG(LOG, "schedule executable  " << result->getSql());
             string sql = result->inject(result->getSql(), copyThreshold);
-            queryExecutor->addQuery(result->getId(), result->getConnectionUrl(), sql, result);
+            queryExecutor->addQuery(result->getId(), result->getConnectionUrl().getUrl(true,false,true), sql, result);
             result->setScheduled();
         }
     }
