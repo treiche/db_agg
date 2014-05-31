@@ -10,6 +10,7 @@
 
 #include <string>
 #include <map>
+#include <memory>
 #include "table/TableData.h"
 
 namespace db_agg {
@@ -25,16 +26,16 @@ class ExecutionStep {
 private:
     Action action;
     std::string query;
-    TableData *dependency = nullptr;
+    std::shared_ptr<TableData> dependency;
 public:
-    ExecutionStep(Action action, std::string query, TableData *dependency):
+    ExecutionStep(Action action, std::string query, std::shared_ptr<TableData> dependency):
         action(action),
         query(query),
         dependency(dependency) {}
     std::string getQuery() {
         return query;
     }
-    TableData *getDependency() {
+    std::shared_ptr<TableData> getDependency() {
         return dependency;
     }
 };
@@ -43,7 +44,7 @@ public:
 
 class DependencyInjector {
 public:
-    virtual std::string inject(std::string query, std::map<std::string,TableData*> dependencies, size_t copyThreshold) = 0;
+    virtual std::string inject(std::string query, std::map<std::string,std::shared_ptr<TableData>> dependencies, size_t copyThreshold) = 0;
     virtual ExecutionStep& getStep(int stepNo) = 0;
     virtual ~DependencyInjector() {}
 };

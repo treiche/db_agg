@@ -29,7 +29,7 @@ class QueryProcessor : public EventListener, public EventProducer {
     std::string outputDir;
     bool disableCache;
     size_t copyThreshold;
-    std::map<std::string,TableData*> externalSources;
+    std::map<std::string,std::shared_ptr<TableData>> externalSources;
     std::list<Transition> transitions;
     std::map<std::string,QueryExecution*> idToResult;
     AsyncQueryExecutor *queryExecutor = 0;
@@ -54,7 +54,7 @@ public:
             std::string outputDir,
             bool disableCache,
             size_t copyThreshold,
-            std::map<std::string,TableData*> externalSources,
+            std::map<std::string,std::shared_ptr<TableData>> externalSources,
             size_t statementTimeout,
             std::map<std::string,std::string> queryParameter
     );
