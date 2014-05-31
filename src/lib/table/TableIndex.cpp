@@ -26,7 +26,7 @@ void TableIndex::addOffset(uint64_t offset) {
 }
 
 void TableIndex::save(std::string fileName) {
-    assert(offsets.size() % rowCount == 0);
+    assert(rowCount == 0 || offsets.size() % rowCount == 0);
     ofstream os{fileName};
     os.write((char*)&rowCount,sizeof(uint64_t));
     os.write((char*)&colCount,sizeof(uint32_t));

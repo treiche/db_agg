@@ -60,7 +60,7 @@ deque<Query>& RegExpQueryParser::parse(string q, map<string,string>& externalSou
     }
     while(CTE_EXTRACT.find(query,matches,offset)) {
         string environment = matches[4];
-        string sql = matches[5];
+        string sql = trim(matches[5]);
         string formattedSql = cutBlock(matches[5]);
         set<string> usedNamespaces = extractUsedNamespaces(sql);
         //Query *q = new Query(matches[2], tq,usedNamespaces);

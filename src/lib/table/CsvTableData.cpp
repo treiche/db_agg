@@ -81,6 +81,7 @@ namespace db_agg {
     }
 
     CsvTableData::~CsvTableData() {
+        LOG4CPLUS_DEBUG(LOG, "delete table data '" << pImpl->fileName << "'");
         if (pImpl->data) {
             free(pImpl->data);
         }
@@ -213,6 +214,10 @@ namespace db_agg {
             if (c == '\t' || c == '\n') {
                 pImpl->index.addOffset(pImpl->size+idx);
             }
+            if (c == '\n' || (idx+1) == size) {
+                pImpl->rowCount++;
+                pImpl->index.setRowCount(pImpl->rowCount);
+            }
         }
         pImpl->size += size;
         //calculateRowCount();
@@ -262,7 +267,7 @@ namespace db_agg {
             pair<string,uint32_t> p = pImpl->columns[idx];
             TypeInfo *ti =  TypeRegistry::getInstance().getTypeInfo((long int)p.second);
             if (ti == nullptr) {
-                LOG4CPLUS_WARN(LOG, "unknown type id '" << p.second << "' assuming text");
+                LOG4CPLUS_WARN(LOG, "unknown type id '" << p.second << "' for columns '" << p.first << "'. assuming text");
                 ti =  TypeRegistry::getInstance().getTypeInfo(TEXT);
             }
             os << p.first << ":" << ti->name;
@@ -273,6 +278,8 @@ namespace db_agg {
         os << endl;
         os.write(pImpl->data, pImpl->size);
         os.close();
+        pImpl->index.setRowCount(pImpl->rowCount);
+        pImpl->index.setColCount(pImpl->colCount);
         pImpl->index.save(filePath+".idx");
     }
 

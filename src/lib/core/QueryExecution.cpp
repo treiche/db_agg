@@ -67,11 +67,18 @@ namespace db_agg {
     }
 
 
-    string QueryExecution::handleCopyIn(size_t stepNo, uint32_t row) {
+    string QueryExecution::handleCopyIn(size_t stepNo, uint64_t startRow, uint64_t rows, uint64_t& rowsRead) {
         ExecutionStep& step = dependencyInjector->getStep(stepNo);
         uint32_t size;
-        void *rawRow = step.getDependency()->getRawRow(row,size);
-        return string((const char*)rawRow,size);
+        uint64_t rowCount = step.getDependency()->getRowCount();
+        string data;
+        rowsRead = 0;
+        for (uint64_t row = startRow; (row < rowCount) && (rowsRead < rows); row++) {
+            void *rawRow = step.getDependency()->getRawRow(row,size);
+            data.append((char*)rawRow, size);
+            rowsRead++;
+        }
+        return data;
     }
 
     void QueryExecution::handleCopyOut(size_t stepNo,string _data) {
@@ -114,7 +121,7 @@ namespace db_agg {
             LOG4CPLUS_DEBUG(LOG, "do transitions for query " << sql);
         }
         for (Transition *t:transitions) {
-            t->doTransition();
+            t->doTransition(this->id, this->data);
         }
     }
 

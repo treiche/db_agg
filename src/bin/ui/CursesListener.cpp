@@ -154,6 +154,14 @@ void CursesListener::handleEvent(Event& event) {
         attrset(COLOR_PAIR(1));
         wrefresh(stdscr);
         screenMutex.unlock();
+    } else if (event.type == EventType::SENT_DATA) {
+        SentDataEvent& e = (SentDataEvent&)event;
+        LOG4CPLUS_DEBUG(LOG, "sent data event for result " << e.resultId  << " received " << e.rowsSent);
+        screenMutex.lock();
+        print(e.resultId,"sent",to_string(e.rowsSent));
+        attrset(COLOR_PAIR(1));
+        wrefresh(stdscr);
+        screenMutex.unlock();
     } else if (event.type == EventType::CACHE_LOADED) {
         CacheLoadEvent& e = (CacheLoadEvent&)event;
         screenMutex.lock();

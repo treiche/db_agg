@@ -48,8 +48,8 @@ namespace db_agg {
         bool done;
         QueryExecutionState state;
         ExecutionHandler *handler;
-        size_t rowsReceived = 0;
-        size_t lastRowSent = -1;
+        uint64_t rowsReceived = 0;
+        int64_t lastRowSent = -1;
     };
 
     struct AsyncQueryExecutor::XImpl
@@ -110,6 +110,10 @@ namespace db_agg {
                 cleanUp("");
                 throw aqee;
             } catch(runtime_error& re) {
+                LOG4CPLUS_ERROR(LOG, "query execution failed: " << re.what());
+                cleanUp("");
+                throw re;
+            } catch(exception& re) {
                 LOG4CPLUS_ERROR(LOG, "query execution failed: " << re.what());
                 cleanUp("");
                 throw re;
@@ -254,16 +258,28 @@ bool AsyncQueryExecutor::processTask(int taskNo) {
                     int copyDataResult = 0;
                     uint64_t rowCount = task->handler->getRowCount(task->queryNo);
                     LOG4CPLUS_DEBUG(LOG, "rowCount = " << rowCount);
+                    uint64_t rowsPerChunk = 100;
                     if (rowCount>0) {
                         do {
+                            if (pImpl->cancelRequest) {
+                                throw CancelException("cancled while copy in");
+                            }
                             LOG4CPLUS_TRACE(LOG, "get row " << (task->lastRowSent+1));
-                            string data = task->handler->handleCopyIn(task->queryNo, task->lastRowSent + 1);
+                            uint64_t rowsRead = 0;
+                            string data = task->handler->handleCopyIn(task->queryNo, task->lastRowSent + 1, rowsPerChunk, rowsRead);
                             LOG4CPLUS_TRACE(LOG, "data = " << data);
+                            LOG4CPLUS_TRACE(LOG, "rowsRead = " << rowsRead);
+                            LOG4CPLUS_TRACE(LOG, "lastRowSent = " << (task->lastRowSent+1));
                             copyDataResult = conn.putCopyData(data);
                             if (copyDataResult == 1) {
-                                task->lastRowSent++;
+                                task->lastRowSent += rowsRead;
+                                SentDataEvent rde{task->id,task->lastRowSent + 1};
+                                EventProducer::fireEvent(rde);
+                                if ((task->lastRowSent+1)<rowCount) {
+                                    return false;
+                                }
                             } else if (copyDataResult == 0) {
-                                LOG4CPLUS_ERROR(LOG, "copy would block. skip ...");
+                                LOG4CPLUS_ERROR(LOG, "copy in would block. skip ...");
                                 return false;
                             } else if (copyDataResult==-1) {
                                 LOG4CPLUS_ERROR(LOG, "copy data failed" << conn.errorMessage());
@@ -273,6 +289,7 @@ bool AsyncQueryExecutor::processTask(int taskNo) {
                         int copyEndResult = conn.putCopyEnd("");
                         if (copyEndResult == 0) {
                             LOG4CPLUS_ERROR(LOG, "putCopyEnd would block.");
+                            return false;
                         }
                         task->lastRowSent = -1;
                     } else {
@@ -289,7 +306,7 @@ bool AsyncQueryExecutor::processTask(int taskNo) {
                     do {
                         size = conn.getCopyData(data,true);
                         if (size == 0) {
-                            LOG4CPLUS_TRACE(LOG, "size would block . skip further processing!!! [received " << task->data.size() << " bytes]");
+                            LOG4CPLUS_TRACE(LOG, "copy out would block . skip further processing!!! [received " << task->data.size() << " bytes]");
                             ReceiveDataEvent rde{task->id,task->rowsReceived};
                             EventProducer::fireEvent(rde);
                             return false;
