@@ -78,6 +78,7 @@ namespace db_agg {
                 systems.push_back(string((const char *)node->children->content));
             }
         }
+        xmlXPathFreeObject(xpathObj);
         return systems;
     }
 

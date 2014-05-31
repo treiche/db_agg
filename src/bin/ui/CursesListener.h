@@ -41,6 +41,7 @@ private:
             {"status",17},
             {"time spent",11},
             {"received",11},
+            {"sent",11},
             {"last executed",21},
             {"duration",11},
             {"last rcvd",11}

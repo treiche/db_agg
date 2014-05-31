@@ -23,7 +23,8 @@ enum class EventType {
     APPLICATION_FAILED=6,
     APPLICATION_CANCELED=7,
     RECEIVE_DATA=8,
-    CACHE_LOADED=9
+    SENT_DATA=9,
+    CACHE_LOADED=10
 };
 
 class Event {
@@ -74,6 +75,15 @@ public:
         Event(EventType::RECEIVE_DATA, resultId),
         rowsReceived(rowsReceived) {}
 };
+
+class SentDataEvent: public Event {
+public:
+    size_t rowsSent = 0;
+    SentDataEvent(std::string resultId, size_t rowsSent):
+        Event(EventType::SENT_DATA, resultId),
+        rowsSent(rowsSent) {}
+};
+
 
 class EventListener {
 public:

@@ -25,7 +25,7 @@ namespace db_agg {
     ExtensionLoader::~ExtensionLoader() {
         LOG4CPLUS_TRACE(LOG,"delete extension loader " << this);
         for (auto &ext:extensions) {
-            // delete ext.second;
+            delete ext.second;
         }
         for (auto &lib:libraries) {
             dlclose(lib.second);

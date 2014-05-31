@@ -45,6 +45,8 @@ class QueryExecution: public ExecutionHandler {
         QueryExecution(std::string name, std::string id, std::string connectionUrl, std::string sql, std::vector<std::string> depName, DependencyInjector *dependencyInjector);
         virtual ~QueryExecution() override;
 
+        bool allTransitionsDone();
+
         std::string getId() { return id; }
         void setId(std::string id) {
             this->id = id;
@@ -66,13 +68,13 @@ class QueryExecution: public ExecutionHandler {
             return duration.count();
         }
         bool isDone() { return done; }
-        std::string getConnectionUrl() { return connectionUrl; }
+        Connection getConnectionUrl() { return connectionUrl; }
         std::string getSql() { return sql; }
 
         void addTransition(Transition *t);
         void addIncomingTransition(Transition *t);
 
-        virtual std::string handleCopyIn(size_t step, uint32_t row) override;
+        virtual std::string handleCopyIn(size_t step, uint64_t startRows, uint64_t rows, uint64_t& rowsRead) override;
         virtual uint64_t getRowCount(size_t step) override;
         virtual void handleCopyOut(size_t step, std::string data) override;
         virtual void handleTuples(size_t step, std::vector<std::pair<std::string, uint32_t>>& columns) override;
