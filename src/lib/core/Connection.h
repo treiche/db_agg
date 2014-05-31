@@ -6,15 +6,18 @@
 namespace db_agg {
 class Connection {
     std::string host;
-    int port;
+    int port = 5432;
     std::string environment;
     std::string database;
-    int shardId;
+    int shardId = -1;
+    std::string user;
+    std::string password;
     std::string suffix;
     size_t statementTimeout = 0;
 public:
+    Connection() {}
     Connection(std::string host, int port, std::string environment, std::string database, int shardId, std::string suffix);
-    std::string getUrl();
+    std::string getUrl(bool includeOptions, bool maskPassword, bool includeCredentials);
     std::string getDatabase() {
         return database;
     }
@@ -23,6 +26,12 @@ public:
     }
     int getPort() {
         return port;
+    }
+    void setUser(std::string user) {
+        this->user = user;
+    }
+    void setPassword(std::string password) {
+        this->password = password;
     }
     size_t getStatementTimeout() {
         return statementTimeout;
