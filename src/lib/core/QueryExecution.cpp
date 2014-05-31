@@ -36,7 +36,7 @@ namespace db_agg {
     QueryExecution::~QueryExecution() {
         LOG4CPLUS_TRACE(LOG, "delete query execution");
         if (data!=nullptr) {
-            delete data;
+            data.reset();
         }
     }
 
@@ -48,7 +48,7 @@ namespace db_agg {
         incomingTransitions.push_back(t);
     }
 
-    void QueryExecution::addDependency(string name, TableData *data) {
+    void QueryExecution::addDependency(string name, shared_ptr<TableData> data) {
         if (dependencies.find(name)==dependencies.end()) {
             throw runtime_error("no dependency '" + name + "' declared");
         }
@@ -89,14 +89,14 @@ namespace db_agg {
                 cleaned.push_back(column);
             }
         }
-        data = new CsvTableData(cleaned);
+        data = shared_ptr<TableData>(new CsvTableData(cleaned));
     }
 
-    TableData * QueryExecution::getResult() {
+    shared_ptr<TableData> QueryExecution::getResult() {
         return data;
     }
 
-    void QueryExecution::setResult(TableData *data) {
+    void QueryExecution::setResult(shared_ptr<TableData> data) {
         LOG4CPLUS_DEBUG(LOG,"set result to " << data);
         this->data = data;
     }
