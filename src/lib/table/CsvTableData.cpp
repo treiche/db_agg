@@ -124,10 +124,6 @@ namespace db_agg {
         return pImpl->columns;
     }
 
-    void CsvTableData::setPointer(uint64_t row, uint32_t col) {
-
-    }
-
     void CsvTableData::loadColumns() {
         LOG4CPLUS_DEBUG(LOG, "read columns from file '" << pImpl->fileName << "'");
         ifstream is{pImpl->fileName,ios::in | ios::binary | ios::ate};

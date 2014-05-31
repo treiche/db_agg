@@ -29,6 +29,10 @@ public:
     }
     Transition(std::string name, std::vector<QueryExecution*> sources, std::vector<QueryExecution*> targets, ShardingStrategy *sharder);
     virtual void doTransition();
+    virtual std::string getId() {
+        return name;
+    }
+    virtual void doTransition(std::string resultId, std::shared_ptr<TableData> data);
     virtual ~Transition();
     void addSource(QueryExecution *source) {
         sources.push_back(source);
@@ -53,6 +57,10 @@ public:
     }
     std::string getName() {
         return name;
+    }
+
+    bool isDone() {
+        return done;
     }
     friend std::ostream& operator<<(std::ostream& cout,const Transition& t);
 };
