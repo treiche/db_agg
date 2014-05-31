@@ -14,8 +14,21 @@ namespace db_agg {
         this->suffix = suffix;
     }
 
-    string Connection::getUrl() {
-        return "host=" + host + " port=" + to_string(port) + " dbname=" + database + " options='--statement-timeout=" + to_string(statementTimeout)+"'";
+    string Connection::getUrl(bool includeOptions, bool maskPassword, bool includeCredentials) {
+        string url = "host=" + host + " port=" + to_string(port) + " dbname=" + database;
+        if (includeCredentials) {
+            url += " user=" + user + " password=";
+            if (maskPassword) {
+                url+="xxxxxxxx";
+            } else {
+                url += password;
+            }
+        }
+
+        if (includeOptions) {
+            url += " options='--statement-timeout=" + to_string(statementTimeout)+"'";
+        }
+        return url;
     }
 
 }
