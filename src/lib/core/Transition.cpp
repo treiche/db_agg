@@ -4,6 +4,8 @@
 #include <iostream>
 #include <stdexcept>
 #include "table/CsvTableData.h"
+#include "table/JoinedTableData.h"
+#include "table/SplittedTableData.h"
 #include "core/ExecutionHandler.h"
 #include "utils/RegExp.h"
 
@@ -18,7 +20,7 @@ static shared_ptr<TableData> join(vector<QueryExecution*> sources) {
     LOG4CPLUS_DEBUG(LOG, "join");
     vector<shared_ptr<TableData>> tds;
     for (auto source:sources) {
-        td->appendRaw(source->getData()->getRaw(), source->getData()->getSize());
+        tds.push_back(source->getData());
     }
     shared_ptr<TableData> td(new JoinedTableData(tds));
     LOG4CPLUS_DEBUG(LOG, "join done rowCount = " << td->getRowCount());
@@ -45,12 +47,6 @@ vector<shared_ptr<TableData>> split(shared_ptr<TableData> src, int dstSize, Shar
     vector<vector<uint64_t>> offsets(dstSize);
     uint64_t rows = src->getRowCount();
     uint32_t cols = src->getColCount();
-    size_t reserveSize = src->getSize() / dstSize;
-    LOG4CPLUS_DEBUG(LOG, "reserve " << reserveSize << " bytes for each shard ");
-    for (int cnt=0;cnt<dstSize;cnt++) {
-        splitted[cnt] = new CsvTableData(src->getColumns());
-        splittedData[cnt].reserve(reserveSize);
-    }
     LOG4CPLUS_DEBUG(LOG, "get shard key index");
     size_t shardKeyIndex = findShardColIndex(src->getColumns(),shardColSearchExpr); // sharder->getShardKeyIndex(src->getColumns());
     if (shardKeyIndex >= cols) {
@@ -66,24 +62,19 @@ vector<shared_ptr<TableData>> split(shared_ptr<TableData> src, int dstSize, Shar
         string shardKey = src->getValue(row,shardKeyIndex);
         try {
             int shardId = sharder->getShardId(shardKey);
-            // cout << "shardId of '" << shardKey << "' is " << shardId << endl;
-            uint32_t rowSize;
-            void *rowData = src->getRawRow(row,rowSize);
-            splittedData[shardId-1].append(string((const char*)rowData,rowSize));
+            offsets[shardId-1].push_back(row);
         } catch(InvalidShardKeyException& ise) {
             continue;
         }
     }
 
-    for (size_t idx=0;idx<splittedData.size();idx++) {
-        string data = splittedData[idx];
-        splitted[idx]->appendRaw((void*)data.c_str(),data.size());
+    for (size_t idx=0;idx<dstSize;idx++) {
+        splitted[idx].reset(new SplittedTableData(src,offsets[idx]));
     }
 
     LOG4CPLUS_DEBUG(LOG, "return splitted result");
     return splitted;
 }
-
 
 Transition::Transition(string name, vector<QueryExecution*> sources, vector<QueryExecution*> targets, ShardingStrategy *sharder) :
     name(name),
@@ -100,6 +91,11 @@ Transition::~Transition() {
         data.reset();
     }
     LOG4CPLUS_TRACE(LOG,"delete transition done");
+}
+
+void Transition::doTransition(string resultId, shared_ptr<TableData> data) {
+    sourceData[resultId] = data;
+    doTransition();
 }
 
 void Transition::doTransition() {
