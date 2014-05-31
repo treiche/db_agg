@@ -106,12 +106,12 @@ void Application::bootstrap(Configuration& config) {
     // load external csv files
     for (auto& externalCsvFile:config.getExternalSources()) {
     	CsvTableData *data = new CsvTableData(externalCsvFile.second);
-    	externalSources[externalCsvFile.first] = data;
+    	externalSources[externalCsvFile.first].reset(data);
     }
     // load external excel files
     for (auto& externalExcelSource:config.getExternalExcelSources()) {
     	ExcelToTextFormat ett;
-    	map<string,TableData*> sheets = ett.transform(externalExcelSource);
+    	map<string,shared_ptr<TableData>> sheets = ett.transform(externalExcelSource);
     	for (auto& sheet:sheets) {
     		externalSources[sheet.first] = sheet.second;
     	}
