@@ -39,7 +39,7 @@ QueryProcessor::QueryProcessor(
     string outputDir,
     bool disableCache,
     size_t copyThreshold,
-    std::map<std::string,TableData*> externalSources,
+    map<string,shared_ptr<TableData>> externalSources,
     size_t statementTimeout,
     map<string,string> queryParameter):
     queryParser(queryParser),
@@ -100,7 +100,7 @@ void QueryProcessor::loadExternalSources() {
     for (auto& query:queryParser.getQueries()) {
         if (query.isExternal()) {
             LOG4CPLUS_DEBUG(LOG, "load external source " << query.getName());
-            TableData *td = externalSources[query.getName()];
+            shared_ptr<TableData> td = externalSources[query.getName()];
             for (auto& qe:query.getQueryExecutions()) {
                 qe.setResult(td);
                 qe.setDone();
@@ -120,8 +120,8 @@ void QueryProcessor::loadFromCache() {
             File path(cacheRegistry.getPath(resultId));
             if (path.exists()) {
                 LOG4CPLUS_INFO(LOG, "cache item for " << resultId << " exists");
-                TableData *data = new CsvTableData(cacheRegistry.getPath(resultId));
                 if (!disableCache) {
+                    shared_ptr<TableData> data(new CsvTableData(cacheRegistry.getPath(resultId)));
                     qr.second->setResult(data);
                     qr.second->setDone();
                     //qr.second->doTransitions();

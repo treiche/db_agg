@@ -14,13 +14,14 @@ namespace db_agg {
 static Logger LOG = Logger::getInstance(LOG4CPLUS_TEXT("Transition"));
 
 
-static TableData *join(vector<QueryExecution*> sources) {
+static shared_ptr<TableData> join(vector<QueryExecution*> sources) {
     LOG4CPLUS_DEBUG(LOG, "join");
-    CsvTableData *td = new CsvTableData(sources[0]->getData()->getColumns());
+    vector<shared_ptr<TableData>> tds;
     for (auto source:sources) {
         td->appendRaw(source->getData()->getRaw(), source->getData()->getSize());
     }
-    LOG4CPLUS_DEBUG(LOG, "join done");
+    shared_ptr<TableData> td(new JoinedTableData(tds));
+    LOG4CPLUS_DEBUG(LOG, "join done rowCount = " << td->getRowCount());
     return td;
 }
 
@@ -36,12 +37,12 @@ int findShardColIndex(vector<pair<string,uint32_t>> columns, string searchExpr) 
     throw runtime_error("unable to find shard key column");
 }
 
-vector<TableData*> split(TableData *src, int dstSize, ShardingStrategy *sharder, string shardColSearchExpr) {
+vector<shared_ptr<TableData>> split(shared_ptr<TableData> src, int dstSize, ShardingStrategy *sharder, string shardColSearchExpr) {
     assert(sharder != nullptr);
     LOG4CPLUS_DEBUG(LOG, "split(" << src << "," << dstSize << "," << sharder << ")");
     sharder->setShardCount(dstSize);
-    vector<TableData*> splitted(dstSize);
-    vector<string> splittedData(dstSize);
+    vector<shared_ptr<TableData>> splitted(dstSize);
+    vector<vector<uint64_t>> offsets(dstSize);
     uint64_t rows = src->getRowCount();
     uint32_t cols = src->getColCount();
     size_t reserveSize = src->getSize() / dstSize;
@@ -96,7 +97,7 @@ Transition::Transition(string name, vector<QueryExecution*> sources, vector<Quer
 Transition::~Transition() {
     LOG4CPLUS_TRACE(LOG,"delete transition " << this);
     for (auto data:createdData) {
-        delete data;
+        data.reset();
     }
     LOG4CPLUS_TRACE(LOG,"delete transition done");
 }
@@ -129,7 +130,7 @@ void Transition::doTransition() {
     }
     if (dstSize == 1 && srcSize > 1) {
         LOG4CPLUS_DEBUG(LOG, "many to one. join ...");
-        TableData *td = join(sources);
+        shared_ptr<TableData> td = join(sources);
         createdData.push_back(td);
         LOG4CPLUS_DEBUG(LOG, "add dependency '" << name << "'");
         targets[0]->addDependency(name, td);
@@ -137,7 +138,7 @@ void Transition::doTransition() {
         return;
     } else if (dstSize > 1 && srcSize==1) {
         // split result
-        TableData *src = sources[0]->getData();
+        shared_ptr<TableData> src = sources[0]->getData();
         LOG4CPLUS_DEBUG(LOG, "start split action sharder=" << sharder << " src=" << src);
         //uint32_t rows = src->getRowCount();
         //uint32_t cols = src->getColCount();
@@ -154,7 +155,7 @@ void Transition::doTransition() {
         } else {
             // split
             LOG4CPLUS_DEBUG(LOG, "start splitting " << src);
-            vector<TableData*> splitted = split(src,dstSize, sharder,shardColSearchExpr);
+            vector<shared_ptr<TableData>> splitted = split(src,dstSize, sharder,shardColSearchExpr);
             for (auto data:splitted) {
                 createdData.push_back(data);
             }
@@ -168,14 +169,14 @@ void Transition::doTransition() {
         }
     } else if (srcSize>1 && dstSize>1) {
         LOG4CPLUS_DEBUG(LOG, "start many to many");
-        TableData *joined = join(sources);
-        vector<TableData*> splitted = split(joined,dstSize,sharder,shardColSearchExpr);
+        shared_ptr<TableData> joined = join(sources);
+        vector<shared_ptr<TableData>> splitted = split(joined,dstSize,sharder,shardColSearchExpr);
         for (int cnt=0;cnt<dstSize;cnt++) {
             targets[cnt]->addDependency(name, splitted[cnt]);
         }
         LOG4CPLUS_DEBUG(LOG, "add dependency done");
         done = true;
-        delete joined;
+        joined.reset();
         return;
     } else if (srcSize==1 && dstSize==1) {
         LOG4CPLUS_DEBUG(LOG, "start one to one");

@@ -28,14 +28,14 @@ struct ExcelToTextFormat::ParseState {
 	bool sharedValue = false;
 };
 
-map<string,TableData*> ExcelToTextFormat::transform(string excelFile) {
+map<string,shared_ptr<TableData>> ExcelToTextFormat::transform(string excelFile) {
     int error;
     this->archive = zip_open(excelFile.c_str(),ZIP_CHECKCONS,&error);
     if (this->archive==0) {
     	LOG4CPLUS_ERROR(LOG,"unable to open excel file " << excelFile);
         throw runtime_error("unable to open archive");
     }
-    map<string,TableData*> result;
+    map<string,shared_ptr<TableData>> result;
     uint32_t stringIndex = 0;
     parseEntry("xl/sharedStrings.xml", [&] (xmlTextReaderPtr reader) {
         int nodeType = xmlTextReaderNodeType(reader);
@@ -82,7 +82,7 @@ map<string,TableData*> ExcelToTextFormat::transform(string excelFile) {
     	LOG4CPLUS_TRACE(LOG, "data = \n" << state.data);
     	CsvTableData *data = new CsvTableData(state.columns);
     	data->appendRaw((void*)state.data.c_str(),state.data.size());
-    	result[sheet.second] = data;
+    	result[sheet.second].reset(data);
     }
     return result;
 }

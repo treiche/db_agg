@@ -24,7 +24,7 @@ DefaultDependencyInjector::~DefaultDependencyInjector() {
 
 }
 
-string DefaultDependencyInjector::inject(string query, map<string,TableData*> dependencies, size_t copyThreshold) {
+string DefaultDependencyInjector::inject(string query, map<string,shared_ptr<TableData>> dependencies, size_t copyThreshold) {
     LOG4CPLUS_DEBUG(LOG, "called inject " << query);
     for (auto dep:dependencies) {
         if (dep.second == nullptr) {
@@ -37,7 +37,7 @@ string DefaultDependencyInjector::inject(string query, map<string,TableData*> de
     //sql += step;
     //steps.push_back(ExecutionStep{step,nullptr});
     // 1. Step
-    for (pair<string,TableData*> dependency:dependencies) {
+    for (pair<string,shared_ptr<TableData>> dependency:dependencies) {
         LOG4CPLUS_DEBUG(LOG, "process dependency " << dependency.first);
         step = "CREATE TEMPORARY TABLE " + dependency.first + "(\n";
         step += dependency.second->toColumnDefinitions();
