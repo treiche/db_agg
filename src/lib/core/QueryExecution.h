@@ -13,6 +13,7 @@
 #include <vector>
 #include <deque>
 #include <chrono>
+#include <memory>
 
 #include "core/ExecutionHandler.h"
 #include "table/TableData.h"
@@ -25,7 +26,7 @@ class Transition;
 
 class QueryExecution: public ExecutionHandler {
     private:
-        TableData* data = nullptr;
+        std::shared_ptr<TableData> data;
         std::string id;
         std::string connectionUrl;
         std::string sql;
@@ -34,7 +35,7 @@ class QueryExecution: public ExecutionHandler {
         std::vector<Transition*> incomingTransitions;
         bool scheduled = false;
         bool done = false;
-        std::map<std::string,TableData*> dependencies;
+        std::map<std::string,std::shared_ptr<TableData>> dependencies;
         DependencyInjector *dependencyInjector = nullptr;
         std::chrono::system_clock::time_point startTime;
         std::chrono::system_clock::time_point endTime;
@@ -49,7 +50,7 @@ class QueryExecution: public ExecutionHandler {
             this->id = id;
         }
         std::string getName() { return name; }
-        TableData *getData() { return data; }
+        std::shared_ptr<TableData> getData() { return data; }
         void setScheduled() {
             scheduled = true;
             startTime = std::chrono::system_clock::now();
@@ -59,6 +60,7 @@ class QueryExecution: public ExecutionHandler {
             endTime = std::chrono::system_clock::now();
             done = true;
         }
+        void release();
         size_t getDuration() {
             std::chrono::system_clock::duration duration = endTime - startTime;
             return duration.count();
@@ -75,9 +77,9 @@ class QueryExecution: public ExecutionHandler {
         virtual void handleCopyOut(size_t step, std::string data) override;
         virtual void handleTuples(size_t step, std::vector<std::pair<std::string, uint32_t>>& columns) override;
 
-        virtual TableData *getResult() override;
-        virtual void setResult(TableData *data) override;
-        virtual void addDependency(std::string name, TableData *data) override;
+        virtual std::shared_ptr<TableData> getResult() override;
+        virtual void setResult(std::shared_ptr<TableData> data) override;
+        virtual void addDependency(std::string name, std::shared_ptr<TableData> data) override;
         virtual std::string inject(std::string query, size_t copyThreshold) override;
         virtual bool isComplete() override;
 

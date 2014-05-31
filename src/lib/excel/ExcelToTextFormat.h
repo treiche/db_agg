@@ -11,6 +11,7 @@
 #include <string>
 #include <functional>
 #include <map>
+#include <memory>
 
 #include "table/TableData.h"
 
@@ -31,7 +32,7 @@ private:
 	void parseData(xmlTextReaderPtr reader, ParseState *state);
 	std::pair<uint32_t,uint32_t> regionToPoint(std::string region);
 public:
-	std::map<std::string,TableData*> transform(std::string excelFile);
+	std::map<std::string,std::shared_ptr<TableData>> transform(std::string excelFile);
 };
 
 }

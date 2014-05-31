@@ -17,10 +17,11 @@ class Transition {
     std::string name;
     std::vector<QueryExecution*> sources;
     std::vector<QueryExecution*> targets;
+    std::map<std::string,std::shared_ptr<TableData>> sourceData;
     bool done = false;
     ShardingStrategy *sharder = nullptr;
     std::string shardColSearchExpr;
-    std::vector<TableData*> createdData;
+    std::vector<std::shared_ptr<TableData>> createdData;
 public:
     Transition() {}
     Transition(std::string name): name(name) {
