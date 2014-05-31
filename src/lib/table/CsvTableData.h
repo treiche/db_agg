@@ -28,7 +28,6 @@ public:
     virtual uint64_t getRowCount() override;
     virtual uint32_t getColCount() override;
     virtual std::vector<std::pair<std::string,uint32_t>> getColumns() override;
-    virtual void setPointer(uint64_t row, uint32_t col) override;
     virtual void * getRaw() override;
     virtual uint64_t getSize() override;
     virtual void setRaw(void *data, uint64_t size) override;
