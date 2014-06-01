@@ -41,7 +41,8 @@ QueryProcessor::QueryProcessor(
     size_t copyThreshold,
     map<string,shared_ptr<TableData>> externalSources,
     size_t statementTimeout,
-    map<string,string> queryParameter):
+    map<string,string> queryParameter,
+    bool dontExecute):
     queryParser(queryParser),
     databaseRegistry(registry),
     extensionLoader(extensionLoader),
@@ -52,7 +53,8 @@ QueryProcessor::QueryProcessor(
     copyThreshold(copyThreshold),
     externalSources(externalSources),
     statementTimeout(statementTimeout),
-    queryParameter(queryParameter) {
+    queryParameter(queryParameter),
+    dontExecute(dontExecute) {
 }
 
 QueryProcessor::~QueryProcessor() {
@@ -88,6 +90,14 @@ void QueryProcessor::process(string query, string environment) {
     fireEvent(event);
     loadFromCache();
     dumpExecutionPlan();
+    if (dontExecute) {
+        Event fe{EventType::APPLICATION_FINISHED,""};
+        fireEvent(fe);
+        for (auto& exec:idToResult) {
+            cout << exec.second->getName() << " -> " << exec.second->getId() << endl;
+        }
+        return;
+    }
     checkConnections();
     queryExecutor = new AsyncQueryExecutor();
     queryExecutor->addEventListener(this);

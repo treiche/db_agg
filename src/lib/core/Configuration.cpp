@@ -1,58 +1,54 @@
-/*
- * Configuration.cpp
- *
- *  Created on: Jan 3, 2014
- *      Author: arnd
- */
-
 #include "Configuration.h"
 
-#include <log4cplus/logger.h>
-
-#include "utils/utility.h"
-#include "utils/File.h"
-#include "utils/Template.h"
-#include "installation.h"
-
-using namespace std;
-using namespace log4cplus;
-
 namespace db_agg {
-    static Logger LOG = Logger::getInstance(LOG4CPLUS_TEXT("Configuration"));
-
-    static string getSysConfigDir() {
-        Template t{"${","}"};
-        t.set("prefix",DBAGG_PREFIX);
-        return t.render(DBAGG_SYSCONFIGDIR);
+    string Configuration::getEnvironment() {
+        return environment;
     }
-
-
-    string Configuration::getQueryFile() {
-        return queryFile;
+    void Configuration::setEnvironment(string environment) {
+        this->environment = environment;
     }
-    void Configuration::setQueryFile(string queryFile) {
-        this->queryFile = queryFile;
+    bool Configuration::getHelp() {
+        return help;
     }
-    string Configuration::getOutputDir() {
-        return outputDir;
+    void Configuration::setHelp(bool help) {
+        this->help = help;
     }
-    void Configuration::setOutputDir(string outputDir) {
-        this->outputDir = outputDir;
+    string Configuration::getLogLevel() {
+        return logLevel;
     }
-    void Configuration::setResultDir(string resultDir) {
-        this->resultDir = resultDir;
+    void Configuration::setLogLevel(string logLevel) {
+        this->logLevel = logLevel;
     }
-    string Configuration::getResultDir() {
-        return resultDir;
+    bool Configuration::getShowProgress() {
+        return showProgress;
     }
-    string Configuration::getCacheDir() {
-        return findConfigurationFile(cacheDir, true, true);
+    void Configuration::setShowProgress(bool showProgress) {
+        this->showProgress = showProgress;
     }
-
-    void Configuration::setCacheDir(string cacheDir) {
-        this->cacheDir = cacheDir;
+    size_t Configuration::getCopyThreshold() {
+        return copyThreshold;
     }
-
+    void Configuration::setCopyThreshold(size_t copyThreshold) {
+        this->copyThreshold = copyThreshold;
+    }
+    map<string,string> Configuration::getExternalSources() {
+        return externalSources;
+    }
+    void Configuration::setExternalSources(map<string,string> externalSources) {
+        this->externalSources = externalSources;
+    }
+    vector<string> Configuration::getExternalExcelSources() {
+        return externalExcelSources;
+    }
+    void Configuration::setExternalExcelSources(vector<string> externalExcelSources) {
+        this->externalExcelSources = externalExcelSources;
+    }
+    size_t Configuration::getStatementTimeout() {
+        return statementTimeout;
+    }
+    void Configuration::setStatementTimeout(size_t statementTimeout) {
+        this->statementTimeout = statementTimeout;
+    }
     bool Configuration::getSearchPasswordInPgPass() {
         return searchPasswordInPgPass;
     }
@@ -62,59 +58,20 @@ namespace db_agg {
     bool Configuration::getUseRegExpParser() {
         return useRegExpParser;
     }
-
     void Configuration::setUseRegExpParser(bool useRegExpParser) {
         this->useRegExpParser = useRegExpParser;
     }
-
-    string Configuration::getEnvironment() {
-        return environment;
+    map<string,string> Configuration::getQueryParameter() {
+        return queryParameter;
     }
-    void Configuration::setEnvironment(string environment) {
-        this->environment = environment;
+    void Configuration::setQueryParameter(map<string,string> queryParameter) {
+        this->queryParameter = queryParameter;
     }
-    string Configuration::getDatabaseRegistryFile() {
-        return findConfigurationFile(databaseRegistryFile, false, false);
+    bool Configuration::getDontExecute() {
+        return dontExecute;
     }
-    void Configuration::setDatabaseRegistryFile(string databaseRegistryFile) {
-        this->databaseRegistryFile = databaseRegistryFile;
-    }
-    string Configuration::getCacheRegistryFile() {
-        return findConfigurationFile(cacheRegistryFile, false, false);
-    }
-    void Configuration::setCacheRegistryFile(string cacheRegistryFile) {
-        this->cacheRegistryFile = cacheRegistryFile;
-    }
-    string Configuration::getExtensionDir() {
-        return findConfigurationFile(extensionDir, false, false);
-    }
-    void Configuration::setExtensionDir(string extensionDir) {
-        this->extensionDir = extensionDir;
-    }
-
-    string Configuration::findConfigurationFile(string name, bool createIfNeeded, bool isDir) {
-		LOG4CPLUS_INFO(LOG, "find configuration file '" << name << "'");
-		string effectiveFile;
-        if (name.find("~") == 0) {
-            string homeLocation = getHomeDir() + "/.db_agg/" + name.substr(1);
-            File homeFile{homeLocation};
-            if (homeFile.exists()) {
-            	effectiveFile = homeFile.abspath();
-            } else {
-                string prefixLocation = getSysConfigDir() + "/" + name.substr(1);
-                File prefixFile{prefixLocation};
-                effectiveFile = prefixLocation;
-            }
-        } else {
-            effectiveFile = name;
-        }
-        File ef{effectiveFile};
-        if (!ef.exists() && createIfNeeded) {
-            if (isDir) {
-                ef.mkdirs();
-            }
-        }
-        return effectiveFile;
+    void Configuration::setDontExecute(bool dontExecute) {
+        this->dontExecute = dontExecute;
     }
     bool Configuration::getDisableCache() {
         return disableCache;
@@ -122,90 +79,67 @@ namespace db_agg {
     void Configuration::setDisableCache(bool disableCache) {
         this->disableCache = disableCache;
     }
-    void Configuration::setLogLevel(std::string logLevel) {
-        this->logLevel = logLevel;
+    string Configuration::getOutputDir() {
+        return outputDir;
     }
-    std::string Configuration::getLogLevel() {
-        return logLevel;
+    void Configuration::setOutputDir(string outputDir) {
+        this->outputDir = outputDir;
     }
-    void Configuration::setLogFile(std::string logFile) {
-        this->logFile = logFile;
+    string Configuration::getResultDir() {
+        return resultDir;
     }
-    std::string Configuration::getLogFile() {
-        return logFile;
+    void Configuration::setResultDir(string resultDir) {
+        this->resultDir = resultDir;
     }
-    void Configuration::setLogConf(std::string logConf) {
+    string Configuration::getCacheDir() {
+        return cacheDir;
+    }
+    void Configuration::setCacheDir(string cacheDir) {
+        this->cacheDir = cacheDir;
+    }
+    string Configuration::getPrefix() {
+        return prefix;
+    }
+    void Configuration::setPrefix(string prefix) {
+        this->prefix = prefix;
+    }
+    string Configuration::getDatabaseRegistryFile() {
+        return databaseRegistryFile;
+    }
+    void Configuration::setDatabaseRegistryFile(string databaseRegistryFile) {
+        this->databaseRegistryFile = databaseRegistryFile;
+    }
+    string Configuration::getCacheRegistryFile() {
+        return cacheRegistryFile;
+    }
+    void Configuration::setCacheRegistryFile(string cacheRegistryFile) {
+        this->cacheRegistryFile = cacheRegistryFile;
+    }
+    string Configuration::getExtensionDir() {
+        return extensionDir;
+    }
+    void Configuration::setExtensionDir(string extensionDir) {
+        this->extensionDir = extensionDir;
+    }
+    string Configuration::getLogConf() {
+        return logConf;
+    }
+    void Configuration::setLogConf(string logConf) {
         this->logConf = logConf;
     }
-    std::string Configuration::getLogConf() {
-        return findConfigurationFile(logConf, false, false);
+    string Configuration::getLogFile() {
+        return logFile;
+    }
+    void Configuration::setLogFile(string logFile) {
+        this->logFile = logFile;
+    }
+    string Configuration::getQueryFile() {
+        return queryFile;
+    }
+    void Configuration::setQueryFile(string queryFile) {
+        this->queryFile = queryFile;
     }
 
-    void Configuration::setCopyThreshold(size_t copyThreshold) {
-        this->copyThreshold = copyThreshold;
-    }
-    size_t Configuration::getCopyThreshold() {
-        return copyThreshold;
-    }
-    void Configuration::setExternalSources(std::map<std::string,std::string> externalSources) {
-        for (auto& externalSource:externalSources) {
-            File src(externalSource.second);
-            if (!src.exists()) {
-                LOG4CPLUS_WARN(LOG, "external source '" << externalSource.second << "' does not exist. skipping ...");
-            } else {
-                this->externalSources[externalSource.first] = externalSource.second;
-            }
-        }
-    }
-    std::map<std::string,std::string> Configuration::getExternalSources() {
-        return externalSources;
-    }
 
-    void Configuration::setExternalExcelSources(vector<string> externalExcelSources) {
-        for (auto& externalExcelSource:externalExcelSources) {
-            File src(externalExcelSource);
-            if (!src.exists()) {
-                LOG4CPLUS_WARN(LOG, "external source '" << externalExcelSource << "' does not exist. skipping ...");
-            } else {
-                this->externalExcelSources.push_back(externalExcelSource);
-            }
-        }
-    }
-    vector<string> Configuration::getExternalExcelSources() {
-        return externalExcelSources;
-    }
-
-    size_t Configuration::getStatementTimeout() {
-        return statementTimeout;
-    }
-    void Configuration::setStatementTimeout(size_t statementTimeout) {
-    	this->statementTimeout = statementTimeout;
-    }
-
-    void Configuration::setHelp(bool help) {
-        this->help = help;
-    }
-
-    void Configuration::setShowProgress(bool showProgress) {
-        this->showProgress = showProgress;
-    }
-
-    bool Configuration::getShowProgress() {
-        return showProgress;
-    }
-
-    void Configuration::setQueryParameter(map<string,string> queryParameter) {
-        for (auto& param:queryParameter) {
-            this->queryParameter[param.first] = param.second;
-        }
-    }
-    map<string,string> Configuration::getQueryParameter() {
-        return queryParameter;
-    }
-
-    bool Configuration::getHelp() {
-        return help;
-    }
 
 }
-

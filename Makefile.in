@@ -1,5 +1,5 @@
 CXX=@CXX@
-INCLUDES=-Isrc -Isrc/lib -Isrc/bin @INCLUDES@
+INCLUDES=-Isrc -Isrc/lib -Isrc/bin -Isrc/lib/core @INCLUDES@
 CXXFLAGS=@CXXFLAGS@ -c $(INCLUDES) -fPIC -rdynamic
 
 LIBS=@LIBS@
@@ -20,7 +20,7 @@ BIN_OBJ = $(subst src/,build/,$(BIN_SRC:.cpp=.o))
 
 all: $(LIB_OBJ) $(TEST_OBJ) $(BIN_OBJ) \
   build/bin/testrunner.o build/bin/testrunner \
-  build/bin/db_agg.o build/bin/parseConfig.o build/bin/db_agg
+  build/bin/db_agg.o build/bin/db_agg
 
 build/%.o : src/%.cpp
 	@echo "compile $(^F)"
@@ -41,10 +41,13 @@ build/bin/testrunner: build/bin/testrunner.o $(TEST_OBJ) build/lib/libdb_agg.a
 	@echo "generate testrunner"
 	@$(CXX) $^ $(LDFLAGS) -o $@
 
-build/bin/db_agg: $(BIN_OBJ) build/bin/parseConfig.o build/bin/db_agg.o build/lib/libdb_agg.a 
+build/bin/db_agg: $(BIN_OBJ) build/bin/db_agg.o build/lib/libdb_agg.a 
 	@echo "generate testrunner"
 	@$(CXX) $^ $(LDFLAGS) -o $@
 
+
+src/lib/core/Configuration.% src/bin/cli/db_agg_parser.%: src/bin/db_agg.cli
+	@tools/gen-cli.py -b src/lib/core -p src/bin/cli src/bin/db_agg.cli
 
 check:
 	@echo "skip checking ${exec_prefix}"

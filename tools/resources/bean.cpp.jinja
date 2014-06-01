@@ -1,0 +1,28 @@
+#include "${bean}.h"
+
+namespace ${namespace} {
+
+
+{%- for optionGroup in optionGroups %}
+{%- for option in optionGroup.options %}
+    ${option.type} ${bean}::get${option.method}() {
+        return ${option.property};
+    }
+    void ${bean}::set${option.method}(${option.type} ${option.property}) {
+        this->${option.property} = ${option.property};
+    }
+{%- endfor %}
+{%- endfor %}
+
+{%- for option in arguments %}
+    ${option.type} ${bean}::get${option.method}() {
+        return ${option.property};
+    }
+    void ${bean}::set${option.method}(${option.type} ${option.property}) {
+        this->${option.property} = ${option.property};
+    }
+{%- endfor %}
+
+
+
+}

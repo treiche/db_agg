@@ -1,13 +1,16 @@
-#include "core/Configuration.h"
-#include "cli/CommandLineParser.h"
+#include "db_agg_parser.h"
+
+
+#include <vector>
+#include "cli/OptionGroup.h"
+#include "cli/Argument.h"
+
+using namespace std;
 
 namespace db_agg {
 
-static vector<Argument> arguments = {
-   {"query-file", "path to the db_agg query file" }
-};
 
-static vector<OptionGroup> optionGroups = {
+static vector<OptionGroup> options = {
     {"general",{
         { 'e', "environment", true, "select default environment" } ,
         { 'h', "help", false, "show help" } ,
@@ -19,7 +22,8 @@ static vector<OptionGroup> optionGroups = {
         { 's', "statement-timeout", true, "timeout when processing database queries" } ,
         { 'j', "search-password-in-pg-pass", true, "look for passwords in ~/.pgpass" } ,
         { 'p', "use-reg-exp-parser", true, "parse query with parser based on regular expression" } ,
-        { 'a', "query-parameter", true, "query parameter" } 
+        { 'a', "query-parameter", true, "query parameter" } ,
+        { 'z', "dont-execute", false, "only dump execution plan and exit" } 
     }},
     {"cache",{
         { 'd', "disable-cache", false, "don't load cached results" } 
@@ -37,65 +41,85 @@ static vector<OptionGroup> optionGroups = {
     }}
 };
 
-void parseConfiguration(CommandLineParser& parser, Configuration& config) {
-    if (parser.hasOption("query-file")) {
-        config.setQueryFile(parser.getOptionValue("query-file"));
+static vector<Argument> args= {
+    {"query-file", "path to the db_agg query file"}
+};
+
+db_agg_parser::db_agg_parser(): CommandLineParser("db_agg",args,options) {
+}
+
+
+void db_agg_parser::parse(int argc, char **argv, Configuration& config) {
+    vector<string> posArgs = CommandLineParser::parse(argc,argv);
+
+    if (getFlag("help")) {
+        cout << getUsage() << endl;
+        exit(1);
     }
-    if (parser.hasOption("environment")) {
-        config.setEnvironment(parser.getOptionValue("environment"));
+
+    if (posArgs.size() != 1) {
+        cout << "wrong number of positional arguments" << endl;
+        cout << getUsage() << endl;
+        exit(1);
     }
-        config.setHelp(parser.getFlag("help"));
-    if (parser.hasOption("log-level")) {
-        config.setLogLevel(parser.getOptionValue("log-level"));
+    config.setQueryFile(getOptionValue("query-file"));
+    if (hasOption("environment")) {
+        config.setEnvironment(getOptionValue("environment"));
     }
-        config.setShowProgress(parser.getFlag("show-progress"));
-        if (parser.hasOption("copy-threshold")) {
-            config.setCopyThreshold(stoi(parser.getOptionValue("copy-threshold")));
+        config.setHelp(getFlag("help"));
+    if (hasOption("log-level")) {
+        config.setLogLevel(getOptionValue("log-level"));
+    }
+        config.setShowProgress(getFlag("show-progress"));
+        if (hasOption("copy-threshold")) {
+            config.setCopyThreshold(stoi(getOptionValue("copy-threshold")));
         }
-        if (parser.hasOption("external-sources")) {
-            config.setExternalSources(parser.getOptionMapValue("external-sources"));
+        if (hasOption("external-sources")) {
+            config.setExternalSources(getOptionMapValue("external-sources"));
         }
-        if (parser.hasOption("external-excel-sources")) {
-            config.setExternalExcelSources(parser.getOptionListValue("external-excel-sources"));
+        if (hasOption("external-excel-sources")) {
+            config.setExternalExcelSources(getOptionListValue("external-excel-sources"));
         }
-        if (parser.hasOption("statement-timeout")) {
-            config.setStatementTimeout(stoi(parser.getOptionValue("statement-timeout")));
+        if (hasOption("statement-timeout")) {
+            config.setStatementTimeout(stoi(getOptionValue("statement-timeout")));
         }
-        config.setSearchPasswordInPgPass(parser.getFlag("search-password-in-pg-pass"));
-        config.setUseRegExpParser(parser.getFlag("use-reg-exp-parser"));
-        if (parser.hasOption("query-parameter")) {
-            config.setQueryParameter(parser.getOptionMapValue("query-parameter"));
+        config.setSearchPasswordInPgPass(getFlag("search-password-in-pg-pass"));
+        config.setUseRegExpParser(getFlag("use-reg-exp-parser"));
+        if (hasOption("query-parameter")) {
+            config.setQueryParameter(getOptionMapValue("query-parameter"));
         }
-        config.setDisableCache(parser.getFlag("disable-cache"));
-    if (parser.hasOption("output-dir")) {
-        config.setOutputDir(parser.getOptionValue("output-dir"));
+        config.setDontExecute(getFlag("dont-execute"));
+        config.setDisableCache(getFlag("disable-cache"));
+    if (hasOption("output-dir")) {
+        config.setOutputDir(getOptionValue("output-dir"));
     }
-    if (parser.hasOption("result-dir")) {
-        config.setResultDir(parser.getOptionValue("result-dir"));
+    if (hasOption("result-dir")) {
+        config.setResultDir(getOptionValue("result-dir"));
     }
-    if (parser.hasOption("cache-dir")) {
-        config.setCacheDir(parser.getOptionValue("cache-dir"));
+    if (hasOption("cache-dir")) {
+        config.setCacheDir(getOptionValue("cache-dir"));
     }
-    if (parser.hasOption("database-registry-file")) {
-        config.setDatabaseRegistryFile(parser.getOptionValue("database-registry-file"));
+    if (hasOption("prefix")) {
+        config.setPrefix(getOptionValue("prefix"));
     }
-    if (parser.hasOption("cache-registry-file")) {
-        config.setCacheRegistryFile(parser.getOptionValue("cache-registry-file"));
+    if (hasOption("database-registry-file")) {
+        config.setDatabaseRegistryFile(getOptionValue("database-registry-file"));
     }
-    if (parser.hasOption("extension-dir")) {
-        config.setExtensionDir(parser.getOptionValue("extension-dir"));
+    if (hasOption("cache-registry-file")) {
+        config.setCacheRegistryFile(getOptionValue("cache-registry-file"));
     }
-    if (parser.hasOption("log-conf")) {
-        config.setLogConf(parser.getOptionValue("log-conf"));
+    if (hasOption("extension-dir")) {
+        config.setExtensionDir(getOptionValue("extension-dir"));
     }
-    if (parser.hasOption("log-file")) {
-        config.setLogFile(parser.getOptionValue("log-file"));
+    if (hasOption("log-conf")) {
+        config.setLogConf(getOptionValue("log-conf"));
+    }
+    if (hasOption("log-file")) {
+        config.setLogFile(getOptionValue("log-file"));
     }
 }
 
-void dumpConfiguration(Configuration& config) {
-    cout << "arguments:" << endl;
-        cout << "    query-file = " << config.getQueryFile() << endl;
+void db_agg_parser::dumpConfiguration(Configuration& config) {
     cout << "general:" << endl;
         cout << "    environment = " << config.getEnvironment() << endl;
         cout << "    help = " << config.getHelp() << endl;
@@ -117,12 +141,14 @@ void dumpConfiguration(Configuration& config) {
         for (auto& item:config.getQueryParameter()) {
             cout << "        " << item.first << "=" << item.second << endl;
         }
+        cout << "    dont-execute = " << config.getDontExecute() << endl;
     cout << "cache:" << endl;
         cout << "    disable-cache = " << config.getDisableCache() << endl;
     cout << "files:" << endl;
         cout << "    output-dir = " << config.getOutputDir() << endl;
         cout << "    result-dir = " << config.getResultDir() << endl;
         cout << "    cache-dir = " << config.getCacheDir() << endl;
+        cout << "    prefix = " << config.getPrefix() << endl;
         cout << "    database-registry-file = " << config.getDatabaseRegistryFile() << endl;
         cout << "    cache-registry-file = " << config.getCacheRegistryFile() << endl;
         cout << "    extension-dir = " << config.getExtensionDir() << endl;
@@ -131,19 +157,5 @@ void dumpConfiguration(Configuration& config) {
 }
 
 
-    void parse(int argc, char **argv, Configuration& config) {
-        CommandLineParser parser{"db_agg", arguments, optionGroups};
-        vector<string> posArgs = parser.parse(argc,argv);
-        if (parser.getFlag("help")) {
-            cout << parser.getUsage();
-            exit(0);
-        }
-        if (posArgs.size() != 1) {
-            cout << "missing query file argument" << endl;
-            cout << parser.getUsage();
-            exit(0);
-        }
-        parseConfiguration(parser,config);
-   }
 
 }

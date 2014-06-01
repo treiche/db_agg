@@ -1,0 +1,106 @@
+#include "${parser}.h"
+
+
+#include <vector>
+#include "cli/OptionGroup.h"
+#include "cli/Argument.h"
+
+using namespace std;
+
+namespace ${namespace} {
+
+
+static vector<OptionGroup> options = {
+{%- for optionGroup in optionGroups %}
+    {"${optionGroup.name}",{
+{%- for option in optionGroup.options %}
+        { '${option.short}', "${option.long}", ${option.args}, "${option.shortDescription}" } {% if not loop.last %},{% endif %}
+{%- endfor %}
+    }}{% if not loop.last %},{% endif %}
+{%- endfor %}
+};
+
+static vector<Argument> args= {
+{%- for argument in arguments %}
+    {"${argument.name}", "${argument.description}"}{% if not loop.last %},{% endif %}
+{%- endfor %}
+};
+
+${parser}::${parser}(): CommandLineParser("${name}",args,options) {
+}
+
+
+void ${parser}::parse(int argc, char **argv, ${bean}& config) {
+    vector<string> posArgs = CommandLineParser::parse(argc,argv);
+
+    if (getFlag("help")) {
+        cout << getUsage() << endl;
+        exit(1);
+    }
+
+    if (posArgs.size() != ${ arguments | length }) {
+        cout << "wrong number of positional arguments" << endl;
+        cout << getUsage() << endl;
+        exit(1);
+    }
+
+{%- for argument in arguments %}
+    config.set${argument.method}(getOptionValue("${argument.name}"));
+
+{%- endfor %}
+
+{%- for optionGroup in optionGroups %}
+{%- for option in optionGroup.options %}
+    {%- if option.type == "string" %}
+    if (hasOption("${option.long}")) {
+        config.set${option.method}(getOptionValue("${option.long}"));
+    }
+    {%- endif %}
+    {%- if option.type == "size_t" %}
+        if (hasOption("${option.long}")) {
+            config.set${option.method}(stoi(getOptionValue("${option.long}")));
+        }
+    {%- endif %}
+    {%- if option.type == "bool" %}
+        config.set${option.method}(getFlag("${option.long}"));
+    {%- endif %}
+    {%- if option.type == "map<string,string>" %}
+        if (hasOption("${option.long}")) {
+            config.set${option.method}(getOptionMapValue("${option.long}"));
+        }
+    {%- endif %}
+    {%- if option.type == "vector<string>" %}
+        if (hasOption("${option.long}")) {
+            config.set${option.method}(getOptionListValue("${option.long}"));
+        }
+    {%- endif %}
+{%- endfor %}
+{%- endfor %}
+}
+
+void ${parser}::dumpConfiguration(${bean}& config) {
+{%- for optionGroup in optionGroups %}
+    cout << "${optionGroup.name}:" << endl;
+{%- for option in optionGroup.options %}
+    {%- if option.type == "string" or option.type == "size_t" or option.type == "bool" %}
+        cout << "    ${option.long} = " << config.get${option.method}() << endl;
+    {%- endif %}
+    {%- if option.type == "vector<string>" %}
+        cout << "    ${option.long}" << endl;
+        for (auto& item:config.get${option.method}()) {
+            cout << "        " << item << endl;
+        }
+    {%- endif %}
+    {%- if option.type == "map<string,string>" %}
+        cout << "    ${option.long}" << endl;
+        for (auto& item:config.get${option.method}()) {
+            cout << "        " << item.first << "=" << item.second << endl;
+        }
+    {%- endif %}
+{%- endfor %}
+{%- endfor %}
+}
+
+
+
+}

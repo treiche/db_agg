@@ -1,7 +1,6 @@
 #ifndef CONFIGURATION_H_
 #define CONFIGURATION_H_
 
-
 #include <string>
 #include <map>
 #include <vector>
@@ -24,60 +23,66 @@ private:
     bool searchPasswordInPgPass{ true };
     bool useRegExpParser{ true };
     map<string,string> queryParameter;
+    bool dontExecute;
     bool disableCache;
     string outputDir{ "." };
     string resultDir{ "{outputDir}/{queryName}/{environment}" };
-    string cacheDir{ "~/cache" };
-    string databaseRegistryFile{ "~/etc/database-registry.xml" };
-    string cacheRegistryFile{ "~/cache/cache-registry.json" };
-    string extensionDir{ "~/extensions" };
-    string logConf{ "~/etc/log4cplus.properties" };
+    string cacheDir{ "${HOME}/cache" };
+    string prefix{ "/usr/local/db_agg" };
+    string databaseRegistryFile{ "${HOME}/etc/database-registry.xml" };
+    string cacheRegistryFile{ "${HOME}/cache/cache-registry.json" };
+    string extensionDir{ "${HOME}/extensions" };
+    string logConf{ "${HOME}/etc/log4cplus.properties" };
     string logFile{ "db_agg.log" };
-    string findConfigurationFile(std::string name, bool createIfNeeded, bool isDir);
 public:
-    void setQueryFile(string queryFile);
     string getQueryFile();
-    void setEnvironment(string environment);
+    void setQueryFile(string queryFile);
     string getEnvironment();
-    void setHelp(bool help);
+    void setEnvironment(string environment);
     bool getHelp();
-    void setLogLevel(string logLevel);
+    void setHelp(bool help);
     string getLogLevel();
-    void setShowProgress(bool showProgress);
+    void setLogLevel(string logLevel);
     bool getShowProgress();
-    void setCopyThreshold(size_t copyThreshold);
+    void setShowProgress(bool showProgress);
     size_t getCopyThreshold();
-    void setExternalSources(map<string,string> externalSources);
+    void setCopyThreshold(size_t copyThreshold);
     map<string,string> getExternalSources();
-    void setExternalExcelSources(vector<string> externalExcelSources);
+    void setExternalSources(map<string,string> externalSources);
     vector<string> getExternalExcelSources();
-    void setStatementTimeout(size_t statementTimeout);
+    void setExternalExcelSources(vector<string> externalExcelSources);
     size_t getStatementTimeout();
-    void setSearchPasswordInPgPass(bool searchPasswordInPgPass);
+    void setStatementTimeout(size_t statementTimeout);
     bool getSearchPasswordInPgPass();
-    void setUseRegExpParser(bool useRegExpParser);
+    void setSearchPasswordInPgPass(bool searchPasswordInPgPass);
     bool getUseRegExpParser();
-    void setQueryParameter(map<string,string> queryParameter);
+    void setUseRegExpParser(bool useRegExpParser);
     map<string,string> getQueryParameter();
-    void setDisableCache(bool disableCache);
+    void setQueryParameter(map<string,string> queryParameter);
+    bool getDontExecute();
+    void setDontExecute(bool dontExecute);
     bool getDisableCache();
-    void setOutputDir(string outputDir);
+    void setDisableCache(bool disableCache);
     string getOutputDir();
-    void setResultDir(string resultDir);
+    void setOutputDir(string outputDir);
     string getResultDir();
-    void setCacheDir(string cacheDir);
+    void setResultDir(string resultDir);
     string getCacheDir();
-    void setDatabaseRegistryFile(string databaseRegistryFile);
+    void setCacheDir(string cacheDir);
+    string getPrefix();
+    void setPrefix(string prefix);
     string getDatabaseRegistryFile();
-    void setCacheRegistryFile(string cacheRegistryFile);
+    void setDatabaseRegistryFile(string databaseRegistryFile);
     string getCacheRegistryFile();
-    void setExtensionDir(string extensionDir);
+    void setCacheRegistryFile(string cacheRegistryFile);
     string getExtensionDir();
-    void setLogConf(string logConf);
+    void setExtensionDir(string extensionDir);
     string getLogConf();
-    void setLogFile(string logFile);
+    void setLogConf(string logConf);
     string getLogFile();
+    void setLogFile(string logFile);
 };
+
 
 }
 

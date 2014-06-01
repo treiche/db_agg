@@ -3,3 +3,5 @@
 #define DBAGG_EXEC_PREFIX "@exec_prefix@"
 #define DBAGG_BINDIR "@bindir@"
 #define DBAGG_LIBDIR "@libdir@"
+#define DBAGG_LOCALSTATEDIR "@localstatedir@"
+#define DBAGG_INCLUDEDIR "@includedir@"

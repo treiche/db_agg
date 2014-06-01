@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config>
+    <name>db_agg</name>
+    <bean>Configuration</bean>
+    <parser>db_agg_parser</parser>
+    <namespace>db_agg</namespace>
+    <arguments>
+        <argument>
+            <name>query-file</name>
+            <description>path to the db_agg query file</description>
+            <type>string</type>
+        </argument>
+    </arguments>
+    <optionGroup>
+        <name>general</name>
+        <option>
+            <short>e</short>
+            <long>environment</long>
+            <args>true</args>
+            <shortDescription>select default environment</shortDescription>
+            <type>string</type>
+            <default>local</default>
+        </option>
+        <option>
+            <short>h</short>
+            <long>help</long>
+            <args>false</args>
+            <shortDescription>show help</shortDescription>
+            <type>bool</type>
+        </option>
+        <option>
+            <short>L</short>
+            <long>log-level</long>
+            <args>true</args>
+            <shortDescription>set the log level</shortDescription>
+            <type>string</type>
+            <default>INFO</default>
+        </option>
+        <option>
+            <short>S</short>
+            <long>show-progress</long>
+            <args>false</args>
+            <shortDescription>shows curses based progress of running queries</shortDescription>
+            <type>bool</type>
+        </option>
+        <option>
+            <short>t</short>
+            <long>copy-threshold</long>
+            <args>true</args>
+            <shortDescription>use copy instead of value injection when size of rows &gt; threshold</shortDescription>
+            <type>size_t</type>
+            <default>0</default>
+        </option>
+        <option>
+            <short>E</short>
+            <long>external-sources</long>
+            <args>true</args>
+            <shortDescription>load external csv data source</shortDescription>
+            <type><![CDATA[map<string,string>]]></type>
+        </option>
+        <option>
+            <short>X</short>
+            <long>external-excel-sources</long>
+            <args>true</args>
+            <shortDescription>load excel file as data source</shortDescription>
+            <type><![CDATA[vector<string>]]></type>
+        </option>
+        <option>
+            <short>s</short>
+            <long>statement-timeout</long>
+            <args>true</args>
+            <shortDescription>timeout when processing database queries</shortDescription>
+            <type>size_t</type>
+            <default>600000</default>
+        </option>
+        <option>
+            <short>j</short>
+            <long>search-password-in-pg-pass</long>
+            <args>true</args>
+            <shortDescription>look for passwords in ~/.pgpass</shortDescription>
+            <type>bool</type>
+            <default>true</default>
+        </option>
+        <option>
+            <short>p</short>
+            <long>use-reg-exp-parser</long>
+            <args>true</args>
+            <shortDescription>parse query with parser based on regular expression</shortDescription>
+            <type>bool</type>
+            <default>true</default>
+        </option>
+        <option>
+            <short>a</short>
+            <long>query-parameter</long>
+            <args>true</args>
+            <shortDescription>query parameter</shortDescription>
+            <type><![CDATA[map<string,string>]]></type>
+        </option>
+        <option>
+            <short>z</short>
+            <long>dont-execute</long>
+            <args>false</args>
+            <shortDescription>only dump execution plan and exit</shortDescription>
+            <type>bool</type>
+        </option>
+    </optionGroup>
+    <optionGroup>
+        <name>cache</name>
+        <option>
+            <short>d</short>
+            <long>disable-cache</long>
+            <args>false</args>
+            <shortDescription>don't load cached results</shortDescription>
+            <type>bool</type>
+        </option>
+    </optionGroup>
+    <optionGroup>
+        <name>files</name>
+        <option>
+            <short>o</short>
+            <long>output-dir</long>
+            <args>true</args>
+            <shortDescription>path to the output directory</shortDescription>
+            <type>string</type>
+            <default>.</default>
+        </option>
+        <option>
+            <short>R</short>
+            <long>result-dir</long>
+            <args>true</args>
+            <shortDescription>path to the result directory</shortDescription>
+            <type>string</type>
+            <default>{outputDir}/{queryName}/{environment}</default>
+        </option>
+        <option>
+            <short>c</short>
+            <long>cache-dir</long>
+            <args>true</args>
+            <shortDescription>path to the cache directory</shortDescription>
+            <type>string</type>
+            <default>${HOME}/cache</default>
+        </option>
+        <option>
+            <short>P</short>
+            <long>prefix</long>
+            <args>true</args>
+            <shortDescription>path to the db_agg installation</shortDescription>
+            <type>string</type>
+            <default>/usr/local/db_agg</default>
+        </option>
+        <option>
+            <short>k</short>
+            <long>database-registry-file</long>
+            <args>true</args>
+            <shortDescription>path to the database registry</shortDescription>
+            <type>string</type>
+            <default>${HOME}/etc/database-registry.xml</default>
+        </option>
+        <option>
+            <short>f</short>
+            <long>cache-registry-file</long>
+            <args>true</args>
+            <shortDescription>path to the cache registry</shortDescription>
+            <type>string</type>
+            <default>${HOME}/cache/cache-registry.json</default>
+        </option>
+        <option>
+            <short>x</short>
+            <long>extension-dir</long>
+            <args>true</args>
+            <shortDescription>path to the extension directory</shortDescription>
+            <type>string</type>
+            <default>${HOME}/extensions</default>
+        </option>
+        <option>
+            <short>l</short>
+            <long>log-conf</long>
+            <args>true</args>
+            <shortDescription>path to the log configuration file</shortDescription>
+            <type>string</type>
+            <default>${HOME}/etc/log4cplus.properties</default>
+        </option>
+        <option>
+            <short>F</short>
+            <long>log-file</long>
+            <args>true</args>
+            <shortDescription>path to the log file</shortDescription>
+            <type>string</type>
+            <default>db_agg.log</default>
+        </option>
+    </optionGroup>
+</config>

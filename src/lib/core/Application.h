@@ -30,6 +30,7 @@ namespace db_agg {
             static Application instance;
             Application();
         public:
+            static std::string findConfigurationFile(std::string name, bool createIfNeeded, bool isDir);
             static Application& getInstance() {
                 return instance;
             }

@@ -1,4 +1,4 @@
-AC_INIT([db_agg], [0.9.0], [arnd@brusdeilins.net])
+AC_INIT([db_agg], [0.9.1], [arnd@brusdeilins.net])
 
 AC_CONFIG_HEADERS([config.h:config.h.in])
 AC_CHECK_HEADERS([curses.h])
