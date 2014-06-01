@@ -23,7 +23,7 @@ Template::Template(): Template("{","}") {}
 Template::Template(string startDelimiter, string endDelimiter) {
     this->startDelimiter = startDelimiter;
     this->endDelimiter = endDelimiter;
-    string re = escapeDelimiter(startDelimiter) + "([a-zA-Z0-9]+)" + escapeDelimiter(endDelimiter);
+    string re = escapeDelimiter(startDelimiter) + "([a-zA-Z0-9_]+)" + escapeDelimiter(endDelimiter);
     LOG4CPLUS_DEBUG(LOG, "regex = " << re);
     regexp.setExpr(re);
 }

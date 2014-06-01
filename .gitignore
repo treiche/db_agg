@@ -5,3 +5,6 @@ config.status
 src/installation.h
 build
 config.h
+.cproject
+.project
+.pydevproject

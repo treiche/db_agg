@@ -18,9 +18,9 @@ BIN_SRC = $(wildcard src/bin/*/*.cpp)
 BIN_OBJ = $(subst src/,build/,$(BIN_SRC:.cpp=.o))
 
 
-all: $(LIB_OBJ) $(TEST_OBJ) $(BIN_OBJ) \
+all: $(LIB_OBJ) $(TEST_OBJ) $(BIN_OBJ) build/lib/libdb_agg.a \
   build/bin/testrunner.o build/bin/testrunner \
-  build/bin/db_agg.o build/bin/db_agg
+  build/bin/db_agg.o build/bin/db_agg build/bin/db_agg_config
 
 build/%.o : src/%.cpp
 	@echo "compile $(^F)"
@@ -37,14 +37,22 @@ build/lib/libdb_agg.a: $(LIB_OBJ)
 	@mkdir -p $(@D)
 	@ar rs $@ $?
 
-build/bin/testrunner: build/bin/testrunner.o $(TEST_OBJ) build/lib/libdb_agg.a 
-	@echo "generate testrunner"
-	@$(CXX) $^ $(LDFLAGS) -o $@
+build/lib/libdb_agg.so: $(LIB_OBJ)
+	@echo "create library $@"
+	@mkdir -p $(@D)
+	@$(CXX) -fPIC -shared -Wl,-soname,libdb_agg.so $^ $(LDFLAGS) -o $@
 
-build/bin/db_agg: $(BIN_OBJ) build/bin/db_agg.o build/lib/libdb_agg.a 
+build/bin/testrunner: build/bin/testrunner.o $(TEST_OBJ) build/lib/libdb_agg.so
 	@echo "generate testrunner"
-	@$(CXX) $^ $(LDFLAGS) -o $@
+	@$(CXX) build/bin/testrunner.o $(TEST_OBJ) -fPIC $(LDFLAGS) -Lbuild/lib -ldb_agg -o $@
 
+build/bin/db_agg: $(BIN_OBJ) build/bin/db_agg.o build/lib/libdb_agg.so 
+	@echo "generate db_agg executable"
+	@$(CXX) $(BIN_OBJ) build/bin/db_agg.o -fPIC $(LDFLAGS) -Lbuild/lib -ldb_agg -o $@
+
+build/bin/db_agg_config: $(BIN_OBJ) build/bin/db_agg_config.o build/lib/libdb_agg.so
+	@echo "generate db_agg_config"
+	@$(CXX) $(BIN_OBJ) build/bin/db_agg_config.o $(LDFLAGS) -Lbuild/lib -ldb_agg -o $@
 
 src/lib/core/Configuration.% src/bin/cli/db_agg_parser.%: src/bin/db_agg.cli
 	@tools/gen-cli.py -b src/lib/core -p src/bin/cli src/bin/db_agg.cli
@@ -56,11 +64,15 @@ check:
 install:
 	@@INSTALL@ -d $(DESTDIR)@bindir@
 	@@INSTALL@ -t $(DESTDIR)@bindir@ build/bin/db_agg
+	@@INSTALL@ -t $(DESTDIR)@bindir@ build/bin/db_agg_config
 	@@INSTALL@ -d $(DESTDIR)@sysconfdir@/db_agg
 	@@INSTALL@ -t $(DESTDIR)@sysconfdir@/db_agg etc/*
 	@@INSTALL@ -d $(DESTDIR)@libdir@
 	libtool --mode=install install -c build/lib/libdb_agg.a $(DESTDIR)@libdir@/libdb_agg.a
 	ranlib $(DESTDIR)@libdir@/libdb_agg.a
+	libtool --mode=install install -c build/lib/libdb_agg.so $(DESTDIR)@libdir@/libdb_agg.so
+	@INSTALL@ -d $(DESTDIR)@includedir@/db_agg
+	@INSTALL@ -t $(DESTDIR)@includedir@/db_agg/ src/db_agg.h src/lib/*/*.h
 
 clean:
 	@rm -rf build/*

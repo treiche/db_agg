@@ -155,11 +155,13 @@ string CommandLineParser::getUsage() {
         usage << " <" << argument.name << ">";
     }
     usage << endl << endl;
-    usage << "ARGUMENTS:" << endl;
-    for (auto& argument:arguments) {
-        usage << "  " << argument.name << ": " << argument.description << endl;
+    if (!arguments.empty()) {
+        usage << "ARGUMENTS:" << endl;
+        for (auto& argument:arguments) {
+            usage << "  " << argument.name << ": " << argument.description << endl;
+        }
+        usage << endl;
     }
-    usage << endl;
     usage << "OPTIONS:" << endl;
     for (auto& group:optionGroups) {
         usage << "  " << group.name << ":" << endl;
@@ -167,7 +169,6 @@ string CommandLineParser::getUsage() {
             usage << "    -" << option.shortOption << " --" << option.longOption << endl;
             usage << "        " << option.description  << endl;
         }
-        usage << endl;
     }
     return usage.str();
 }

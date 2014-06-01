@@ -10,6 +10,7 @@
 
 #include "utils/md5.h"
 
+#include "utils/File.h"
 #include "extension/Extension.h"
 
 #include "installation.h"
