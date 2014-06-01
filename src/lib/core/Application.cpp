@@ -18,6 +18,7 @@
 #include "table/CsvTableData.h"
 #include "excel/ExcelToTextFormat.h"
 #include "utils/Template.h"
+#include "installation.h"
 
 using namespace std;
 using namespace log4cplus;
@@ -69,7 +70,8 @@ void Application::bootstrap(Configuration& config) {
     query = readFile(queryFile.abspath());
     environment = config.getEnvironment();
     LOG4CPLUS_DEBUG(LOG, "load database registry");
-    databaseRegistry = new DatabaseRegistry(config.getDatabaseRegistryFile());
+    string databaseRegistryFile = findConfigurationFile(config.getDatabaseRegistryFile(), false, false);
+    databaseRegistry = new DatabaseRegistry(databaseRegistryFile);
     vector<string> environments = databaseRegistry->getSystems();
     bool environmentExists = false;
     for (auto& env:environments) {
@@ -83,7 +85,9 @@ void Application::bootstrap(Configuration& config) {
         throw runtime_error(message);
     }
     LOG4CPLUS_DEBUG(LOG, "load cache registry");
-    cacheRegistry = new CacheRegistry(config.getCacheDir(), config.getCacheRegistryFile());
+    string cacheDir = findConfigurationFile(config.getCacheDir(),true,true);
+    string cacheRegistryFile = findConfigurationFile(config.getCacheRegistryFile(), false, false);
+    cacheRegistry = new CacheRegistry(cacheDir, cacheRegistryFile);
 
     string outputDir = config.getOutputDir();
     string queryFileName = queryFile.getName();
@@ -117,13 +121,51 @@ void Application::bootstrap(Configuration& config) {
     	}
     }
     queryParameter = config.getQueryParameter();
-    queryProcessor = new QueryProcessor(*queryParser, *databaseRegistry,extensionLoader,*passwordManager,*cacheRegistry, resultDir, config.getDisableCache(), config.getCopyThreshold(), externalSources, config.getStatementTimeout(), queryParameter);
+    queryProcessor = new QueryProcessor(*queryParser, *databaseRegistry,extensionLoader,*passwordManager,*cacheRegistry, resultDir, config.getDisableCache(), config.getCopyThreshold(), externalSources, config.getStatementTimeout(), queryParameter, config.getDontExecute());
     queryProcessor->addEventListener(this);
     LOG4CPLUS_DEBUG(LOG, "load extensions");
-    extensionLoader.loadExtensions(config.getExtensionDir());
+    string extensionDir = findConfigurationFile(config.getExtensionDir(), false,false);
+    extensionLoader.loadExtensions(extensionDir);
     LOG4CPLUS_DEBUG(LOG, "bootstrapping ok");
 
 }
+
+static string getSysConfigDir() {
+    Template t{"${","}"};
+    t.set("prefix",DBAGG_PREFIX);
+    return t.render(DBAGG_SYSCONFIGDIR);
+}
+
+static string getLocalStateDir() {
+    Template t{"${","}"};
+    t.set("prefix",DBAGG_PREFIX);
+    return t.render(DBAGG_LOCALSTATEDIR);
+}
+
+string Application::findConfigurationFile(string name, bool createIfNeeded, bool isDir) {
+        LOG4CPLUS_INFO(LOG, "find configuration file '" << name << "'");
+        string effectiveFile;
+        if (name.find("${HOME}") == 0) {
+            string homeLocation = getHomeDir() + "/.db_agg/" + name.substr(7);
+            File homeFile{homeLocation};
+            if (homeFile.exists()) {
+                effectiveFile = homeFile.abspath();
+            } else {
+                string prefixLocation = getSysConfigDir() + "/" + name.substr(7);
+                File prefixFile{prefixLocation};
+                effectiveFile = prefixLocation;
+            }
+        } else {
+            effectiveFile = name;
+        }
+        File ef{effectiveFile};
+        if (!ef.exists() && createIfNeeded) {
+            if (isDir) {
+                ef.mkdirs();
+            }
+        }
+        return effectiveFile;
+    }
 
 void Application::handleEvent(Event& event) {
     LOG4CPLUS_DEBUG(LOG, "received event");

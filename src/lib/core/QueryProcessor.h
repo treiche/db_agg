@@ -44,6 +44,7 @@ class QueryProcessor : public EventListener, public EventProducer {
     std::vector<QueryExecution*> findExecutables();
     void cacheItem(std::string resultId);
     void loadExternalSources();
+    bool dontExecute;
 public:
     QueryProcessor(
             QueryParser& queryParser,
@@ -56,7 +57,8 @@ public:
             size_t copyThreshold,
             std::map<std::string,std::shared_ptr<TableData>> externalSources,
             size_t statementTimeout,
-            std::map<std::string,std::string> queryParameter
+            std::map<std::string,std::string> queryParameter,
+            bool dontExecute
     );
     ~QueryProcessor();
     void process(std::string query, std::string environment);

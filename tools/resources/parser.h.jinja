@@ -1,0 +1,26 @@
+#ifndef ${parser | upper}_H_
+#define ${parser | upper}_H_
+
+#include <string>
+#include <map>
+#include <vector>
+
+#include "cli/CommandLineParser.h"
+#include "${bean}.h"
+
+using namespace std;
+
+namespace ${namespace} {
+
+class ${parser}: public CommandLineParser {
+public:
+    ${parser}();
+    void parse(int argc, char **argv, ${bean}& config);
+    void dumpConfiguration(${bean}&);
+
+
+};
+
+}
+
+#endif /* ${parser | upper}_H_ */

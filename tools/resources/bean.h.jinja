@@ -1,0 +1,38 @@
+#ifndef ${bean | upper}_H_
+#define ${bean | upper}_H_
+
+#include <string>
+#include <map>
+#include <vector>
+
+using namespace std;
+
+namespace ${namespace} {
+
+class ${bean} {
+private:
+{%- for argument in arguments %}
+    ${argument.type} ${argument.property};
+{%- endfor %}
+{%- for optionGroup in optionGroups %}
+{%- for option in optionGroup.options %}
+    ${option.type} ${option.property}{%- if option.default %}{ ${option | literal} }{% endif %};
+{%- endfor %}
+{%- endfor %}
+public:
+{%- for argument in arguments %}
+    ${argument.type} get${argument.method}();
+    void set${argument.method}(${argument.type} ${argument.property});
+{%- endfor %}
+{%- for optionGroup in optionGroups %}
+{%- for option in optionGroup.options %}
+    ${option.type} get${option.method}();
+    void set${option.method}(${option.type} ${option.property});
+{%- endfor %}
+{%- endfor %}
+};
+
+
+}
+
+#endif /* ${bean | upper}_H_ */

@@ -14,10 +14,10 @@
 
 
 #include "db_agg.h"
+#include "cli/db_agg_parser.h"
 #include "utils/SignalHandler.h"
 #include <signal.h>
 #include <string>
-#include "parseConfig.h"
 #include "ui/CursesListener.h"
 
 using namespace std;
@@ -66,11 +66,13 @@ int main(int argc, char **argv) {
     defaultLogConfig += "/etc/log4cplus.properties";
     initLogging(defaultLogConfig);
     Configuration config;
-    db_agg::parse(argc,argv,config);
-    initLogging(config.getLogConf());
+    db_agg::db_agg_parser parser;
+    parser.parse(argc,argv,config);
+    string logConf = Application::findConfigurationFile(config.getLogConf(),false,false);
+    initLogging(logConf);
     config.setUseRegExpParser(true);
     config.setSearchPasswordInPgPass(true);
-    // dumpConfiguration(config);
+    // parser.dumpConfiguration(config);
     signal(SIGINT,&cancel);
     signal(SIGHUP,&cancel);
     Application& app = Application::getInstance();
