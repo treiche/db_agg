@@ -3,9 +3,6 @@
 #include "installation.h"
 #include "utils/Template.h"
 
-//#include "cli/db_agg_config_bean.h"
-//#include "cli/db_agg_config_parser.h"
-
 #include <log4cplus/configurator.h>
 #include <log4cplus/consoleappender.h>
 #include <log4cplus/fileappender.h>
@@ -44,7 +41,7 @@ static string interpolate(string path) {
 int main(int argc, char **argv) {
     SharedObjectPtr<Appender> append_1(new ConsoleAppender());
     Logger::getRoot().addAppender(append_1);
-    Logger::getRoot().setLogLevel(DEBUG_LOG_LEVEL);
+    Logger::getRoot().setLogLevel(ERROR_LOG_LEVEL);
 
     CommandLineParser parser("db_agg_config",{},options);
     parser.parse(argc,argv);
