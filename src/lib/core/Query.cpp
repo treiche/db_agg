@@ -115,4 +115,15 @@ namespace db_agg {
         return arguments;
     }
 
+    void Query::setMetaData(map<string,string> metaData) {
+        this->metaData = metaData;
+    }
+
+    string Query::getMetaData(string name, string fallback) {
+        if (metaData.find(name) == metaData.end()) {
+            return fallback;
+        }
+        return metaData[name];
+    }
+
 }

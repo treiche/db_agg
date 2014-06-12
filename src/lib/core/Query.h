@@ -31,6 +31,7 @@ private:
     std::deque<Dependency> dependencies;
     std::string databaseId;
     std::vector<std::string> arguments;
+    std::map<std::string,std::string> metaData;
 public:
     Query() {}
     Query(std::string id, std::string type, Locator locator, std::string query, std::string formattedQuery, std::set<std::string> usedNamespaces);
@@ -51,6 +52,8 @@ public:
     void setType(std::string queryType);
     void setArguments(std::vector<std::string> arguments);
     std::vector<std::string>& getArguments();
+    void setMetaData(std::map<std::string,std::string> metaData);
+    std::string getMetaData(std::string name, std::string fallback);
 };
 
 

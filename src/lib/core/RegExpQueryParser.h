@@ -13,6 +13,7 @@ class RegExpQueryParser : public QueryParser {
     void detectDependencies(std::vector<Query*>& queries);
     Query *getSourceQuery(Dependency dep,std::vector<Query*>& queries);
     void detectScriptQueries(std::vector<Query*>& queries, std::vector<std::string>& functions);
+    void extractMetaData(std::vector<Query*>& queries);
 public:
     RegExpQueryParser();
     virtual ~RegExpQueryParser();

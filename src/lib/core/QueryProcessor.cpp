@@ -244,9 +244,9 @@ void QueryProcessor::populateUrls(string environment) {
             if (urls.size() > 1) {
                 linkPath += "_" + to_string(idx + 1);
             }
-            // TODO: decide here which injection type must be used
-            // based on a regexp on the query
-            shared_ptr<DependencyInjector> di = extensionLoader.getDependencyInjector("default");
+            string injectorName = query->getMetaData("injector","default");
+            LOG4CPLUS_DEBUG(LOG, "injector for query " << query->getName() << ":" << injectorName);
+            shared_ptr<DependencyInjector> di = extensionLoader.getDependencyInjector(injectorName);
             LOG4CPLUS_DEBUG(LOG, "create execution for " << query->getName() << " type = " << query->getType());
             QueryExecution *exec = extensionLoader.getQueryExecution(query->getType());
             if (exec == nullptr) {

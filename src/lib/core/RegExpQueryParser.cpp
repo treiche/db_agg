@@ -110,6 +110,7 @@ vector<Query*> RegExpQueryParser::parse(string q, map<string,string>& externalSo
 
     detectScriptQueries(queries,functions);
 
+    extractMetaData(queries);
     return queries;
 }
 
@@ -183,6 +184,19 @@ void RegExpQueryParser::detectScriptQueries(vector<Query*>& queries, vector<stri
             query->setType(executorName);
             query->setArguments(scriptArgs);
         }
+    }
+}
+
+void RegExpQueryParser::extractMetaData(std::vector<Query*>& queries) {
+    RegExp re{"\\@([a-z]+)\\s*:\\s*([a-z]+)"};
+    for (auto query:queries) {
+        int offset = 0;
+        vector<string> matches;
+        map<string,string> metaData;
+        while(re.find(query->getQuery(),matches,offset)) {
+            metaData[matches[1]] = matches[2];
+        }
+        query->setMetaData(metaData);
     }
 }
 
