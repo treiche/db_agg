@@ -13,6 +13,7 @@
 #include <log4cplus/fileappender.h>
 
 
+#include "../installation.h"
 #include "db_agg.h"
 #include "cli/db_agg_parser.h"
 #include "utils/SignalHandler.h"

@@ -15,7 +15,6 @@
 #include "core/RegExpQueryParser.h"
 #include "utils/utility.h"
 #include "utils/File.h"
-#include "table/CsvTableData.h"
 #include "excel/ExcelToTextFormat.h"
 #include "utils/Template.h"
 #include "installation.h"
@@ -109,15 +108,21 @@ void Application::bootstrap(Configuration& config) {
 
     // load external csv files
     for (auto& externalCsvFile:config.getExternalSources()) {
-    	CsvTableData *data = new CsvTableData(externalCsvFile.second);
-    	externalSources[externalCsvFile.first].reset(data);
+        File f(externalCsvFile.second);
+        if (f.exists()) {
+            externalSources[externalCsvFile.first] = "file://" + f.abspath();
+        }
     }
     // load external excel files
     for (auto& externalExcelSource:config.getExternalExcelSources()) {
-    	ExcelToTextFormat ett;
-    	map<string,shared_ptr<TableData>> sheets = ett.transform(externalExcelSource);
-    	for (auto& sheet:sheets) {
-    		externalSources[sheet.first] = sheet.second;
+    	File f(externalExcelSource);
+    	if (f.exists()) {
+    	    string url = "file://" + f.abspath();
+            ExcelToTextFormat ett;
+            vector<string> sheets = ett.getSheetNames(f.abspath());
+            for (auto& sheet:sheets) {
+                externalSources[sheet] = url + "#" + sheet;
+            }
     	}
     }
     queryParameter = config.getQueryParameter();
@@ -195,5 +200,10 @@ bool Application::run() {
     }
     return false;
 }
+
+ExecutionGraph& Application::getExecutionGraph() {
+    return queryProcessor->getExecutionGraph();
+}
+
 }
 

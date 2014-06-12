@@ -25,7 +25,7 @@ namespace db_agg {
             ExtensionLoader extensionLoader;
             std::string query;
             std::string environment;
-            std::map<std::string,shared_ptr<TableData>> externalSources;
+            std::map<std::string,std::string> externalSources;
             std::map<std::string,std::string> queryParameter;
             static Application instance;
             Application();
@@ -42,6 +42,7 @@ namespace db_agg {
                 return *queryParser;
             }
             virtual void handleSignal(int signal) override;
+            ExecutionGraph& getExecutionGraph();
     };
 }
 

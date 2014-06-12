@@ -24,6 +24,8 @@ public:
     virtual std::string toSqlValues();
     virtual std::string toColumnDefinitions();
     virtual std::string getValue(uint64_t row, uint32_t col) = 0;
+    virtual void addRow(std::vector<std::string> row);
+    uint32_t getColumnIndex(std::string colName);
 };
 }
 

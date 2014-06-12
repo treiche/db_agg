@@ -72,7 +72,12 @@ install:
 	ranlib $(DESTDIR)@libdir@/libdb_agg.a
 	libtool --mode=install install -c build/lib/libdb_agg.so $(DESTDIR)@libdir@/libdb_agg.so
 	@INSTALL@ -d $(DESTDIR)@includedir@/db_agg
-	@INSTALL@ -t $(DESTDIR)@includedir@/db_agg/ src/db_agg.h src/lib/*/*.h
+	@INSTALL@ -t $(DESTDIR)@includedir@/db_agg/ src/db_agg.h src/installation.h
+	for dir in `ls -d src/lib/*` ; do \
+		bn=`basename $$dir`; \
+		@INSTALL@ -d $(DESTDIR)@includedir@/db_agg/$$bn ; \
+		@INSTALL@ -t $(DESTDIR)@includedir@/db_agg/$$bn src/lib/$$bn/*.h ; \
+	done
 
 clean:
 	@rm -rf build/*

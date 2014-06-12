@@ -4,6 +4,8 @@
 #include <map>
 #include <set>
 #include <string>
+#include <memory>
+#include "table/TableDataFactory.h"
 
 #include "utils/Time.h"
 
@@ -31,6 +33,7 @@ public:
     void save();
     void load();
     std::string getPath(std::string id);
+    std::shared_ptr<TableData> getData(std::string id);
     uint64_t getRowCount(std::string id);
     CacheItem& get(std::string id);
 };

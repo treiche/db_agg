@@ -14,7 +14,6 @@ extern "C" {
 #include <log4cplus/logger.h>
 
 #include "utils/utility.h"
-#include "core/Connection.h"
 #include "utils/PasswordManager.h"
 
 using namespace std;
@@ -92,18 +91,18 @@ namespace db_agg {
         this->searchInPgPass = searchInPgPass;
     }
 
-    pair<string,string> PasswordManager::getCredential(Connection connection) {
+    pair<string,string> PasswordManager::getCredential(Url *url) {
         pair<string,string> c;
         if (searchInPgPass) {
-            c = getCredentialFromPgPass(connection);
+            c = getCredentialFromPgPass(url);
             if (!c.first.empty()) {
                 return c;
             }
         }
-        return getCredentialFromPrompt(connection);
+        return getCredentialFromPrompt(url);
     }
 
-    pair<string,string> PasswordManager::getCredentialFromPgPass(Connection connection) {
+    pair<string,string> PasswordManager::getCredentialFromPgPass(Url *url) {
         pair<string,string> c;
         uid_t uid = getuid();
         LOG4CPLUS_DEBUG(LOG,"uid=" << uid);
@@ -125,7 +124,7 @@ namespace db_agg {
                 vector<string> columns;
                 split(line,':',columns);
                 if (columns.size() == 5) {
-                    if (columns[0] == connection.getHost() && columns[1] == to_string(connection.getPort())) {
+                    if (columns[0] == url->getHost() && columns[1] == to_string(url->getPort())) {
                         LOG4CPLUS_DEBUG(LOG, "found entry for host " << columns[0]);
                         c.first = columns[3];
                         c.second = columns[4];
@@ -143,7 +142,7 @@ namespace db_agg {
         return c;
     }
 
-    pair<string,string> PasswordManager::getCredentialFromPrompt(Connection connection) {
+    pair<string,string> PasswordManager::getCredentialFromPrompt(Url *url) {
         pair<string,string> c;
         string user = getinput("user>");
         string pass=getpass("password>", true);

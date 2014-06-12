@@ -22,8 +22,8 @@ private:
     std::vector<std::shared_ptr<TableData>> sources;
     std::vector<uint64_t> offsets;
     void calculateRelativeRow(uint64_t row, int& sourceIdx, uint64_t& relRow);
-public:
     JoinedTableData(std::vector<std::shared_ptr<TableData>> sources);
+public:
     virtual uint64_t getRowCount() override;
     virtual uint32_t getColCount() override;
     virtual std::vector<std::pair<std::string,uint32_t>> getColumns() override;
@@ -35,6 +35,7 @@ public:
     virtual void save(std::string filePath) override;
     virtual std::string calculateMD5Sum() override;
     virtual std::string getValue(uint64_t row, uint32_t col) override;
+    friend class TableDataFactory;
 };
 
 }

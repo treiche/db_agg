@@ -15,20 +15,37 @@ namespace db_agg {
     /*!
      @todo test todo annotation
      */
-    Query::Query(string id, Locator locator, string query, string formattedQuery, set<string> usedNamespaces, bool external) {
+    Query::Query(string id, string type, Locator locator, string query, string formattedQuery, set<string> usedNamespaces) {
         this->id = id;
         LOG4CPLUS_DEBUG(LOG, "query '" << locator.getQName() << "' id = " << id);
         this->locator = locator;
         this->query = query;
         this->formattedQuery = formattedQuery;
         this->usedNamespaces = usedNamespaces;
-        this->external = external;
+        this->type = type;
     }
 
     void Query::addDependency(Locator locator, string alias) {
         Dependency dep{Locator(locator),alias};
         dependencies.push_back(dep);
     }
+
+    deque<Dependency>& Query::getDependencies() {
+        return dependencies;
+    }
+
+    void Query::setDatabaseId(string databaseId) {
+        this->databaseId = databaseId;
+    }
+
+    string Query::getDatabaseId() {
+        return databaseId;
+    }
+
+    Locator& Query::getLocator() {
+        return locator;
+    }
+
 
     string Query::getQuery() {
         return query;
@@ -62,18 +79,40 @@ namespace db_agg {
         return ss.str();
     }
 
-    void Query::addQueryExecution(QueryExecution queryExecution) {
-        executions.push_back(queryExecution);
+    std::set<std::string>& Query::getUsedNamespaces() {
+       return usedNamespaces;
     }
 
-    QueryExecution* Query::getQueryExecution(size_t shardId) {
-        if (shardId >= executions.size()) {
-            throw runtime_error("out of range");
-        }
-        return &executions[shardId];
+    short Query::getShardId() {
+        return locator.getShardId();
     }
 
-    std::deque<QueryExecution>& Query::getQueryExecutions() {
-        return executions;
+    string Query::getEnvironment() {
+        return locator.getEnvironment();
     }
+
+    string Query::getId() {
+        return id;
+    }
+
+    string Query::getName() {
+        return locator.getName();
+    }
+
+    string Query::getType() {
+        return type;
+    }
+
+    void Query::setType(string queryType) {
+        this->type = queryType;
+    }
+
+    void Query::setArguments(vector<string> arguments) {
+        this->arguments = arguments;
+    }
+
+    vector<string>& Query::getArguments() {
+        return arguments;
+    }
+
 }

@@ -68,9 +68,11 @@ namespace db_agg {
         }
         for (int cnt = 0; cnt < ret; cnt++) {
             match m;
-            m.substr = string(qs, subStrVec[cnt * 2], subStrVec[(cnt * 2) + 1] - subStrVec[cnt * 2]);
             m.start = subStrVec[cnt * 2];
             m.end = subStrVec[cnt * 2 + 1];
+            if (m.start != m.end) {
+                m.substr = string(qs, subStrVec[cnt * 2], subStrVec[(cnt * 2) + 1] - subStrVec[cnt * 2]);
+            }
             result.push_back(m);
         }
         return result;

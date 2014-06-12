@@ -60,24 +60,26 @@ void CursesListener::handleEvent(Event& event) {
         }
         attrset(COLOR_PAIR(1));
 
-        deque<Query>& queries = application.getQueryParser().getQueries();
+        ExecutionGraph& executionGraph = application.getExecutionGraph();
+        vector<Query*> queries = executionGraph.getQueries();
         size_t cnt = 2;
         size_t statusOffset = 0;
-        for (auto& query:queries) {
+        for (auto query:queries) {
             attron(A_BOLD|A_UNDERLINE);
-            mvaddstr(cnt,2,query.getName().c_str());
+            mvaddstr(cnt,2,query->getName().c_str());
             attroff(A_BOLD|A_UNDERLINE);
-            if (query.getName().size()+2 > statusOffset) {
-                statusOffset = query.getName().size()+2;
+            if (query->getName().size()+2 > statusOffset) {
+                statusOffset = query->getName().size()+2;
             }
-            queryIdToLine[query.getId()] = cnt;
+            queryIdToLine[query->getId()] = cnt;
             cnt++;
-            for (auto& exec:query.getQueryExecutions()) {
-                mvaddstr(cnt,4,exec.getName().c_str());
-                if (exec.getName().size()+4 > statusOffset) {
-                    statusOffset = exec.getName().size()+4;
+
+            for (auto exec:executionGraph.getQueryExecutions(query)) {
+                mvaddstr(cnt,4,exec->getName().c_str());
+                if (exec->getName().size()+4 > statusOffset) {
+                    statusOffset = exec->getName().size()+4;
                 }
-                resultIdToLine[exec.getId()] = cnt;
+                resultIdToLine[exec->getId()] = cnt;
                 cnt++;
             }
         }
@@ -198,6 +200,7 @@ void CursesListener::updateClock() {
     using namespace chrono;
     // LOG4CPLUS_DEBUG(LOG, "updateClock ");
     while(running) {
+        screenMutex.lock();
         for (auto& p:timeSpent) {
             auto current = std::chrono::system_clock::now();
             auto delta = current - p.second;
@@ -215,11 +218,8 @@ void CursesListener::updateClock() {
                     offset = col.offset;
                 }
             }
-            screenMutex.lock();
             mvaddstr(p.first,offset,fmt.c_str());
-            screenMutex.unlock();
         }
-        screenMutex.lock();
         wrefresh(stdscr);
         screenMutex.unlock();
         this_thread::sleep_for(std::chrono::milliseconds(10));

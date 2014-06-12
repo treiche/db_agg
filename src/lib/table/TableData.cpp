@@ -96,5 +96,19 @@ std::string TableData::toColumnDefinitions() {
     return sql;
 }
 
+uint32_t TableData::getColumnIndex(std::string colName) {
+    auto columns = getColumns();
+    for (uint32_t idx = 0; idx < columns.size(); idx++) {
+        if (columns[idx].first == colName) {
+            return idx;
+        }
+    }
+    throw runtime_error("column with name '" + colName + "' not found.");
+}
+
+void TableData::addRow(std::vector<std::string> row) {
+    throw runtime_error("not supported");
+}
+
 }
 

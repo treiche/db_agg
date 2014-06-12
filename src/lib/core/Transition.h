@@ -7,46 +7,39 @@
 
 #include "core/QueryExecution.h"
 #include "sharding/ShardingStrategy.h"
+#include "graph/Channel.h"
+#include "graph/DataReceiver.h"
+#include "graph/DataSender.h"
 
 namespace db_agg {
 class QueryExecution;
 
 std::vector<TableData*> split(TableData *src, int dstSize, ShardingStrategy *sharder);
 
-class Transition {
+class Transition : public DataReceiver, public DataSender {
     std::string name;
-    std::vector<QueryExecution*> sources;
-    std::vector<QueryExecution*> targets;
-    std::map<std::string,std::shared_ptr<TableData>> sourceData;
+    int srcSize = 0;
+    int dstSize = 0;
+    std::vector<std::shared_ptr<TableData>> receivedData;
+    // std::map<std::string,std::shared_ptr<TableData>> sourceData;
     bool done = false;
-    ShardingStrategy *sharder = nullptr;
+    std::shared_ptr<ShardingStrategy> sharder;
     std::string shardColSearchExpr;
-    std::vector<std::shared_ptr<TableData>> createdData;
+    std::vector<Channel*> channels;
 public:
     Transition() {}
-    Transition(std::string name): name(name) {
+    Transition(std::string name, int srcSize, int dstSize): name(name), srcSize(srcSize), dstSize(dstSize) {
         sharder = nullptr;
     }
-    Transition(std::string name, std::vector<QueryExecution*> sources, std::vector<QueryExecution*> targets, ShardingStrategy *sharder);
+
+    void receive(std::string name, std::shared_ptr<TableData> data) override;
+    virtual void addChannel(Channel* channel) override;
     virtual void doTransition();
     virtual std::string getId() {
         return name;
     }
-    virtual void doTransition(std::string resultId, std::shared_ptr<TableData> data);
     virtual ~Transition();
-    void addSource(QueryExecution *source) {
-        sources.push_back(source);
-    }
-    std::vector<QueryExecution*>& getSources() {
-        return sources;
-    }
-    void addTarget(QueryExecution *target) {
-        targets.push_back(target);
-    }
-    std::vector<QueryExecution*>& getTargets() {
-        return targets;
-    }
-    void setSharder(ShardingStrategy *sharder) {
+    void setSharder(std::shared_ptr<ShardingStrategy> sharder) {
         this->sharder = sharder;
     }
     void setShardColSearchExpr(std::string shardColSearchExpr) {

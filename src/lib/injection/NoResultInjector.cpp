@@ -10,7 +10,6 @@
 #include <log4cplus/logger.h>
 #include "type/oids.h"
 #include "type/TypeRegistry.h"
-#include "table/CsvTableData.h"
 #include "utils/RegExp.h"
 
 using namespace std;

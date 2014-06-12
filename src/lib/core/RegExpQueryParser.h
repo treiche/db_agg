@@ -9,16 +9,19 @@
 
 namespace db_agg {
 class RegExpQueryParser : public QueryParser {
-    struct XImpl;
-    XImpl *pImpl;
     std::set<std::string> extractUsedNamespaces(std::string query);
-    void detectDependencies();
-    Query *getSourceQuery(Dependency dep);
+    void detectDependencies(std::vector<Query*>& queries);
+    Query *getSourceQuery(Dependency dep,std::vector<Query*>& queries);
+    void detectScriptQueries(std::vector<Query*>& queries, std::vector<std::string>& functions);
 public:
     RegExpQueryParser();
     virtual ~RegExpQueryParser();
-    virtual std::deque<Query>& parse(std::string query, std::map<std::string,std::string>& externalSources,std::map<std::string,std::string>& queryParameter) override;
-    virtual std::deque<Query>& getQueries() override;
+    virtual std::vector<Query*> parse(
+            std::string query,
+            std::map<std::string,std::string>& externalSources,
+            std::map<std::string,
+            std::string>& queryParameter,
+            std::vector<std::string> functions) override;
 
 };
 

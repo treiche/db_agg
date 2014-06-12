@@ -224,6 +224,12 @@ namespace db_agg {
         //buildIndex();
     }
 
+    void CsvTableData::addRow(std::vector<std::string> row) {
+        assert(row.size() == pImpl->colCount);
+        string joined = join(row,"\t") + "\n";
+        appendRaw((void*)joined.c_str(),joined.size());
+    }
+
     void CsvTableData::readColumns(string firstLine) {
         pImpl->columns.clear();
         LOG4CPLUS_DEBUG(LOG, "firstLine = " << firstLine);
@@ -234,7 +240,12 @@ namespace db_agg {
             split(col,':',nt);
             string name = nt[0];
             LOG4CPLUS_TRACE(LOG, "column name = " << name);
-            string typeName = nt[1];
+            string typeName;
+            if (nt.size()>1) {
+                typeName = nt[1];
+            } else {
+                typeName = "TEXT";
+            }
             LOG4CPLUS_TRACE(LOG, "column type = " << typeName);
             TypeInfo *ti = TypeRegistry::getInstance().getTypeInfo(typeName);
             uint32_t typeId;

@@ -19,20 +19,13 @@ namespace db_agg {
 static Logger LOG = Logger::getInstance(LOG4CPLUS_TEXT("RegExpQueryParser"));
 
 
-struct RegExpQueryParser::XImpl {
-    deque<Query> queries;
-};
-
 static RegExp CTE_EXTRACT(R"((WITH\s+|,\s*)([a-z_0-9]+)\$?([0-9]{0,1})\$?([a-z]*)\s+AS\s+\((.+?)\n\))");
 static RegExp NS_EXTRACT(R"((?<!distinct )(table|from|join)\s+([a-z_0-9]+)\.[a-z_]+\s*)");
 
 RegExpQueryParser::RegExpQueryParser() {
-    pImpl = new XImpl();
 }
 
 RegExpQueryParser::~RegExpQueryParser() {
-    LOG4CPLUS_DEBUG(LOG, "delete RegExpQueryParser");
-    delete pImpl;
 }
 
 set<string> RegExpQueryParser::extractUsedNamespaces(std::string query) {
@@ -45,8 +38,9 @@ set<string> RegExpQueryParser::extractUsedNamespaces(std::string query) {
     return usedNamespaces;
 }
 
-deque<Query>& RegExpQueryParser::parse(string q, map<string,string>& externalSources, map<string,string>& queryParameter) {
+vector<Query*> RegExpQueryParser::parse(string q, map<string,string>& externalSources, map<string,string>& queryParameter, vector<string> functions) {
     assert(!q.empty());
+    vector<Query*> queries;
     LOG4CPLUS_DEBUG(LOG,"start query parsing");
     int offset = 0;
     vector<string> matches;
@@ -75,7 +69,7 @@ deque<Query>& RegExpQueryParser::parse(string q, map<string,string>& externalSou
             throw runtime_error("duplicate locator " + loc.getQName());
         }
         locs.insert(loc.getQName());
-        pImpl->queries.push_back(Query(id, loc, sql, formattedSql, usedNamespaces));
+        queries.push_back(new Query(id, "postgres", loc, sql, formattedSql, usedNamespaces));
     }
     offset++;
 
@@ -88,7 +82,7 @@ deque<Query>& RegExpQueryParser::parse(string q, map<string,string>& externalSou
     string id = string(md5hex("__main_query__$-1:" + sql));
     //pImpl->queryMap["__main_query__"] = Query(id, "__main_query__", tq, usedNamespaces, -1, "");
     Locator loc("__main_query__",-1,"");
-    pImpl->queries.push_back(Query(id, loc, sql, formattedSql, usedNamespaces));
+    queries.push_back(new Query(id, "postgres", loc, sql, formattedSql, usedNamespaces));
 
     // create pseudo entries for external sources
     LOG4CPLUS_DEBUG(LOG, "create " << externalSources.size() << "pseudo entries");
@@ -97,33 +91,34 @@ deque<Query>& RegExpQueryParser::parse(string q, map<string,string>& externalSou
         Locator loc(externalSource.first,-1,"");
         string id = string(md5hex(externalSource.first + ":" + externalSource.second + "$-1:"));
         set<string> empty;
-        pImpl->queries.push_back(Query(id, loc, externalSource.second, externalSource.second, empty, true));
+        queries.push_back(new Query(id, "resource", loc, externalSource.second, externalSource.second, empty));
     }
 
-    //map<string, Query*> map = pImpl->queryMap;
-    detectDependencies();
+    detectDependencies(queries);
 
-    for (auto& query:pImpl->queries) {
-        LOG4CPLUS_DEBUG(LOG, "    "  << query.toString());
-        for (auto& dep:query.getDependencies()) {
-            Query *src = getSourceQuery(dep);
+    for (auto query:queries) {
+        LOG4CPLUS_DEBUG(LOG, "    "  << query->toString());
+        for (auto& dep:query->getDependencies()) {
+            Query *src = getSourceQuery(dep, queries);
             if (src==nullptr) {
                 throw runtime_error("no source found for dependency " + dep.locator.getName());
             }
             dep.sourceQuery = src;
-            LOG4CPLUS_DEBUG(LOG, query.getLocator().getQName() << ": " << dep.locator.getQName() << " -> " << src->getLocator().getQName());
+            LOG4CPLUS_DEBUG(LOG, query->getLocator().getQName() << ": " << dep.locator.getQName() << " -> " << src->getLocator().getQName());
         }
     }
-    return pImpl->queries;
+
+    detectScriptQueries(queries,functions);
+
+    return queries;
 }
 
-void RegExpQueryParser::detectDependencies() {
+void RegExpQueryParser::detectDependencies(vector<Query*>& queries) {
     string re = "(from|join)\\s+(";
     int cnt=0;
-    auto& queries = pImpl->queries;
     int len = queries.size();
     for (size_t idx = 0; idx < queries.size(); idx++) {
-        re += queries[idx].getName();
+        re += queries[idx]->getName();
         if (cnt<len-1) {
             re += "|";
         }
@@ -132,12 +127,12 @@ void RegExpQueryParser::detectDependencies() {
     re+=")\\$?([0-9]*)\\$?([a-zA-Z0-9_]*)(\\s+([a-z0-9_$]+))?";
     LOG4CPLUS_DEBUG(LOG, "REGEXP = " << re);
     RegExp regexp(re);
-    for (auto& q:queries) {
-        string qs = q.getQuery();
+    for (auto q:queries) {
+        string qs = q->getQuery();
         vector<string> matches;
         int offset = 0;
         while(regexp.find(qs,matches,offset)) {
-            LOG4CPLUS_DEBUG(LOG, "found dependency " << matches[2] << " in " << q.getName());
+            LOG4CPLUS_DEBUG(LOG, "found dependency " << matches[2] << " in " << q->getName());
             string name = matches[2];
             string alias = "";
             short shardId = -1;
@@ -163,38 +158,54 @@ void RegExpQueryParser::detectDependencies() {
             LOG4CPLUS_DEBUG(LOG, "with environment = " << environment);
             LOG4CPLUS_DEBUG(LOG, "with alias = " << alias);
             Locator loc(name,shardId,environment);
-            q.addDependency(loc, alias);
+            q->addDependency(loc, alias);
         }
-        for (auto& dep:q.getDependencies()) {
+        for (auto& dep:q->getDependencies()) {
             LOG4CPLUS_DEBUG(LOG, "detected dependency " + dep.locator.getQName());
         }
     }
 }
 
-Query* RegExpQueryParser::getSourceQuery(Dependency dep) {
+void RegExpQueryParser::detectScriptQueries(vector<Query*>& queries, vector<string>& functions) {
+    string expr = "(" + join(functions,"|") + ")\\(([a-zA-Z_0-9, ]+)\\)";
+    RegExp re(expr);
+    for (auto query:queries) {
+        int offset = 0;
+        vector<string> matches;
+        while(re.find(query->getQuery(),matches,offset)) {
+            string executorName = matches[1];
+            string arguments = matches[2];
+            vector<string> scriptArgs;
+            split(arguments,',',scriptArgs);
+            for (auto& arg:scriptArgs) {
+                trim(arg);
+            }
+            query->setType(executorName);
+            query->setArguments(scriptArgs);
+        }
+    }
+}
+
+Query* RegExpQueryParser::getSourceQuery(Dependency dep, vector<Query*>& queries) {
     Query *src = nullptr;
-    for (auto& query:pImpl->queries) {
-        int diff = query.getLocator().compare(dep.locator);
+    for (auto query:queries) {
+        int diff = query->getLocator().compare(dep.locator);
         if (diff>-1) {
-            LOG4CPLUS_DEBUG(LOG, "found candidate '" << query.getLocator().getQName());
-            src = &query;
+            LOG4CPLUS_DEBUG(LOG, "found candidate '" << query->getLocator().getQName());
+            src = query;
         }
         if (src==nullptr) {
             // search for inter system transition
-            if (query.getName().compare(dep.locator.getName())==0) {
-                if (!query.getEnvironment().empty() &&
+            if (query->getName().compare(dep.locator.getName())==0) {
+                if (!query->getEnvironment().empty() &&
                     dep.locator.getEnvironment().empty()) {
-                    src = &query;
+                    src = query;
                 }
             }
         }
     }
     LOG4CPLUS_TRACE(LOG,"getSourceQuery(" << dep.locator.getQName() << ") = " << (Query*)src);
     return src;
-}
-
-std::deque<Query>& RegExpQueryParser::getQueries() {
-    return pImpl->queries;
 }
 
 }

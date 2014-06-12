@@ -4,7 +4,7 @@
 #include <string>
 #include <utility>
 
-#include "core/Connection.h"
+#include "core/Url.h"
 
 namespace db_agg {
 class PasswordManager {
@@ -12,9 +12,9 @@ private:
     bool searchInPgPass;
 public:
     PasswordManager(bool searchInPgPass);
-    std::pair<std::string,std::string> getCredential(Connection connection);
-    std::pair<std::string,std::string> getCredentialFromPrompt(Connection connection);
-    std::pair<std::string,std::string> getCredentialFromPgPass(Connection connection);
+    std::pair<std::string,std::string> getCredential(Url *url);
+    std::pair<std::string,std::string> getCredentialFromPrompt(Url *url);
+    std::pair<std::string,std::string> getCredentialFromPgPass(Url *url);
 };
 }
 

@@ -22,7 +22,11 @@ class ExtensionLoader {
 public:
     ~ExtensionLoader();
     void loadExtensions(std::string extensionDir);
-    ShardingStrategy *getShardingStrategy(std::string name);
+    std::shared_ptr<ShardingStrategy> getShardingStrategy(std::string name);
+    std::shared_ptr<DependencyInjector> getDependencyInjector(std::string name);
+    QueryExecution *getQueryExecution(std::string name);
+    Extension& getExtension(ComponentType component, std::string name);
+    std::vector<std::string> getAvailableExecutorNames();
 };
 
 

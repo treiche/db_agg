@@ -82,7 +82,7 @@ namespace db_agg {
         return systems;
     }
 
-    Connection DatabaseRegistry::getWorker() {
+    shared_ptr<Url> DatabaseRegistry::getWorker() {
         string expr("//database-instance[@worker]");
         xmlXPathObjectPtr xpathObj = xmlXPathEvalExpression((const xmlChar*)expr.c_str(), this->xpathCtx);
         xmlNodeSetPtr nodes = xpathObj->nodesetval;
@@ -92,7 +92,7 @@ namespace db_agg {
         }
         xmlNodePtr node = nodes->nodeTab[0];
         if(node->type == XML_ELEMENT_NODE) {
-            Connection c = getUrl((xmlElementPtr)node);
+            shared_ptr<Url> c = getUrl((xmlElementPtr)node);
             xmlXPathFreeObject(xpathObj);
             return c;
         }
@@ -100,7 +100,7 @@ namespace db_agg {
     }
 
 
-    vector<Connection> DatabaseRegistry::getUrls(string database, string environment, short shardId) {
+    vector<shared_ptr<Url>> DatabaseRegistry::getUrls(string database, string environment, short shardId) {
         assert(!database.empty());
         assert(!environment.empty());
         LOG4CPLUS_DEBUG(LOG, "called getUrls(" << database << "," << environment << "," << shardId << ")");
@@ -120,11 +120,11 @@ namespace db_agg {
         
         int found = nodes->nodeNr;
         
-        vector<Connection> urls;
+        vector<shared_ptr<Url>> urls;
         for (int cnt=0;cnt<found;cnt++) {
             xmlNodePtr node = nodes->nodeTab[cnt];
             if(node->type == XML_ELEMENT_NODE) {
-                Connection c = getUrl((xmlElementPtr)node);
+                shared_ptr<Url> c = getUrl((xmlElementPtr)node);
                 urls.push_back(c);
             }
         
@@ -209,7 +209,7 @@ namespace db_agg {
         return result;
     }
 
-    Connection DatabaseRegistry::getUrl(xmlElementPtr databaseNode) {
+    shared_ptr<Url> DatabaseRegistry::getUrl(xmlElementPtr databaseNode) {
         string database = getAttribute(databaseNode, "id");
         xmlElementPtr serverNode = (xmlElementPtr)databaseNode->parent;
         xmlElementPtr hostNode = (xmlElementPtr)serverNode->parent;
@@ -238,7 +238,7 @@ namespace db_agg {
             }
             databaseName = t.render(this->databaseNamingStrategy);
         }
-        Connection c(hostAddr,port,environment,databaseName, shard,"");
-        return c;
+        shared_ptr<Url> url(new Url("postgres",hostAddr,port,databaseName));
+        return url;
     }
 }

@@ -18,6 +18,7 @@
 #include "cache/CacheRegistry.h"
 #include "core/AsyncQueryExecutor.h"
 #include "table/TableData.h"
+#include "ExecutionGraph.h"
 
 namespace db_agg {
 class QueryProcessor : public EventListener, public EventProducer {
@@ -29,10 +30,8 @@ class QueryProcessor : public EventListener, public EventProducer {
     std::string outputDir;
     bool disableCache;
     size_t copyThreshold;
-    std::map<std::string,std::shared_ptr<TableData>> externalSources;
-    std::list<Transition> transitions;
-    std::map<std::string,QueryExecution*> idToResult;
-    AsyncQueryExecutor *queryExecutor = 0;
+    std::map<std::string,std::string> externalSources;
+    ExecutionGraph executionGraph;
     size_t statementTimeout;
     std::map<std::string,std::string> queryParameter;
     void populateUrls(std::string environment);
@@ -44,6 +43,7 @@ class QueryProcessor : public EventListener, public EventProducer {
     std::vector<QueryExecution*> findExecutables();
     void cacheItem(std::string resultId);
     void loadExternalSources();
+    void cleanUp();
     bool dontExecute;
 public:
     QueryProcessor(
@@ -55,7 +55,7 @@ public:
             std::string outputDir,
             bool disableCache,
             size_t copyThreshold,
-            std::map<std::string,std::shared_ptr<TableData>> externalSources,
+            std::map<std::string,std::string> externalSources,
             size_t statementTimeout,
             std::map<std::string,std::string> queryParameter,
             bool dontExecute
@@ -63,8 +63,8 @@ public:
     ~QueryProcessor();
     void process(std::string query, std::string environment);
     void handleEvent(Event& event);
-    void dumpExecutionPlan();
     void stop();
+    ExecutionGraph& getExecutionGraph();
 };
 }
 

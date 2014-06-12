@@ -11,7 +11,6 @@
 
 #include "type/oids.h"
 #include "type/TypeRegistry.h"
-#include "table/CsvTableData.h"
 #include "utils/RegExp.h"
 
 using namespace std;
@@ -22,12 +21,20 @@ namespace db_agg {
 
     QueryExecution::QueryExecution() {}
 
-    QueryExecution::QueryExecution(std::string name, std::string id, Connection connectionUrl, std::string sql, std::vector<std::string> depNames, DependencyInjector *dependencyInjector):
-            id(id),
-            connectionUrl(connectionUrl),
-            sql(sql),
-            name(name),
-            dependencyInjector(dependencyInjector) {
+    void QueryExecution::init(
+            string name,
+            string id,
+            shared_ptr<Url> url,
+            string sql,
+            vector<string> depNames,
+            shared_ptr<DependencyInjector> dependencyInjector,
+            vector<string> arguments) {
+        this->id = id;
+        this->url = url;
+        this->sql = sql;
+        this->name = name;
+        this->dependencyInjector = dependencyInjector;
+        this->arguments = arguments;
         for (auto& depName:depNames) {
             dependencies[depName] = nullptr;
         }
@@ -40,79 +47,12 @@ namespace db_agg {
         }
     }
 
-    bool QueryExecution::allTransitionsDone() {
-        bool isDone = true;
-        for (auto t:transitions) {
-            isDone &= t->isDone();
-        }
-        return isDone;
-    }
-
     void QueryExecution::release() {
         LOG4CPLUS_TRACE(LOG, "use count before release = " << data.use_count());
         data.reset();
         LOG4CPLUS_TRACE(LOG, "use count after release = " << data.use_count());
     }
 
-
-    void QueryExecution::addTransition(Transition *t) {
-        transitions.push_back(t);
-    }
-
-    void QueryExecution::addIncomingTransition(Transition *t) {
-        incomingTransitions.push_back(t);
-    }
-
-    void QueryExecution::addDependency(string name, shared_ptr<TableData> data) {
-        if (dependencies.find(name)==dependencies.end()) {
-            throw runtime_error("no dependency '" + name + "' declared");
-        }
-        dependencies[name] = data;
-    }
-
-    string QueryExecution::inject(string query, size_t copyThreshold) {
-        assert(dependencyInjector != nullptr);
-        LOG4CPLUS_DEBUG(LOG, "called inject " << query << " di = " << dependencyInjector);
-        return dependencyInjector->inject(query,dependencies,copyThreshold);
-    }
-
-    uint64_t QueryExecution::getRowCount(size_t stepNo) {
-        ExecutionStep& step = dependencyInjector->getStep(stepNo);
-        return step.getDependency()->getRowCount();
-    }
-
-
-    string QueryExecution::handleCopyIn(size_t stepNo, uint64_t startRow, uint64_t rows, uint64_t& rowsRead) {
-        ExecutionStep& step = dependencyInjector->getStep(stepNo);
-        uint32_t size;
-        uint64_t rowCount = step.getDependency()->getRowCount();
-        string data;
-        rowsRead = 0;
-        for (uint64_t row = startRow; (row < rowCount) && (rowsRead < rows); row++) {
-            void *rawRow = step.getDependency()->getRawRow(row,size);
-            data.append((char*)rawRow, size);
-            rowsRead++;
-        }
-        return data;
-    }
-
-    void QueryExecution::handleCopyOut(size_t stepNo,string _data) {
-         data->appendRaw((void*)_data.c_str(),_data.size());
-    }
-
-    void QueryExecution::handleTuples(size_t step, vector<pair<string, uint32_t> >& columns) {
-        vector<pair<string, uint32_t>> cleaned;
-        for (size_t idx = 0; idx < columns.size(); idx++) {
-            auto column = columns[idx];
-            if (column.first == "?column?") {
-                LOG4CPLUS_DEBUG(LOG,"column " << idx << "has unknown name/type. assume type TEXT");
-                cleaned.push_back(pair<string,uint32_t>(string("argument_") + to_string(idx),TEXT));
-            } else {
-                cleaned.push_back(column);
-            }
-        }
-        data = shared_ptr<TableData>(new CsvTableData(cleaned));
-    }
 
     shared_ptr<TableData> QueryExecution::getResult() {
         return data;
@@ -131,13 +71,22 @@ namespace db_agg {
         return complete;
     }
 
-    void QueryExecution::doTransitions() {
-        if (!transitions.empty()) {
-            LOG4CPLUS_DEBUG(LOG, "do transitions for query " << sql);
+    string QueryExecution::inject(string query, size_t copyThreshold) {
+            assert(dependencyInjector != nullptr);
+            LOG4CPLUS_DEBUG(LOG, "called inject " << query << " di = " << dependencyInjector);
+            return dependencyInjector->inject(query,dependencies,copyThreshold);
+    }
+
+    void QueryExecution::receive(string name, shared_ptr<TableData> data) {
+        LOG4CPLUS_DEBUG(LOG, "receive data " << data);
+        if (dependencies.find(name)==dependencies.end()) {
+            throw runtime_error("no dependency '" + name + "' declared");
         }
-        for (Transition *t:transitions) {
-            t->doTransition(this->id, this->data);
-        }
+        dependencies[name] = data;
+    }
+
+    void QueryExecution::addChannel(Channel* channel) {
+        this->channels.push_back(channel);
     }
 
     std::ostream& operator<<(std::ostream& cout,const QueryExecution& qe) {
@@ -145,5 +94,71 @@ namespace db_agg {
         return cout;
     }
 
+    void QueryExecution::setId(string id) {
+        this->id = id;
+    }
+
+    string QueryExecution::getId() {
+        return id;
+    }
+
+    string QueryExecution::getName() {
+        return name;
+    }
+
+    shared_ptr<TableData> QueryExecution::getData() {
+        return data;
+    }
+
+    void QueryExecution::setData(std::shared_ptr<TableData> data) {
+        this->data = data;
+    }
+
+    void QueryExecution::setScheduled() {
+        scheduled = true;
+        startTime = std::chrono::system_clock::now();
+    }
+
+    bool QueryExecution::isScheduled() {
+        return scheduled;
+    }
+
+    void QueryExecution::setDone() {
+        endTime = std::chrono::system_clock::now();
+        done = true;
+    }
+
+    bool QueryExecution::isDone() {
+        return done;
+    }
+
+    size_t QueryExecution::getDuration() {
+        std::chrono::system_clock::duration duration = endTime - startTime;
+        return duration.count();
+    }
+
+    shared_ptr<Url> QueryExecution::getUrl() {
+        return url;
+    }
+
+    string QueryExecution::getSql() {
+        return sql;
+    }
+
+    vector<Channel*> QueryExecution::getChannels() {
+        return channels;
+    }
+
+    vector<string> QueryExecution::getArguments() {
+        return arguments;
+    }
+
+    map<string,shared_ptr<TableData>>& QueryExecution::getDependencies() {
+        return dependencies;
+    }
+
+    shared_ptr<DependencyInjector> QueryExecution::getInjector() {
+        return dependencyInjector;
+    }
 }
 

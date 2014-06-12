@@ -37,7 +37,7 @@ public:
     bool connected();
     static PGConnection connectDb(std::string conninfo);
     static PGConnection connectStart(std::string conninfo);
-    static void ping(std::string conninfo);
+    static bool ping(std::string conninfo);
 };
 }
 

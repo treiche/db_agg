@@ -19,79 +19,73 @@
 #include "table/TableData.h"
 #include "core/Transition.h"
 #include "event/Event.h"
-#include "Connection.h"
+#include "core/Url.h"
 #include "injection/DependencyInjector.h"
+#include "graph/DataSender.h"
+#include "graph/Channel.h"
 
 namespace db_agg {
 class Transition;
 
-class QueryExecution: public ExecutionHandler {
+class QueryExecution: public DataReceiver, public DataSender, public EventProducer {
     private:
         std::shared_ptr<TableData> data;
         std::string id;
-        Connection connectionUrl;
+        std::shared_ptr<Url> url;
         std::string sql;
         std::string name;
-        std::vector<Transition*> transitions;
-        std::vector<Transition*> incomingTransitions;
         bool scheduled = false;
         bool done = false;
         std::map<std::string,std::shared_ptr<TableData>> dependencies;
-        DependencyInjector *dependencyInjector = nullptr;
+        std::shared_ptr<DependencyInjector> dependencyInjector;
         std::chrono::system_clock::time_point startTime;
         std::chrono::system_clock::time_point endTime;
-        public:
+        std::vector<Channel*> channels;
+        std::vector<std::string> arguments;
+    protected:
+        void setData(std::shared_ptr<TableData> data);
+        std::vector<std::string> getArguments();
+        std::map<std::string,std::shared_ptr<TableData>>& getDependencies();
+        std::shared_ptr<DependencyInjector> getInjector();
+    public:
         QueryExecution();
-        QueryExecution(std::string name, std::string id, Connection connectionUrl, std::string sql, std::vector<std::string> depName, DependencyInjector *dependencyInjector);
+        void init(std::string name,
+                  std::string id,
+                  std::shared_ptr<Url> url,
+                  std::string sql,
+                  std::vector<std::string> depName,
+                  std::shared_ptr<DependencyInjector> dependencyInjector,
+                  std::vector<std::string> arguments);
         virtual ~QueryExecution() override;
-
-        bool allTransitionsDone();
-
-        std::string getId() { return id; }
-        void setId(std::string id) {
-            this->id = id;
-        }
-        std::string getName() { return name; }
-        std::shared_ptr<TableData> getData() { return data; }
-        void setScheduled() {
-            scheduled = true;
-            startTime = std::chrono::system_clock::now();
-        }
-        bool isScheduled() { return scheduled; }
-        void setDone() {
-            endTime = std::chrono::system_clock::now();
-            done = true;
-        }
+        std::string getId();
+        void setId(std::string id);
+        std::string getName();
+        std::shared_ptr<TableData> getData();
+        void setScheduled();
+        bool isScheduled();
+        void setDone();
+        bool isDone();
         void release();
-        size_t getDuration() {
-            std::chrono::system_clock::duration duration = endTime - startTime;
-            return duration.count();
-        }
-        bool isDone() { return done; }
-        Connection getConnectionUrl() { return connectionUrl; }
-        std::string getSql() { return sql; }
+        size_t getDuration();
+        std::shared_ptr<Url> getUrl();
+        std::string getSql();
+        std::shared_ptr<TableData> getResult();
+        void setResult(std::shared_ptr<TableData> data);
+        std::string inject(std::string query, size_t copyThreshold);
+        bool isComplete();
+        std::vector<Channel*> getChannels();
 
-        void addTransition(Transition *t);
-        void addIncomingTransition(Transition *t);
+        virtual void stop() = 0;
+        virtual void schedule() = 0;
+        virtual bool process() = 0;
+        virtual void cleanUp() = 0;
+        virtual bool isResourceAvailable() = 0;
+        // Interfaces:
+        // DataReceiver
+        virtual void receive(std::string name, std::shared_ptr<TableData> data) override;
+        // DataSender
+        virtual void addChannel(Channel* channel) override;
 
-        virtual std::string handleCopyIn(size_t step, uint64_t startRows, uint64_t rows, uint64_t& rowsRead) override;
-        virtual uint64_t getRowCount(size_t step) override;
-        virtual void handleCopyOut(size_t step, std::string data) override;
-        virtual void handleTuples(size_t step, std::vector<std::pair<std::string, uint32_t>>& columns) override;
-
-        virtual std::shared_ptr<TableData> getResult() override;
-        virtual void setResult(std::shared_ptr<TableData> data) override;
-        virtual void addDependency(std::string name, std::shared_ptr<TableData> data) override;
-        virtual std::string inject(std::string query, size_t copyThreshold) override;
-        virtual bool isComplete() override;
-
-        std::vector<Transition*>& getIncomingTransitions() {
-            return incomingTransitions;
-        }
-        std::vector<Transition*>& getTransitions() {
-            return transitions;
-        }
-        void doTransitions();
         friend std::ostream& operator<<(std::ostream& cout,const QueryExecution& t);
 };
 

@@ -92,39 +92,38 @@ namespace db_agg {
         this->pImpl->tasks.push_back(qt);
     }
 
-    void AsyncQueryExecutor::process() {
+    bool AsyncQueryExecutor::process() {
         LOG4CPLUS_DEBUG(LOG, "start processing with " << this->pImpl->tasks.size() << " queries");
         // PQinitOpenSSL(1,1);
         bool done = false;
         fireEvent(EventType::INITIALIZE,-1);
-        do {
-            try {
-                done = this->loop();
-            } catch(CancelException& ce) {
-                LOG4CPLUS_ERROR(LOG, "query execution canceled:" << endl);
-                cleanUp("CANCEL");
-                throw ce;
-            } catch(AsyncQueryExecutorException& aqee) {
-                LOG4CPLUS_ERROR(LOG, "query execution failed: " << aqee.what());
-                LOG4CPLUS_ERROR(LOG, "query:\n" << aqee.getQuery());
-                cleanUp("");
-                throw aqee;
-            } catch(runtime_error& re) {
-                LOG4CPLUS_ERROR(LOG, "query execution failed: " << re.what());
-                cleanUp("");
-                throw re;
-            } catch(exception& re) {
-                LOG4CPLUS_ERROR(LOG, "query execution failed: " << re.what());
-                cleanUp("");
-                throw re;
-            } catch(...) {
-                // TODO: find out how this works
-                exception_ptr e = current_exception();
-                LOG4CPLUS_ERROR(LOG, "query execution failed:");
-                cleanUp("");
-                throw runtime_error("caught exception and stopped all tasks");
-            }
-        } while(!done);
+        try {
+            done = this->loop();
+        } catch(CancelException& ce) {
+            LOG4CPLUS_ERROR(LOG, "query execution canceled:" << endl);
+            cleanUp("CANCEL");
+            throw ce;
+        } catch(AsyncQueryExecutorException& aqee) {
+            LOG4CPLUS_ERROR(LOG, "query execution failed: " << aqee.what());
+            LOG4CPLUS_ERROR(LOG, "query:\n" << aqee.getQuery());
+            cleanUp("");
+            throw aqee;
+        } catch(runtime_error& re) {
+            LOG4CPLUS_ERROR(LOG, "query execution failed: " << re.what());
+            cleanUp("");
+            throw re;
+        } catch(exception& re) {
+            LOG4CPLUS_ERROR(LOG, "query execution failed: " << re.what());
+            cleanUp("");
+            throw re;
+        } catch(...) {
+            // TODO: find out how this works
+            exception_ptr e = current_exception();
+            LOG4CPLUS_ERROR(LOG, "query execution failed:");
+            cleanUp("");
+            throw runtime_error("caught exception and stopped all tasks");
+        }
+        return done;
     }
 
     void AsyncQueryExecutor::cleanUp(string reason) {
@@ -134,7 +133,7 @@ namespace db_agg {
     }
 
     bool AsyncQueryExecutor::loop() {
-        LOG4CPLUS_TRACE(LOG, "called loop ");
+        LOG4CPLUS_DEBUG(LOG, "called loop with " << this->pImpl->tasks.size() << " tasks scheduled");
         bool tasksDone = true;
         for (size_t taskNo = 0; taskNo < this->pImpl->tasks.size(); taskNo++) {
             LOG4CPLUS_TRACE(LOG, "process task " << taskNo);
@@ -160,7 +159,7 @@ bool AsyncQueryExecutor::processTask(int taskNo) {
         if (task->done) {
             return true;
         }
-        //std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        // std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         PGConnection& conn = task->conn;
         if (task->state == QueryExecutionState::INITIAL) {
             bool connectAsync = false;

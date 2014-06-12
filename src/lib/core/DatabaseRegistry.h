@@ -4,6 +4,7 @@
 #include <set>
 #include <string>
 #include <vector>
+#include <memory>
 
 extern "C" {
     #include <libxml/tree.h>
@@ -12,7 +13,7 @@ extern "C" {
     #include <libxml/xpathInternals.h>
 }
 
-#include "core/Connection.h"
+#include "core/Url.h"
 
 namespace db_agg {
 
@@ -21,16 +22,16 @@ private:
     xmlXPathContextPtr xpathCtx;
     xmlDocPtr doc;
     std::string databaseNamingStrategy;
-    Connection getUrl(xmlElementPtr databaseNode);
+    std::shared_ptr<Url> getUrl(xmlElementPtr databaseNode);
     std::string evaluateXPath(std::string expr);
 public:
     DatabaseRegistry(std::string regfile);
     ~DatabaseRegistry();
-    std::vector<Connection> getUrls(std::string database, std::string environment, short shardId);
+    std::vector<std::shared_ptr<Url>> getUrls(std::string database, std::string environment, short shardId);
     std::string getDatabaseByNamespace(std::set<std::string> namespaces);
     std::string getShardingStrategyName(std::string databaseId);
     std::string getShardColumn(std::string databaseId);
-    Connection getWorker();
+    std::shared_ptr<Url> getWorker();
     std::vector<std::string> getSystems();
     std::string getDatabaseNamingStrategy();
 };

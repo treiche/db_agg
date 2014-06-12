@@ -125,6 +125,9 @@ namespace db_agg {
         return items[id];
     }
 
+    shared_ptr<TableData> CacheRegistry::getData(string id) {
+        return TableDataFactory::getInstance().load(getPath(id));
+    }
 }
 
 

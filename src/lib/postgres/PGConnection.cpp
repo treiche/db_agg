@@ -88,11 +88,12 @@ PGConnection PGConnection::connectStart(std::string conninfo) {
     return conn;
 }
 
-void PGConnection::ping(std::string conninfo) {
+bool PGConnection::ping(std::string conninfo) {
     PGPing ping = PQping(conninfo.c_str());
     if (ping != PQPING_OK) {
-        throw runtime_error("ping " + maskPassword(conninfo) + " failed.");
+        return false;
     }
+    return true;
 }
 
 }

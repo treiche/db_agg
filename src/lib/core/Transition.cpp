@@ -3,9 +3,7 @@
 #include <log4cplus/logger.h>
 #include <iostream>
 #include <stdexcept>
-#include "table/CsvTableData.h"
-#include "table/JoinedTableData.h"
-#include "table/SplittedTableData.h"
+#include "table/TableDataFactory.h"
 #include "core/ExecutionHandler.h"
 #include "utils/RegExp.h"
 
@@ -14,18 +12,6 @@ using namespace log4cplus;
 
 namespace db_agg {
 static Logger LOG = Logger::getInstance(LOG4CPLUS_TEXT("Transition"));
-
-
-static shared_ptr<TableData> join(vector<QueryExecution*> sources) {
-    LOG4CPLUS_DEBUG(LOG, "join");
-    vector<shared_ptr<TableData>> tds;
-    for (auto source:sources) {
-        tds.push_back(source->getData());
-    }
-    shared_ptr<TableData> td(new JoinedTableData(tds));
-    LOG4CPLUS_DEBUG(LOG, "join done rowCount = " << td->getRowCount());
-    return td;
-}
 
 int findShardColIndex(vector<pair<string,uint32_t>> columns, string searchExpr) {
     RegExp re(searchExpr);
@@ -39,7 +25,7 @@ int findShardColIndex(vector<pair<string,uint32_t>> columns, string searchExpr) 
     throw runtime_error("unable to find shard key column");
 }
 
-vector<shared_ptr<TableData>> split(shared_ptr<TableData> src, int dstSize, ShardingStrategy *sharder, string shardColSearchExpr) {
+vector<shared_ptr<TableData>> split(shared_ptr<TableData> src, int dstSize, shared_ptr<ShardingStrategy> sharder, string shardColSearchExpr) {
     assert(sharder != nullptr);
     LOG4CPLUS_DEBUG(LOG, "split(" << src << "," << dstSize << "," << sharder << ")");
     sharder->setShardCount(dstSize);
@@ -69,81 +55,89 @@ vector<shared_ptr<TableData>> split(shared_ptr<TableData> src, int dstSize, Shar
     }
 
     for (size_t idx=0;idx<dstSize;idx++) {
-        splitted[idx].reset(new SplittedTableData(src,offsets[idx]));
+        splitted[idx] = TableDataFactory::getInstance().split(src,offsets[idx]);
     }
 
     LOG4CPLUS_DEBUG(LOG, "return splitted result");
     return splitted;
 }
 
-Transition::Transition(string name, vector<QueryExecution*> sources, vector<QueryExecution*> targets, ShardingStrategy *sharder) :
-    name(name),
-    sources(sources),
-    targets(targets),
-    sharder(sharder) {
-    LOG4CPLUS_DEBUG(LOG, "create transition '" << name << "'");
-    assert((targets.size() == 1 && sharder == nullptr) || (targets.size() > 1 && sharder != nullptr));
-}
-
 Transition::~Transition() {
     LOG4CPLUS_TRACE(LOG,"delete transition " << this);
+    /*
     for (auto data:createdData) {
         data.reset();
     }
+    */
     LOG4CPLUS_TRACE(LOG,"delete transition done");
 }
 
+/*
 void Transition::doTransition(string resultId, shared_ptr<TableData> data) {
     sourceData[resultId] = data;
     doTransition();
 }
+*/
+
+void Transition::receive(string name, shared_ptr<TableData> data) {
+    LOG4CPLUS_DEBUG(LOG, "receive data " << data);
+    receivedData.push_back(data);
+    if (receivedData.size() == srcSize) {
+        doTransition();
+    }
+}
+
+void Transition::addChannel(Channel* channel) {
+    this->channels.push_back(channel);
+}
 
 void Transition::doTransition() {
+    bool channelsDone = true;
+    for (auto channel:channels) {
+        channelsDone &= channel->getState() == ChannelState::CLOSED;
+        LOG4CPLUS_DEBUG(LOG, "channel '" << channel->getName() << "' is closed already");
+    }
+    LOG4CPLUS_DEBUG(LOG, "channelsDone = " << channelsDone);
+    if (channelsDone) {
+        string message = "transition '" + name +"' already done !";
+        LOG4CPLUS_WARN(LOG, message);
+        done = true;
+        return;
+    }
     if (done) {
         string message = "transition '" + name +"' already done !";
         LOG4CPLUS_WARN(LOG, message);
         return;
     }
-    int srcSize = sources.size();
-    int dstSize = targets.size();
     LOG4CPLUS_DEBUG(LOG, "do transition '" << name << "' with src = " << srcSize << " dst = " << dstSize);
-    bool allTargetsDone = true;
-    for (auto& target:targets) {
-        allTargetsDone &= target->isDone();
-    }
-    if (allTargetsDone) {
-        LOG4CPLUS_DEBUG(LOG, "all targets done. skip transition ...");
-        return;
-    }
-
     bool complete = true;
-    for (auto& source:sources) {
-        complete &= source->isDone();
-    }
-    if (!complete) {
+    if (receivedData.size() != srcSize) {
         LOG4CPLUS_DEBUG(LOG, "transitions sources are not complete... skip");
         return;
     }
     if (dstSize == 1 && srcSize > 1) {
         LOG4CPLUS_DEBUG(LOG, "many to one. join ...");
-        shared_ptr<TableData> td = join(sources);
-        createdData.push_back(td);
+        shared_ptr<TableData> td = TableDataFactory::getInstance().join(receivedData);
+        //createdData.push_back(td);
         LOG4CPLUS_DEBUG(LOG, "add dependency '" << name << "'");
-        targets[0]->addDependency(name, td);
+        for (Channel *channel:channels) {
+            channel->open();
+            channel->send(td);
+            channel->close();
+        }
         done=true;
         return;
     } else if (dstSize > 1 && srcSize==1) {
         // split result
-        shared_ptr<TableData> src = sources[0]->getData();
+        shared_ptr<TableData> src = receivedData[0];
         LOG4CPLUS_DEBUG(LOG, "start split action sharder=" << sharder << " src=" << src);
-        //uint32_t rows = src->getRowCount();
-        //uint32_t cols = src->getColCount();
         if (sharder == nullptr) {
             // no splitting
             LOG4CPLUS_DEBUG(LOG, "inject targets");
-            for (auto& target:targets) {
-                LOG4CPLUS_DEBUG(LOG, "add dependency " + name);
-                target->addDependency(name,src);
+            for (auto channel:channels) {
+                channel->open();
+                channel->send(src);
+                channel->close();
             }
             LOG4CPLUS_DEBUG(LOG, "add dependency done");
             done = true;
@@ -152,12 +146,16 @@ void Transition::doTransition() {
             // split
             LOG4CPLUS_DEBUG(LOG, "start splitting " << src);
             vector<shared_ptr<TableData>> splitted = split(src,dstSize, sharder,shardColSearchExpr);
+            /*
             for (auto data:splitted) {
                 createdData.push_back(data);
             }
+            */
             LOG4CPLUS_DEBUG(LOG, "splitting done");
             for (int cnt=0;cnt<dstSize;cnt++) {
-                targets[cnt]->addDependency(name, splitted[cnt]);
+                channels[cnt]->open();
+                channels[cnt]->send(splitted[cnt]);
+                channels[cnt]->close();
             }
             LOG4CPLUS_DEBUG(LOG, "add dependency done");
             done = true;
@@ -165,10 +163,12 @@ void Transition::doTransition() {
         }
     } else if (srcSize>1 && dstSize>1) {
         LOG4CPLUS_DEBUG(LOG, "start many to many");
-        shared_ptr<TableData> joined = join(sources);
+        shared_ptr<TableData> joined = TableDataFactory::getInstance().join(receivedData);
         vector<shared_ptr<TableData>> splitted = split(joined,dstSize,sharder,shardColSearchExpr);
         for (int cnt=0;cnt<dstSize;cnt++) {
-            targets[cnt]->addDependency(name, splitted[cnt]);
+            channels[cnt]->open();
+            channels[cnt]->send(splitted[cnt]);
+            channels[cnt]->close();
         }
         LOG4CPLUS_DEBUG(LOG, "add dependency done");
         done = true;
@@ -176,7 +176,9 @@ void Transition::doTransition() {
         return;
     } else if (srcSize==1 && dstSize==1) {
         LOG4CPLUS_DEBUG(LOG, "start one to one");
-        targets[0]->addDependency(name,sources[0]->getData());
+        channels[0]->open();
+        channels[0]->send(receivedData[0]);
+        channels[0]->close();
         done = true;
         return;
     }
@@ -186,9 +188,9 @@ void Transition::doTransition() {
 
 std::ostream& operator<<(std::ostream& cout,const Transition& t) {
     cout << "{\"name\": \"" << t.name << "\""
-         << ", sources = " << t.sources.size()
-         << ", targets = " << t.targets.size()
-         << ", targets = " << *(t.targets[0])
+         << ", sources = " << t.srcSize
+         << ", targets = " << t.dstSize
+        //  << ", targets = " << *(t.targets[0])
     ;
     return cout;
 }

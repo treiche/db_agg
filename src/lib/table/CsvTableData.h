@@ -18,12 +18,12 @@ private:
     void calculateRowCount();
     void buildIndex();
     void loadOnDemand(std::string reason);
-public:
     CsvTableData(std::string csvFile);
     CsvTableData(std::string csvFile, std::vector<std::pair<std::string,uint32_t>> columns);
     CsvTableData(std::vector<std::string> columns);
     CsvTableData(std::vector<std::pair<std::string,uint32_t>> columns);
     CsvTableData(void *data, uint64_t size);
+public:
     virtual ~CsvTableData() override;
     virtual uint64_t getRowCount() override;
     virtual uint32_t getColCount() override;
@@ -36,6 +36,8 @@ public:
     virtual void save(std::string filePath) override;
     virtual std::string calculateMD5Sum() override;
     virtual std::string getValue(uint64_t row, uint32_t col) override;
+    virtual void addRow(std::vector<std::string> row) override;
+    friend class TableDataFactory;
 };
 }
 

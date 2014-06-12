@@ -1,27 +1,21 @@
 /*
- * SplittedTableData.h
+ * ExtendedTableData.h
  *
- *  Created on: Apr 17, 2014
+ *  Created on: Jun 11, 2014
  *      Author: arnd
  */
 
-#ifndef SPLITTEDTABLEDATA_H_
-#define SPLITTEDTABLEDATA_H_
+#ifndef EXTENDEDTABLEDATA_H_
+#define EXTENDEDTABLEDATA_H_
 
 #include <memory>
-#include <vector>
-
 #include "TableData.h"
 
 namespace db_agg {
-
-class SplittedTableData: public TableData {
+class ExtendedTableData: public TableData {
 private:
-    uint64_t rowCount;
-    uint32_t colCount;
-    std::shared_ptr<TableData> source;
-    std::vector<uint64_t> rows;
-    SplittedTableData(std::shared_ptr<TableData> source, std::vector<uint64_t> offsets);
+    std::vector<std::shared_ptr<TableData>> sources;
+    ExtendedTableData(std::vector<std::shared_ptr<TableData>> tables);
 public:
     virtual uint64_t getRowCount() override;
     virtual uint32_t getColCount() override;
@@ -36,10 +30,8 @@ public:
     virtual std::string getValue(uint64_t row, uint32_t col) override;
     friend class TableDataFactory;
 };
-
 }
 
 
 
-
-#endif /* SPLITTEDTABLEDATA_H_ */
+#endif /* EXTENDEDTABLEDATA_H_ */

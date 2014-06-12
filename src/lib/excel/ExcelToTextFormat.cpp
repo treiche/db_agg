@@ -9,7 +9,7 @@
 #include "excel/ExcelToTextFormat.h"
 #include <log4cplus/logger.h>
 
-#include "table/CsvTableData.h"
+#include "table/TableDataFactory.h"
 #include "utils/utility.h"
 
 using namespace std;
@@ -80,9 +80,9 @@ map<string,shared_ptr<TableData>> ExcelToTextFormat::transform(string excelFile)
     		this->parseData(reader, &state);
     	});
     	LOG4CPLUS_TRACE(LOG, "data = \n" << state.data);
-    	CsvTableData *data = new CsvTableData(state.columns);
+    	shared_ptr<TableData> data = TableDataFactory::getInstance().create("text", state.columns);
     	data->appendRaw((void*)state.data.c_str(),state.data.size());
-    	result[sheet.second].reset(data);
+    	result[sheet.second] = data;
     }
     return result;
 }
@@ -223,6 +223,36 @@ void ExcelToTextFormat::parseEntry(std::string entry,std::function<void (xmlText
     } else {
         throw runtime_error("entry " + entry + " not found");
     }
+}
+
+
+vector<std::string> ExcelToTextFormat::getSheetNames(std::string excelFile) {
+    int error;
+    this->archive = zip_open(excelFile.c_str(),ZIP_CHECKCONS,&error);
+    if (this->archive==0) {
+        LOG4CPLUS_ERROR(LOG,"unable to open excel file " << excelFile);
+        throw runtime_error("unable to open archive");
+    }
+    vector<string> sheetNames;
+    parseEntry("xl/workbook.xml", [&] (xmlTextReaderPtr reader) {
+        int nodeType = xmlTextReaderNodeType(reader);
+        xmlChar* nodeName = xmlTextReaderName(reader);
+        if (nodeType == XML_READER_TYPE_ELEMENT) {
+            string elementName((const char*)nodeName);
+            if (elementName == "sheet") {
+                xmlTextReaderMoveToAttribute(reader,(xmlChar*)"name");
+                string sheetName = (const char*)xmlTextReaderValue(reader);
+                LOG4CPLUS_DEBUG(LOG,"sheetName = " << sheetName);
+                xmlTextReaderMoveToAttribute(reader,(xmlChar*)"sheetId");
+                string sheetId = (const char*)xmlTextReaderValue(reader);
+                LOG4CPLUS_DEBUG(LOG,"sheetId = " << sheetId);
+                LOG4CPLUS_TRACE(LOG, sheetId << " -> " << sheetName);
+                sheetNames.push_back(sheetName);
+            }
+        }
+    });
+    zip_close(this->archive);
+    return sheetNames;
 }
 
 }

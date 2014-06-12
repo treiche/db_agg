@@ -14,19 +14,19 @@ private:
     struct XImpl;
     struct QueryTask;
     XImpl* pImpl;
-    bool loop();
     bool processTask(int taskNo);
     void fireEvent(Event& event, int taskNo);
     void fireEvent(EventType type, int taskNo);
     void fireStateChangeEvent(int taskNo, std::string state);
     void cleanUp(int taskNo, std::string reason);
-    void cleanUp(std::string reason);
+    bool loop();
 public:
     AsyncQueryExecutor();
     ~AsyncQueryExecutor();
     void addQuery(std::string id, std::string connectionUrl, std::string query, ExecutionHandler *handler);
-    void process();
+    bool process();
     void stop();
+    void cleanUp(std::string reason);
 };
 
 class AsyncQueryExecutorException : public std::runtime_error {
