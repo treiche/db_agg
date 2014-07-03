@@ -12,10 +12,28 @@
 #include "TableData.h"
 
 namespace db_agg {
+
+class ColRef {
+private:
+    std::shared_ptr<TableData> table;
+    uint32_t colIdx;
+public:
+    ColRef(std::shared_ptr<TableData> table, uint32_t colIdx);
+    std::shared_ptr<TableData> getTable();
+    uint32_t getColIdx();
+};
+
 class ExtendedTableData: public TableData {
 private:
-    std::vector<std::shared_ptr<TableData>> sources;
+    std::vector<std::pair<std::string,uint32_t>> columns;
+    uint32_t colCount;
+    uint64_t rowCount;
+    std::vector<ColRef> colRefs;
+    std::vector<size_t> tableOffsets;
+    std::vector<uint32_t> columnOffsets;
     ExtendedTableData(std::vector<std::shared_ptr<TableData>> tables);
+    ExtendedTableData(std::vector<ColRef> columns);
+    void init(std::vector<ColRef> columns);
 public:
     virtual uint64_t getRowCount() override;
     virtual uint32_t getColCount() override;
