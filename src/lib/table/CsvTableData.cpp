@@ -296,8 +296,8 @@ namespace db_agg {
         pImpl->index.clear();
         pImpl->index.setRowCount(pImpl->rowCount);
         pImpl->index.setColCount(pImpl->colCount);
-        uint32_t ptr = 0;
-        uint32_t lastPtr = 0;
+        uint64_t ptr = 0;
+        uint64_t lastPtr = 0;
         while (ptr < pImpl->size) {
             if (pImpl->data[ptr] == '\t' || pImpl->data[ptr] == '\n') {
                 pImpl->index.addOffset(lastPtr);
@@ -309,7 +309,7 @@ namespace db_agg {
 
     void * CsvTableData::getRawRow(uint32_t row, uint32_t& size) {
         loadOnDemand("getRawRow");
-        uint32_t ptr = pImpl->index.getOffset(row,0);
+        uint64_t ptr = pImpl->index.getOffset(row,0);
         size = 0;
         char *rowData = pImpl->data + ptr;
         while (pImpl->data[ptr] != '\n' && ptr < pImpl->size) {
