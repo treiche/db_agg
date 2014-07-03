@@ -22,9 +22,6 @@ private:
     void calculateRelativeRow(uint64_t row, int& sourceIdx, uint64_t& relRow);
     JoinedTableData(std::vector<std::shared_ptr<TableData>> sources);
 public:
-    virtual void * getRaw() override;
-    virtual uint64_t getSize() override;
-    virtual void setRaw(void *data, uint64_t size) override;
     virtual void appendRaw(void *data, uint64_t size) override;
     virtual void *getRawRow(uint32_t row, uint32_t& size) override;
     virtual void save(std::string filePath) override;

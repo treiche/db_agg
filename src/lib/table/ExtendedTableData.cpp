@@ -55,17 +55,6 @@ void ExtendedTableData::init(vector<ColRef> colRefs) {
     setColumns(colDefs);
 }
 
-void * ExtendedTableData::getRaw() {
-    throw runtime_error("deprecated");
-}
-
-uint64_t ExtendedTableData::getSize() {
-    throw runtime_error("getSize not supported");
-}
-
-void ExtendedTableData::setRaw(void *data, uint64_t size) {
-    throw runtime_error("setRaw not supported");
-}
 
 void ExtendedTableData::appendRaw(void *data, uint64_t size) {
     throw runtime_error("appendRaw not supported");

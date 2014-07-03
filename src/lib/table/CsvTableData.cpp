@@ -23,21 +23,21 @@ namespace db_agg {
 
     CsvTableData::CsvTableData(vector<string> columns) {
         vector<ColDef> colDefs;
-    	for (string& column:columns) {
-    		vector<string> splitted;
-    		split(column,':',splitted);
-    		string colName = splitted[0];
-    		uint32_t colType = TEXT;
-    		if (splitted.size()==2) {
-    			string colTypeName = splitted[1];
-    			TypeInfo *ti = TypeRegistry::getInstance().getTypeInfo(colTypeName);
-    			if (ti!=nullptr) {
-    				colType = ti->oid;
-    			}
-    		}
-    		colDefs.push_back(make_pair(colName,colType));
-    	}
-    	setColumns(colDefs);
+        for (string& column:columns) {
+            vector<string> splitted;
+            split(column,':',splitted);
+            string colName = splitted[0];
+            uint32_t colType = TEXT;
+            if (splitted.size()==2) {
+                string colTypeName = splitted[1];
+                TypeInfo *ti = TypeRegistry::getInstance().getTypeInfo(colTypeName);
+                if (ti!=nullptr) {
+                    colType = ti->oid;
+                }
+            }
+            colDefs.push_back(make_pair(colName,colType));
+        }
+        setColumns(colDefs);
     }
 
     CsvTableData::CsvTableData(vector<pair<string,uint32_t>> columns) {
@@ -76,7 +76,7 @@ namespace db_agg {
         digest.update(cols.c_str(), cols.size());
         digest.update(data, size);
         digest.finalize();
-    	return digest.hexdigest();
+        return digest.hexdigest();
     }
 
     uint64_t CsvTableData::getRowCount() {
@@ -157,6 +157,8 @@ namespace db_agg {
         LOG4CPLUS_DEBUG(LOG, "load file " << fileName << " done");
     }
 
+    /*
+
     void *CsvTableData::getRaw() {
         loadOnDemand("getRaw");
         return data;
@@ -174,14 +176,20 @@ namespace db_agg {
         calculateRowCount();
         buildIndex();
     }
+    */
 
 
     void CsvTableData::appendRaw(void *raw, uint64_t rsize) {
         if (data==nullptr) {
-            setRaw(raw,rsize);
+            data = (char*)malloc(rsize);
+            this->size = rsize;
+            memcpy(data, raw, rsize);
+            calculateRowCount();
+            buildIndex();
             return;
+        } else {
+            data = (char*)realloc(data, size + rsize);
         }
-        data = (char*)realloc(data, size + rsize);
         memcpy(data + size, raw, rsize);
         for (uint64_t idx=0; idx < rsize; idx++) {
             char c = ((char*)data + size -1)[idx];
@@ -226,7 +234,7 @@ namespace db_agg {
                 LOG4CPLUS_WARN(LOG, "unknown type " + typeName + " for column " + name + ". treat as type TEXT ...");
                 typeId = TEXT;
             } else {
-            	typeId = ti->oid;
+                typeId = ti->oid;
             }
             LOG4CPLUS_DEBUG(LOG, "push column " << name << "[" << typeId << "]");
             //columns.push_back(pair<string,uint32_t>(name,typeId));

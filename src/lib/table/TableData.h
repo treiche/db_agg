@@ -24,9 +24,6 @@ public:
     virtual uint64_t getRowCount();
     virtual uint32_t getColCount();
     virtual std::vector<ColDef>& getColumns();
-    virtual void * getRaw() = 0;
-    virtual uint64_t getSize() = 0;
-    virtual void setRaw(void *data, uint64_t size) = 0;
     virtual void appendRaw(void *data, uint64_t size) = 0;
     virtual void *getRawRow(uint32_t row, uint32_t& size) = 0;
     virtual void save(std::string filePath) = 0;

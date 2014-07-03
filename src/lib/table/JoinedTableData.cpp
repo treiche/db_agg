@@ -32,16 +32,6 @@ JoinedTableData::JoinedTableData(std::vector<std::shared_ptr<TableData>> sources
     setRowCount(rowCount);
 }
 
-void * JoinedTableData::getRaw() {
-    throw runtime_error("deprecated");
-}
-uint64_t JoinedTableData::getSize() {
-    throw runtime_error("not supported");
-}
-void JoinedTableData::setRaw(void *data, uint64_t size) {
-    throw runtime_error("not supported");
-
-}
 void JoinedTableData::appendRaw(void *data, uint64_t size) {
     throw runtime_error("not supported");
 }

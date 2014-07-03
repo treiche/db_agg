@@ -24,16 +24,6 @@ SplittedTableData::SplittedTableData(shared_ptr<TableData> source, vector<uint64
     setRowCount(rows.size());
 }
 
-void * SplittedTableData::getRaw() {
-    throw runtime_error("deprecated");
-}
-uint64_t SplittedTableData::getSize() {
-    throw runtime_error("getSize not supported");
-}
-void SplittedTableData::setRaw(void *data, uint64_t size) {
-    throw runtime_error("setRaw not supported");
-
-}
 void SplittedTableData::appendRaw(void *data, uint64_t size) {
     throw runtime_error("appendRaw not supported");
 }
