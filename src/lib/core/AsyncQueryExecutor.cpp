@@ -265,7 +265,9 @@ bool AsyncQueryExecutor::processTask(int taskNo) {
                             }
                             LOG4CPLUS_TRACE(LOG, "get row " << (task->lastRowSent+1));
                             uint64_t rowsRead = 0;
-                            string data = task->handler->handleCopyIn(task->queryNo, task->lastRowSent + 1, rowsPerChunk, rowsRead);
+                            vector<DataChunk> chunks;
+                            task->handler->handleCopyIn(task->queryNo, task->lastRowSent + 1, rowsPerChunk, chunks, rowsRead);
+                            string data = DataChunk::contiguous(chunks);
                             LOG4CPLUS_TRACE(LOG, "data = " << data);
                             LOG4CPLUS_TRACE(LOG, "rowsRead = " << rowsRead);
                             LOG4CPLUS_TRACE(LOG, "lastRowSent = " << (task->lastRowSent+1));

@@ -157,28 +157,6 @@ namespace db_agg {
         LOG4CPLUS_DEBUG(LOG, "load file " << fileName << " done");
     }
 
-    /*
-
-    void *CsvTableData::getRaw() {
-        loadOnDemand("getRaw");
-        return data;
-    }
-
-    uint64_t CsvTableData::getSize() {
-        loadOnDemand("getSize");
-        return size;
-    }
-
-    void CsvTableData::setRaw(void *raw, uint64_t size) {
-        data = (char*)malloc(size);
-        this->size = size;
-        memcpy(data, raw, size);
-        calculateRowCount();
-        buildIndex();
-    }
-    */
-
-
     void CsvTableData::appendRaw(void *raw, uint64_t rsize) {
         if (data==nullptr) {
             data = (char*)malloc(rsize);
@@ -293,19 +271,17 @@ namespace db_agg {
         }
     }
 
-    void * CsvTableData::getRawRow(uint32_t row, uint32_t& rsize) {
-        loadOnDemand("getRawRow");
-        uint64_t ptr = index.getOffset(row,0);
-        rsize = 0;
-        char *rowData = data + ptr;
-        while (data[ptr] != '\n' && ptr < size) {
-            rsize++;
-            ptr++;
+    void CsvTableData::getRows(uint64_t startRow, uint64_t rows, std::vector<DataChunk>& chunks) {
+        assert(startRow + rows <= getRowCount());
+        loadOnDemand("getRows");
+        uint64_t startOffset = index.getOffset(startRow,0);
+        uint64_t endOffset = 0;
+        if (startRow + rows == getRowCount()) {
+            endOffset = size;
+        } else {
+            endOffset = index.getOffset(startRow + rows,0);
         }
-        if (data[ptr]=='\n') {
-            rsize++;
-        }
-        return rowData;
+        chunks.push_back(DataChunk(data + startOffset, endOffset - startOffset));
     }
 
     inline void CsvTableData::loadOnDemand(string reason) {
@@ -315,12 +291,13 @@ namespace db_agg {
         }
     }
 
-    string CsvTableData::getValue(uint64_t row, uint32_t col) {
-        int startIndex = index.getOffset(row,col);
+    DataChunk CsvTableData::getColumn(uint64_t row, uint32_t col) {
+        uint64_t startIndex = index.getOffset(row,col);
         int len = 0;
         while (data[startIndex+len] != '\n' && data[startIndex+len] != '\t' && startIndex+len < size) {
             len++;
         }
-        return string(data+startIndex,len);
+        return DataChunk(data+startIndex,len);
     }
+
 }

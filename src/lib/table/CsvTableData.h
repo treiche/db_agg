@@ -33,14 +33,11 @@ public:
     virtual uint64_t getRowCount() override;
     virtual uint32_t getColCount() override;
     virtual std::vector<ColDef>& getColumns() override;
-    //virtual void * getRaw() override;
-    //virtual uint64_t getSize() override;
-    //virtual void setRaw(void *data, uint64_t size) override;
     virtual void appendRaw(void *data, uint64_t size) override;
-    virtual void *getRawRow(uint32_t row, uint32_t& size) override;
+    virtual void getRows(uint64_t startRow, uint64_t rows, std::vector<DataChunk>& chunks) override;
     virtual void save(std::string filePath) override;
     virtual std::string calculateMD5Sum() override;
-    virtual std::string getValue(uint64_t row, uint32_t col) override;
+    virtual DataChunk getColumn(uint64_t row, uint32_t col) override;
     virtual void addRow(std::vector<std::string> row) override;
     friend class TableDataFactory;
 };

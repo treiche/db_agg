@@ -6,6 +6,9 @@
 #include <utility>
 #include <vector>
 
+#include "DataChunk.h"
+
+
 namespace db_agg {
 
 using ColDef = std::pair<std::string,uint32_t>;
@@ -25,14 +28,15 @@ public:
     virtual uint32_t getColCount();
     virtual std::vector<ColDef>& getColumns();
     virtual void appendRaw(void *data, uint64_t size) = 0;
-    virtual void *getRawRow(uint32_t row, uint32_t& size) = 0;
+    virtual void getRows(uint64_t startRow, uint64_t rows, std::vector<DataChunk>& chunks) = 0;
     virtual void save(std::string filePath) = 0;
     virtual std::string calculateMD5Sum() = 0;
     virtual std::string toSqlValues();
     virtual std::string toColumnDefinitions();
-    virtual std::string getValue(uint64_t row, uint32_t col) = 0;
+    virtual DataChunk getColumn(uint64_t row, uint32_t col) = 0;
     virtual void addRow(std::vector<std::string> row);
     uint32_t getColumnIndex(std::string colName);
+    std::string getValue(uint64_t row, uint32_t col);
 };
 }
 

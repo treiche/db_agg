@@ -24,32 +24,18 @@ namespace db_agg {
         queryExecutor.addEventListener(this);
     }
 
-    /*
-    PGQueryExecution::PGQueryExecution(string name, string id, shared_ptr<Url> url, string sql, vector<string> depName, DependencyInjector *dependencyInjector):
-            QueryExecution(name,id,url,sql,depName,dependencyInjector) {
-        queryExecutor.addEventListener(this);
-    }
-    */
-
-
     uint64_t PGQueryExecution::getRowCount(size_t stepNo) {
         ExecutionStep& step = getInjector()->getStep(stepNo);
         return step.getDependency()->getRowCount();
     }
 
-
-    string PGQueryExecution::handleCopyIn(size_t stepNo, uint64_t startRow, uint64_t rows, uint64_t& rowsRead) {
+    void PGQueryExecution::handleCopyIn(size_t stepNo, uint64_t startRow, uint64_t rows, vector<DataChunk> chunks, uint64_t& rowsRead) {
         ExecutionStep& step = getInjector()->getStep(stepNo);
-        uint32_t size;
         uint64_t rowCount = step.getDependency()->getRowCount();
-        string data;
-        rowsRead = 0;
-        for (uint64_t row = startRow; (row < rowCount) && (rowsRead < rows); row++) {
-            void *rawRow = step.getDependency()->getRawRow(row,size);
-            data.append((char*)rawRow, size);
-            rowsRead++;
+        if (startRow + rows > rowCount) {
+            rowsRead = rowCount - startRow;
         }
-        return data;
+        step.getDependency()->getRows(startRow, rowsRead, chunks);
     }
 
     void PGQueryExecution::handleCopyOut(size_t stepNo,string _data) {
@@ -75,7 +61,6 @@ namespace db_agg {
     }
 
     void PGQueryExecution::schedule() {
-        // queryExecutor->addQuery(result->getId(), result->getConnectionUrl().getUrl(true,false,true), sql, eh);
         string injectedSql = this->inject(getSql(), 0);
         queryExecutor.addQuery(getId(),toPostgresUrl(getUrl()), injectedSql, this);
         setScheduled();

@@ -52,6 +52,9 @@ shared_ptr<TableData> TableDataFactory::extend(vector<shared_ptr<TableData>> tab
     return shared_ptr<TableData>(new ExtendedTableData(tables));
 }
 
+shared_ptr<TableData> TableDataFactory::extend(vector<ColRef> colRefs) {
+    return shared_ptr<TableData>(new ExtendedTableData(colRefs));
+}
 
 }
 

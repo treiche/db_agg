@@ -10,18 +10,9 @@
 
 #include <memory>
 #include "TableData.h"
+#include "ColRef.h"
 
 namespace db_agg {
-
-class ColRef {
-private:
-    std::shared_ptr<TableData> table;
-    uint32_t colIdx;
-public:
-    ColRef(std::shared_ptr<TableData> table, uint32_t colIdx);
-    std::shared_ptr<TableData> getTable();
-    uint32_t getColIdx();
-};
 
 class ExtendedTableData: public TableData {
 private:
@@ -33,10 +24,10 @@ private:
     void init(std::vector<ColRef> columns);
 public:
     virtual void appendRaw(void *data, uint64_t size) override;
-    virtual void *getRawRow(uint32_t row, uint32_t& size) override;
+    virtual void getRows(uint64_t startRow, uint64_t rows, std::vector<DataChunk>& chunks) override;
     virtual void save(std::string filePath) override;
     virtual std::string calculateMD5Sum() override;
-    virtual std::string getValue(uint64_t row, uint32_t col) override;
+    virtual DataChunk getColumn(uint64_t row, uint32_t col) override;
     friend class TableDataFactory;
 };
 }

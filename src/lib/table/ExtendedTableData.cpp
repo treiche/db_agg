@@ -13,20 +13,6 @@ using namespace std;
 
 namespace db_agg {
 
-ColRef::ColRef(std::shared_ptr<TableData> table, uint32_t colIdx):
-        table(table),
-        colIdx(colIdx) {}
-
-
-shared_ptr<TableData> ColRef::getTable() {
-    return table;
-}
-
-uint32_t ColRef::getColIdx() {
-    return colIdx;
-}
-
-
 ExtendedTableData::ExtendedTableData(vector<shared_ptr<TableData>> tables) {
     vector<ColRef> refs;
     for (auto& table:tables) {
@@ -60,22 +46,20 @@ void ExtendedTableData::appendRaw(void *data, uint64_t size) {
     throw runtime_error("appendRaw not supported");
 }
 
-void *ExtendedTableData::getRawRow(uint32_t row, uint32_t& size) {
-    // throw runtime_error("getRawRow not supported");
-    /*
-    string raw;
-    Data chunks;
-    for (auto& source:sources) {
-        uint32_t len;
-        char *p = (char*)source->getRawRow(row,len);
-        chunks.addChunk(p,len);
-        size += len;
+void ExtendedTableData::getRows(uint64_t startRow, uint64_t rows, std::vector<DataChunk>& chunks) {
+    DataChunk delimiter((char*)"\t",1);
+    DataChunk eol((char*)"\n",1);
+    for (uint64_t row = startRow; row < startRow + rows; row++) {
+        for (uint32_t col = 0; col < getColCount(); col++) {
+            chunks.push_back(getColumn(row,col));
+            if (col < getColCount() - 1) {
+                chunks.push_back(delimiter);
+            }
+        }
+        chunks.push_back(eol);
     }
-    Data normalized;
-    chunks.range(0,chunks.size(),normalized);
-    return (void*)normalized.getPtr();
-    */
 }
+
 
 void ExtendedTableData::save(string filePath) {
     throw runtime_error("save not supported");
@@ -85,8 +69,8 @@ string ExtendedTableData::calculateMD5Sum() {
     throw runtime_error("calculateMD5Sum not supported");
 }
 
-string ExtendedTableData::getValue(uint64_t row, uint32_t col) {
-    return colRefs[col].getTable()->getValue(row,colRefs[col].getColIdx());
+DataChunk ExtendedTableData::getColumn(uint64_t row, uint32_t col) {
+    return colRefs[col].getTable()->getColumn(row,colRefs[col].getColIdx());
 }
 
 

@@ -45,6 +45,10 @@ vector<ColDef>& TableData::getColumns() {
     return columns;
 }
 
+string TableData::getValue(uint64_t row, uint32_t col) {
+    DataChunk chunk = getColumn(row,col);
+    return string(chunk.getPtr(),chunk.getSize());
+}
 
 string TableData::toSqlValues() {
     string values;

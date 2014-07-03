@@ -11,6 +11,8 @@
 #include <memory>
 
 #include "TableData.h"
+#include "ColRef.h"
+
 
 namespace db_agg {
 class TableDataFactory {
@@ -25,6 +27,7 @@ public:
     std::shared_ptr<TableData> join(std::vector<std::shared_ptr<TableData>> sources);
     std::shared_ptr<TableData> split(std::shared_ptr<TableData> source, std::vector<uint64_t> offsets);
     std::shared_ptr<TableData> extend(std::vector<std::shared_ptr<TableData>> tables);
+    std::shared_ptr<TableData> extend(std::vector<ColRef> colRefs);
 };
 }
 
