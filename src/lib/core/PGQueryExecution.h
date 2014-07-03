@@ -23,7 +23,7 @@ private:
 public:
     // ExecutionHandler
     PGQueryExecution();
-    virtual void handleCopyIn(size_t step, uint64_t startRows, uint64_t rows, std::vector<DataChunk> chunks, uint64_t& rowsRead) override;
+    virtual void handleCopyIn(size_t step, uint64_t startRows, uint64_t rows, std::vector<DataChunk>& chunks, uint64_t& rowsRead) override;
     virtual uint64_t getRowCount(size_t step) override;
     virtual void handleCopyOut(size_t step, std::string data) override;
     virtual void handleTuples(size_t step, std::vector<std::pair<std::string, uint32_t>>& columns) override;

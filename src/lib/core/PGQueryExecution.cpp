@@ -29,7 +29,7 @@ namespace db_agg {
         return step.getDependency()->getRowCount();
     }
 
-    void PGQueryExecution::handleCopyIn(size_t stepNo, uint64_t startRow, uint64_t rows, vector<DataChunk> chunks, uint64_t& rowsRead) {
+    void PGQueryExecution::handleCopyIn(size_t stepNo, uint64_t startRow, uint64_t rows, vector<DataChunk>& chunks, uint64_t& rowsRead) {
         ExecutionStep& step = getInjector()->getStep(stepNo);
         uint64_t rowCount = step.getDependency()->getRowCount();
         if (startRow + rows > rowCount) {
