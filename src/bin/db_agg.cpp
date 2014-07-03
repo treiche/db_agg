@@ -33,7 +33,6 @@ void initLogging(std::string logConf) {
 }
 
 void initLogging(std::string logFile, std::string logLevel) {
-	cout << "init logging 1" << endl;
     SharedObjectPtr<Appender> append_1(new FileAppender(logFile));
     append_1->setName(LOG4CPLUS_TEXT("A1"));
     tstring pattern = LOG4CPLUS_TEXT("%-5p [%-30l] %m%n");
@@ -56,6 +55,17 @@ void initLogging(std::string logFile, std::string logLevel) {
     }
 }
 
+void disableConsoleLogging() {
+    SharedAppenderPtrList appenders = Logger::getRoot().getAllAppenders();
+    ConsoleAppender *ca = nullptr;
+    for (auto appender:appenders) {
+        ConsoleAppender *ca = dynamic_cast<ConsoleAppender*>(appender.get());
+        if (ca != nullptr) {
+            Logger::getRoot().removeAppender(appender);
+        }
+    }
+}
+
 void cancel(int param) {
     LOG4CPLUS_DEBUG(LOG, "cancel db_agg");
     GlobalSignalHandler::getInstance().handleSignal(param);
@@ -63,8 +73,8 @@ void cancel(int param) {
 
 
 int main(int argc, char **argv) {
-    string defaultLogConfig = DBAGG_PREFIX;
-    defaultLogConfig += "/etc/log4cplus.properties";
+    string defaultLogConfig = DBAGG_SYSCONFDIR;
+    defaultLogConfig += "/log4cplus.properties";
     initLogging(defaultLogConfig);
     Configuration config;
     db_agg::db_agg_parser parser;
@@ -80,6 +90,7 @@ int main(int argc, char **argv) {
     app.bootstrap(config);
     CursesListener *cl = nullptr;
     if (config.getShowProgress()) {
+        disableConsoleLogging();
         cl = new CursesListener(app);
         app.addEventListener(cl);
     }
