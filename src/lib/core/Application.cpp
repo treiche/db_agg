@@ -138,7 +138,7 @@ void Application::bootstrap(Configuration& config) {
 static string getSysConfigDir() {
     Template t{"${","}"};
     t.set("prefix",DBAGG_PREFIX);
-    return t.render(DBAGG_SYSCONFIGDIR);
+    return t.render(DBAGG_SYSCONFDIR);
 }
 
 static string getLocalStateDir() {
