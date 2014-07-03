@@ -1,6 +1,6 @@
 CXX=@CXX@
 INCLUDES=-Isrc -Isrc/lib -Isrc/bin -Isrc/lib/core @INCLUDES@
-CXXFLAGS=@CXXFLAGS@ -c $(INCLUDES) -fPIC -rdynamic
+CXXFLAGS=@CXXFLAGS@ -Wall -Wconversion -c $(INCLUDES) -fPIC -rdynamic
 
 LIBS=@LIBS@
 LDFLAGS=$(LIBS)
@@ -70,9 +70,9 @@ install:
 	@@INSTALL@ -d $(DESTDIR)@libdir@
 	libtool --mode=install install -c build/lib/libdb_agg.a $(DESTDIR)@libdir@/libdb_agg.a
 	ranlib $(DESTDIR)@libdir@/libdb_agg.a
-	libtool --mode=install install -c build/lib/libdb_agg.so $(DESTDIR)@libdir@/libdb_agg.so
+	libtool --mode=install install -c build/lib/libdb_agg.so $(DESTDIR)@libdir@/libdb_agg.so.@PACKAGE_VERSION@
 	@INSTALL@ -d $(DESTDIR)@includedir@/db_agg
-	@INSTALL@ -t $(DESTDIR)@includedir@/db_agg/ src/db_agg.h src/installation.h
+	@INSTALL@ -t $(DESTDIR)@includedir@/db_agg/ src/lib/db_agg.h src/installation.h
 	for dir in `ls -d src/lib/*` ; do \
 		bn=`basename $$dir`; \
 		@INSTALL@ -d $(DESTDIR)@includedir@/db_agg/$$bn ; \
