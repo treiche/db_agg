@@ -18,27 +18,18 @@ static Logger LOG = Logger::getInstance(LOG4CPLUS_TEXT("JoinedTableData"));
 
 JoinedTableData::JoinedTableData(std::vector<std::shared_ptr<TableData>> sources) {
     assert(!sources.empty());
-    rowCount = 0;
-    colCount = sources[0]->getColCount();
+    uint64_t rowCount = 0;
+    uint32_t colCount = sources[0]->getColCount();
     offsets.push_back(0);
-    for (int idx=0;idx<sources.size();idx++) {
+    for (size_t idx = 0; idx < sources.size(); idx++) {
         auto& source = sources[idx];
         rowCount += source->getRowCount();
         offsets.push_back(rowCount);
         assert(source->getColCount()==colCount);
     }
     this->sources = sources;
-}
-
-uint64_t JoinedTableData::getRowCount() {
-    return rowCount;
-}
-uint32_t JoinedTableData::getColCount() {
-    return colCount;
-}
-
-vector<pair<string,uint32_t>> JoinedTableData::getColumns() {
-    return sources[0]->getColumns();
+    setColumns(sources[0]->getColumns());
+    setRowCount(rowCount);
 }
 
 void * JoinedTableData::getRaw() {

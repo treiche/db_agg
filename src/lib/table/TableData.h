@@ -8,12 +8,22 @@
 
 namespace db_agg {
 
+using ColDef = std::pair<std::string,uint32_t>;
+
 class TableData {
+private:
+    uint64_t rowCount = 0;
+    uint32_t colCount = 0;
+    std::vector<ColDef> columns;
+protected:
+    void setRowCount(uint64_t rowCount);
+    void setColumns(std::vector<ColDef> columns);
+    TableData();
 public:
     virtual ~TableData() {};
-    virtual uint64_t getRowCount() = 0;
-    virtual uint32_t getColCount() = 0;
-    virtual std::vector<std::pair<std::string,uint32_t>> getColumns() = 0;
+    virtual uint64_t getRowCount();
+    virtual uint32_t getColCount();
+    virtual std::vector<ColDef>& getColumns();
     virtual void * getRaw() = 0;
     virtual uint64_t getSize() = 0;
     virtual void setRaw(void *data, uint64_t size) = 0;

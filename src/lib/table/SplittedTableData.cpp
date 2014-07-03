@@ -18,20 +18,10 @@ static Logger LOG = Logger::getInstance(LOG4CPLUS_TEXT("SplittedTableData"));
 
 SplittedTableData::SplittedTableData(shared_ptr<TableData> source, vector<uint64_t> rows) {
     this->source = source;
-    this->colCount = source->getColCount();
+    //this->colCount = source->getColCount();
+    setColumns(source->getColumns());
     this->rows = rows;
-    this->rowCount = rows.size();
-}
-
-uint64_t SplittedTableData::getRowCount() {
-    return rowCount;
-}
-uint32_t SplittedTableData::getColCount() {
-    return colCount;
-}
-
-vector<pair<string,uint32_t>> SplittedTableData::getColumns() {
-    return source->getColumns();
+    setRowCount(rows.size());
 }
 
 void * SplittedTableData::getRaw() {

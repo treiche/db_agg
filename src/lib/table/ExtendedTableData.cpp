@@ -44,26 +44,15 @@ ExtendedTableData::ExtendedTableData(vector<ColRef> columns) {
 void ExtendedTableData::init(vector<ColRef> colRefs) {
     assert(colRefs.size() > 0);
     this->colRefs = colRefs;
-    colCount = static_cast<uint32_t>(colRefs.size());
-    rowCount = colRefs[0].getTable()->getRowCount();
+    setRowCount(colRefs[0].getTable()->getRowCount());
+    vector<ColDef> colDefs;
     for (auto& colRef:colRefs) {
-        if (colRef.getTable()->getRowCount() != rowCount) {
+        if (colRef.getTable()->getRowCount() != getRowCount()) {
             throw runtime_error("tables need same row count to be extendable");
         }
-        columns.push_back(colRef.getTable()->getColumns()[colRef.getColIdx()]);
+        colDefs.push_back(colRef.getTable()->getColumns()[colRef.getColIdx()]);
     }
-}
-
-uint64_t ExtendedTableData::getRowCount() {
-    return rowCount;
-}
-
-uint32_t ExtendedTableData::getColCount() {
-    return colCount;
-}
-
-vector<pair<string,uint32_t>> ExtendedTableData::getColumns() {
-    return columns;
+    setColumns(colDefs);
 }
 
 void * ExtendedTableData::getRaw() {
@@ -108,7 +97,6 @@ string ExtendedTableData::calculateMD5Sum() {
 }
 
 string ExtendedTableData::getValue(uint64_t row, uint32_t col) {
-//    throw runtime_error("getValue not supported");
     return colRefs[col].getTable()->getValue(row,colRefs[col].getColIdx());
 }
 

@@ -21,30 +21,8 @@ using namespace log4cplus;
 namespace db_agg {
     static Logger LOG = Logger::getInstance(LOG4CPLUS_TEXT("CsvTableData"));
 
-    struct CsvTableData::XImpl {
-        vector<pair<string,uint32_t>> columns;
-        char *data = nullptr;
-        uint64_t size = 0;
-        uint32_t currentColumn = 0;
-        uint64_t currentRow = 0;
-        size_t rowCount = 0;
-        size_t colCount = 0;
-        uint64_t ptr;
-        //vector<int> index;
-        TableIndex index;
-        string fileName;
-    };
-
-    CsvTableData::CsvTableData(void *data, uint64_t size) {
-        pImpl = new XImpl();
-        pImpl->data = (char*)malloc(size);
-        memcpy(data,pImpl->data,size);
-        pImpl->size = size;
-    }
-
     CsvTableData::CsvTableData(vector<string> columns) {
-        pImpl = new XImpl();
-        pImpl->colCount = columns.size();
+        vector<ColDef> colDefs;
     	for (string& column:columns) {
     		vector<string> splitted;
     		split(column,':',splitted);
@@ -57,80 +35,75 @@ namespace db_agg {
     				colType = ti->oid;
     			}
     		}
-    		pImpl->columns.push_back(make_pair(colName,colType));
+    		colDefs.push_back(make_pair(colName,colType));
     	}
+    	setColumns(colDefs);
     }
 
     CsvTableData::CsvTableData(vector<pair<string,uint32_t>> columns) {
-        pImpl = new XImpl();
-        pImpl->columns = columns;
-        pImpl->colCount = columns.size();
+        setColumns(columns);
     }
 
     CsvTableData::CsvTableData(string csvFile, vector<pair<string,uint32_t>> columns) {
-        pImpl = new XImpl();
-        pImpl->columns = columns;
-        pImpl->colCount = columns.size();
-        pImpl->data = nullptr;
-        pImpl->fileName = csvFile;
+        setColumns(columns);
+        fileName = csvFile;
     }
 
     CsvTableData::CsvTableData(string csvFile) {
-        pImpl = new XImpl();
-        pImpl->fileName = csvFile;
+        fileName = csvFile;
     }
 
     CsvTableData::~CsvTableData() {
-        LOG4CPLUS_DEBUG(LOG, "delete table data '" << pImpl->fileName << "'");
-        if (pImpl->data) {
-            free(pImpl->data);
+        LOG4CPLUS_DEBUG(LOG, "delete table data '" << fileName << "'");
+        if (data) {
+            free(data);
         }
-        delete pImpl;
     }
 
     string CsvTableData::calculateMD5Sum() {
         loadOnDemand("calculateMD5Sum");
         MD5 digest;
         string cols;
-        for (int idx = 0;idx < pImpl->columns.size(); idx++) {
-            pair<string,uint32_t> column = pImpl->columns[idx];
+        for (int idx = 0;idx < getColCount(); idx++) {
+            pair<string,uint32_t> column = getColumns()[idx];
             TypeInfo *ti = TypeRegistry::getInstance().getTypeInfo(column.second);
             cols += column.first + ":" + ti->name;
-            if (idx < pImpl->columns.size() -1) {
+            if (idx < getColCount() -1) {
                 cols += "\t";
             }
         }
         cols += "\n";
         digest.update(cols.c_str(), cols.size());
-        digest.update(pImpl->data, pImpl->size);
+        digest.update(data, size);
         digest.finalize();
     	return digest.hexdigest();
     }
 
     uint64_t CsvTableData::getRowCount() {
         loadOnDemand("getRowCount");
-        return pImpl->rowCount;
-    }
-    uint32_t CsvTableData::getColCount() {
-        if (pImpl->data == nullptr && !pImpl->fileName.empty() && pImpl->columns.empty()) {
-            loadColumns();
-        }
-        return pImpl->columns.size();
+        return TableData::getRowCount();
     }
 
-    vector<pair<string,uint32_t>> CsvTableData::getColumns() {
-        if (pImpl->data == nullptr && !pImpl->fileName.empty() && pImpl->columns.empty()) {
+    uint32_t CsvTableData::getColCount() {
+        if (data == nullptr && !fileName.empty() && getColumns().empty()) {
             loadColumns();
         }
-        return pImpl->columns;
+        return TableData::getColCount();
+    }
+
+    vector<ColDef>& CsvTableData::getColumns() {
+        if (data == nullptr && !fileName.empty() && TableData::getColumns().empty()) {
+            loadColumns();
+        }
+        return TableData::getColumns();
     }
 
     void CsvTableData::loadColumns() {
-        LOG4CPLUS_DEBUG(LOG, "read columns from file '" << pImpl->fileName << "'");
-        ifstream is{pImpl->fileName,ios::in | ios::binary | ios::ate};
+        LOG4CPLUS_DEBUG(LOG, "read columns from file '" << fileName << "'");
+        ifstream is{fileName,ios::in | ios::binary | ios::ate};
         if (is.is_open()) {
             LOG4CPLUS_DEBUG(LOG, "size of file " << is.tellg());
-            pImpl->size = is.tellg();
+            size = is.tellg();
             is.seekg(0, ios::beg);
             string firstLine;
             getline(is,firstLine,'\n');
@@ -140,17 +113,17 @@ namespace db_agg {
             readColumns(firstLine);
             is.close();
         } else {
-            throw runtime_error("unable to open file '" + pImpl->fileName + "'");
+            throw runtime_error("unable to open file '" + fileName + "'");
         }
     }
 
     void CsvTableData::readData() {
-        LOG4CPLUS_DEBUG(LOG, "load file " << pImpl->fileName);
-        LOG4CPLUS_DEBUG(LOG, "read data from file '" << pImpl->fileName << "'");
-        ifstream is{pImpl->fileName,ios::in | ios::binary | ios::ate};
+        LOG4CPLUS_DEBUG(LOG, "load file " << fileName);
+        LOG4CPLUS_DEBUG(LOG, "read data from file '" << fileName << "'");
+        ifstream is{fileName,ios::in | ios::binary | ios::ate};
         if (is.is_open()) {
             LOG4CPLUS_DEBUG(LOG, "size of file " << is.tellg());
-            pImpl->size = is.tellg();
+            size = is.tellg();
             is.seekg(0, ios::beg);
             string firstLine;
             getline(is,firstLine,'\n');
@@ -158,80 +131,82 @@ namespace db_agg {
                 LOG4CPLUS_ERROR(LOG, "failed getting first line. probably long line header");
             }
             readColumns(firstLine);
-            pImpl->size -= is.tellg();
+            size -= is.tellg();
             LOG4CPLUS_DEBUG(LOG, "offset after first line " << is.tellg());
-            pImpl->data = (char*)malloc(pImpl->size);
-            is.read(pImpl->data, pImpl->size);
+            data = (char*)malloc(size);
+            is.read(data, size);
             is.close();
         } else {
-            throw runtime_error("unable to open file '" + pImpl->fileName + "'");
+            throw runtime_error("unable to open file '" + fileName + "'");
         }
-        pImpl->ptr = 0;
-        pImpl->currentRow = 0;
-        pImpl->currentColumn = 0;
+        ptr = 0;
+        currentRow = 0;
+        currentColumn = 0;
         LOG4CPLUS_TRACE(LOG, "calculate row count");
-        File indexFile{pImpl->fileName + ".idx"};
+        File indexFile{fileName + ".idx"};
         if (indexFile.exists()) {
-            pImpl->index.load(indexFile.abspath());
-            assert(pImpl->colCount == pImpl->index.getColCount());
-            pImpl->rowCount = pImpl->index.getRowCount();
+            index.load(indexFile.abspath());
+            assert(getColCount() == index.getColCount());
+            setRowCount(index.getRowCount());
         } else {
             calculateRowCount();
             LOG4CPLUS_TRACE(LOG, "build index");
             buildIndex();
         }
         LOG4CPLUS_TRACE(LOG, "loading file done");
-        LOG4CPLUS_DEBUG(LOG, "load file " << pImpl->fileName << " done");
+        LOG4CPLUS_DEBUG(LOG, "load file " << fileName << " done");
     }
 
     void *CsvTableData::getRaw() {
         loadOnDemand("getRaw");
-        return pImpl->data;
+        return data;
     }
 
     uint64_t CsvTableData::getSize() {
         loadOnDemand("getSize");
-        return pImpl->size;
+        return size;
     }
 
-    void CsvTableData::setRaw(void *data, uint64_t size) {
-        pImpl->data = (char*)malloc(size);
-        pImpl->size = size;
-        memcpy(pImpl->data, data, size);
+    void CsvTableData::setRaw(void *raw, uint64_t size) {
+        data = (char*)malloc(size);
+        this->size = size;
+        memcpy(data, raw, size);
         calculateRowCount();
         buildIndex();
     }
 
-    void CsvTableData::appendRaw(void *data, uint64_t size) {
-        if (pImpl->data==nullptr) {
-            setRaw(data,size);
+
+    void CsvTableData::appendRaw(void *raw, uint64_t rsize) {
+        if (data==nullptr) {
+            setRaw(raw,rsize);
             return;
         }
-        pImpl->data = (char*)realloc(pImpl->data, pImpl->size + size);
-        memcpy(pImpl->data + pImpl->size, data, size);
-        for (uint64_t idx=0; idx < size; idx++) {
-            char c = ((char*)pImpl->data + pImpl->size -1)[idx];
+        data = (char*)realloc(data, size + rsize);
+        memcpy(data + size, raw, rsize);
+        for (uint64_t idx=0; idx < rsize; idx++) {
+            char c = ((char*)data + size -1)[idx];
             if (c == '\t' || c == '\n') {
-                pImpl->index.addOffset(pImpl->size + idx);
+                index.addOffset(size + idx);
             }
             if (c == '\n') {
-                pImpl->rowCount++;
-                pImpl->index.setRowCount(pImpl->rowCount);
+                setRowCount(getRowCount() + 1);
+                index.setRowCount(getRowCount());
             }
         }
-        pImpl->size += size;
+        size += rsize;
     }
 
     void CsvTableData::addRow(std::vector<std::string> row) {
-        assert(row.size() == pImpl->colCount);
+        assert(row.size() == getColCount());
         string joined = join(row,"\t") + "\n";
         appendRaw((void*)joined.c_str(),joined.size());
     }
 
     void CsvTableData::readColumns(string firstLine) {
-        pImpl->columns.clear();
+        TableData::getColumns().clear();
         LOG4CPLUS_DEBUG(LOG, "firstLine = " << firstLine);
         vector<string> cols;
+        vector<ColDef> colDefs;
         split(firstLine,'\t',cols);
         for (string col:cols) {
             vector<string> nt;
@@ -254,87 +229,90 @@ namespace db_agg {
             	typeId = ti->oid;
             }
             LOG4CPLUS_DEBUG(LOG, "push column " << name << "[" << typeId << "]");
-            pImpl->columns.push_back(pair<string,uint32_t>(name,typeId));
+            //columns.push_back(pair<string,uint32_t>(name,typeId));
+            colDefs.push_back(ColDef(name,typeId));
         }
-        LOG4CPLUS_DEBUG(LOG, "found " << pImpl->columns.size() << " columns");
-        pImpl->colCount = pImpl->columns.size();
+        LOG4CPLUS_DEBUG(LOG, "found " << colDefs.size() << " columns");
+        //colCount = columns.size();
+        setColumns(colDefs);
     }
 
     void CsvTableData::calculateRowCount() {
-        pImpl->rowCount = 0;
-        for (uint32_t ptr = 0; ptr<pImpl->size;ptr++) {
-            if (pImpl->data[ptr] == '\n') {
-                pImpl->rowCount++;
+        uint64_t rowCount = 0;
+        for (uint32_t ptr = 0; ptr<size;ptr++) {
+            if (data[ptr] == '\n') {
+                rowCount++;
             }
         }
+        setRowCount(rowCount);
     }
 
     void CsvTableData::save(std::string filePath) {
         LOG4CPLUS_DEBUG(LOG, "save data in file " + filePath);
         ofstream os{filePath};
-        for (size_t idx = 0; idx < pImpl->columns.size(); idx++) {
-            pair<string,uint32_t> p = pImpl->columns[idx];
+        for (size_t idx = 0; idx < getColCount(); idx++) {
+            pair<string,uint32_t> p = getColumns()[idx];
             TypeInfo *ti =  TypeRegistry::getInstance().getTypeInfo((long int)p.second);
             if (ti == nullptr) {
                 LOG4CPLUS_WARN(LOG, "unknown type id '" << p.second << "' for columns '" << p.first << "'. assuming text");
                 ti =  TypeRegistry::getInstance().getTypeInfo(TEXT);
             }
             os << p.first << ":" << ti->name;
-            if (idx<pImpl->columns.size()-1) {
+            if (idx < getColCount() - 1) {
                 os << "\t";
             }
         }
         os << endl;
-        os.write(pImpl->data, pImpl->size);
+        os.write(data, size);
         os.close();
-        pImpl->index.setRowCount(pImpl->rowCount);
-        pImpl->index.setColCount(pImpl->colCount);
-        pImpl->index.save(filePath+".idx");
+        index.setRowCount(getRowCount());
+        index.setColCount(getColCount());
+        index.save(filePath+".idx");
     }
 
     void CsvTableData::buildIndex() {
-        pImpl->index.clear();
-        pImpl->index.setRowCount(pImpl->rowCount);
-        pImpl->index.setColCount(pImpl->colCount);
+        index.clear();
+        index.setRowCount(getRowCount());
+        index.setColCount(getColCount());
         uint64_t ptr = 0;
         uint64_t lastPtr = 0;
-        while (ptr < pImpl->size) {
-            if (pImpl->data[ptr] == '\t' || pImpl->data[ptr] == '\n') {
-                pImpl->index.addOffset(lastPtr);
+        while (ptr < size) {
+            if (data[ptr] == '\t' || data[ptr] == '\n') {
+                index.addOffset(lastPtr);
                 lastPtr = ptr + 1;
             }
             ptr++;
         }
     }
 
-    void * CsvTableData::getRawRow(uint32_t row, uint32_t& size) {
+    void * CsvTableData::getRawRow(uint32_t row, uint32_t& rsize) {
         loadOnDemand("getRawRow");
-        uint64_t ptr = pImpl->index.getOffset(row,0);
-        size = 0;
-        char *rowData = pImpl->data + ptr;
-        while (pImpl->data[ptr] != '\n' && ptr < pImpl->size) {
-            size++;
+        uint64_t ptr = index.getOffset(row,0);
+        rsize = 0;
+        char *rowData = data + ptr;
+        while (data[ptr] != '\n' && ptr < size) {
+            rsize++;
             ptr++;
         }
-        if (pImpl->data[ptr]=='\n') {
-            size++;
+        if (data[ptr]=='\n') {
+            rsize++;
         }
         return rowData;
     }
 
     inline void CsvTableData::loadOnDemand(string reason) {
-        if (pImpl->data == nullptr && !pImpl->fileName.empty()) {
+        if (data == nullptr && !fileName.empty()) {
             LOG4CPLUS_DEBUG(LOG, "load on demand -> " << reason);
             readData();
         }
     }
 
     string CsvTableData::getValue(uint64_t row, uint32_t col) {
-        int startIndex = pImpl->index.getOffset(row,col);
+        int startIndex = index.getOffset(row,col);
         int len = 0;
-        while (pImpl->data[startIndex+len] != '\n' && pImpl->data[startIndex+len] != '\t' && startIndex+len < pImpl->size) {
+        while (data[startIndex+len] != '\n' && data[startIndex+len] != '\t' && startIndex+len < size) {
             len++;
         }
-        return string(pImpl->data+startIndex,len);
+        return string(data+startIndex,len);
     }
 }

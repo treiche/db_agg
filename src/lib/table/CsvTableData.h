@@ -6,12 +6,18 @@
 #include <vector>
 
 #include "TableData.h"
+#include "TableIndex.h"
 
 namespace db_agg {
 class CsvTableData : public TableData {
 private:
-    struct XImpl;
-    XImpl *pImpl;
+    char *data = nullptr;
+    uint64_t size = 0;
+    uint32_t currentColumn = 0;
+    uint64_t currentRow = 0;
+    uint64_t ptr = 0;
+    TableIndex index;
+    std::string fileName;
     void readData();
     void loadColumns();
     void readColumns(std::string firstLine);
@@ -22,12 +28,11 @@ private:
     CsvTableData(std::string csvFile, std::vector<std::pair<std::string,uint32_t>> columns);
     CsvTableData(std::vector<std::string> columns);
     CsvTableData(std::vector<std::pair<std::string,uint32_t>> columns);
-    CsvTableData(void *data, uint64_t size);
 public:
     virtual ~CsvTableData() override;
     virtual uint64_t getRowCount() override;
     virtual uint32_t getColCount() override;
-    virtual std::vector<std::pair<std::string,uint32_t>> getColumns() override;
+    virtual std::vector<ColDef>& getColumns() override;
     virtual void * getRaw() override;
     virtual uint64_t getSize() override;
     virtual void setRaw(void *data, uint64_t size) override;

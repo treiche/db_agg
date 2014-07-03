@@ -25,9 +25,6 @@ public:
 
 class ExtendedTableData: public TableData {
 private:
-    std::vector<std::pair<std::string,uint32_t>> columns;
-    uint32_t colCount;
-    uint64_t rowCount;
     std::vector<ColRef> colRefs;
     std::vector<size_t> tableOffsets;
     std::vector<uint32_t> columnOffsets;
@@ -35,9 +32,6 @@ private:
     ExtendedTableData(std::vector<ColRef> columns);
     void init(std::vector<ColRef> columns);
 public:
-    virtual uint64_t getRowCount() override;
-    virtual uint32_t getColCount() override;
-    virtual std::vector<std::pair<std::string,uint32_t>> getColumns() override;
     virtual void * getRaw() override;
     virtual uint64_t getSize() override;
     virtual void setRaw(void *data, uint64_t size) override;

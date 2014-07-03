@@ -19,6 +19,32 @@ namespace db_agg {
 
 static Logger LOG = Logger::getInstance(LOG4CPLUS_TEXT("TableData"));
 
+TableData::TableData() {
+
+}
+
+void TableData::setRowCount(uint64_t rowCount) {
+    this->rowCount = rowCount;
+}
+
+uint64_t TableData::getRowCount() {
+    return rowCount;
+}
+
+uint32_t TableData::getColCount()  {
+    return colCount;
+}
+
+void TableData::setColumns(std::vector<ColDef> columns) {
+    this->columns = columns;
+    this->colCount = columns.size();
+}
+
+
+vector<ColDef>& TableData::getColumns() {
+    return columns;
+}
+
 
 string TableData::toSqlValues() {
     string values;
@@ -74,8 +100,8 @@ string TableData::toSqlValues() {
 std::string TableData::toColumnDefinitions() {
     string sql;
     auto cols = getColumns();
-    int len = cols.size();
-    int idx = 0;
+    size_t len = cols.size();
+    size_t idx = 0;
     for (auto col:cols) {
         string colName = col.first;
         uint32_t colType = col.second;
