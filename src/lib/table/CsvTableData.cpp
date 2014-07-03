@@ -210,18 +210,16 @@ namespace db_agg {
         pImpl->data = (char*)realloc(pImpl->data, pImpl->size + size);
         memcpy(pImpl->data + pImpl->size, data, size);
         for (uint64_t idx=0; idx < size; idx++) {
-            char c = ((char*)data)[idx];
+            char c = ((char*)pImpl->data + pImpl->size -1)[idx];
             if (c == '\t' || c == '\n') {
-                pImpl->index.addOffset(pImpl->size+idx);
+                pImpl->index.addOffset(pImpl->size + idx);
             }
-            if (c == '\n' || (idx+1) == size) {
+            if (c == '\n') {
                 pImpl->rowCount++;
                 pImpl->index.setRowCount(pImpl->rowCount);
             }
         }
         pImpl->size += size;
-        //calculateRowCount();
-        //buildIndex();
     }
 
     void CsvTableData::addRow(std::vector<std::string> row) {
