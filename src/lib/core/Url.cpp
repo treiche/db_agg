@@ -94,7 +94,7 @@ string Url::getUrl() {
 }
 
 string Url::getUrl(bool includeParameters, bool includeCredentials, bool maskPassword) {
-    string url = protocol + "://" + host + "/" + path;
+    string url = protocol + "://" + host + ":" + to_string(port) + "/" + path;
     if (includeParameters && !parameters.empty()) {
         url += "?";
         int len = parameters.size();
