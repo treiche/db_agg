@@ -62,7 +62,7 @@ void ExtendedTableData::getRows(uint64_t startRow, uint64_t rows, std::vector<Da
 
 
 void ExtendedTableData::save(string filePath) {
-    throw runtime_error("save not supported");
+    TableData::save(filePath);
 }
 
 string ExtendedTableData::calculateMD5Sum() {

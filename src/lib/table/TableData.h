@@ -29,13 +29,14 @@ public:
     virtual std::vector<ColDef>& getColumns();
     virtual void appendRaw(void *data, uint64_t size) = 0;
     virtual void getRows(uint64_t startRow, uint64_t rows, std::vector<DataChunk>& chunks) = 0;
-    virtual void save(std::string filePath) = 0;
+    virtual void save(std::string filePath);
     virtual std::string calculateMD5Sum() = 0;
     virtual std::string toSqlValues();
     virtual std::string toColumnDefinitions();
     virtual DataChunk getColumn(uint64_t row, uint32_t col) = 0;
     virtual void addRow(std::vector<std::string> row);
     uint32_t getColumnIndex(std::string colName);
+    ColDef getColumn(std::string colName);
     std::string getValue(uint64_t row, uint32_t col);
 };
 }

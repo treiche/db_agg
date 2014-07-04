@@ -7,6 +7,9 @@
 
 #include "TableData.h"
 
+#include <fstream>
+
+
 #include <log4cplus/logger.h>
 #include "type/oids.h"
 #include "type/TypeRegistry.h"
@@ -48,6 +51,30 @@ vector<ColDef>& TableData::getColumns() {
 string TableData::getValue(uint64_t row, uint32_t col) {
     DataChunk chunk = getColumn(row,col);
     return string(chunk.getPtr(),chunk.getSize());
+}
+
+void TableData::save(std::string filePath) {
+    vector<DataChunk> chunks;
+    getRows(0,getRowCount(),chunks);
+    LOG4CPLUS_DEBUG(LOG, "save data in file " + filePath);
+    ofstream os{filePath};
+    for (size_t idx = 0; idx < getColCount(); idx++) {
+        pair<string,uint32_t> p = getColumns()[idx];
+        TypeInfo *ti =  TypeRegistry::getInstance().getTypeInfo((long int)p.second);
+        if (ti == nullptr) {
+            LOG4CPLUS_WARN(LOG, "unknown type id '" << p.second << "' for columns '" << p.first << "'. assuming text");
+            ti =  TypeRegistry::getInstance().getTypeInfo(TEXT);
+        }
+        os << p.first << ":" << ti->name;
+        if (idx < getColCount() - 1) {
+            os << "\t";
+        }
+    }
+    os << endl;
+    for (auto chunk:chunks) {
+        os.write(chunk.getPtr(),chunk.getSize());
+    }
+    os.close();
 }
 
 string TableData::toSqlValues() {
@@ -126,7 +153,7 @@ std::string TableData::toColumnDefinitions() {
     return sql;
 }
 
-uint32_t TableData::getColumnIndex(std::string colName) {
+uint32_t TableData::getColumnIndex(string colName) {
     auto columns = getColumns();
     for (uint32_t idx = 0; idx < columns.size(); idx++) {
         if (columns[idx].first == colName) {
@@ -134,6 +161,10 @@ uint32_t TableData::getColumnIndex(std::string colName) {
         }
     }
     throw runtime_error("column with name '" + colName + "' not found.");
+}
+
+ColDef TableData::getColumn(string colName) {
+    return getColumns()[getColumnIndex(colName)];
 }
 
 void TableData::addRow(std::vector<std::string> row) {
