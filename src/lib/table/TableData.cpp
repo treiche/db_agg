@@ -154,7 +154,6 @@ std::string TableData::toColumnDefinitions() {
 }
 
 uint32_t TableData::getColumnIndex(string colName) {
-    auto columns = getColumns();
     for (uint32_t idx = 0; idx < columns.size(); idx++) {
         if (columns[idx].first == colName) {
             return idx;
@@ -169,6 +168,15 @@ ColDef TableData::getColumn(string colName) {
 
 void TableData::addRow(std::vector<std::string> row) {
     throw runtime_error("not supported");
+}
+
+bool TableData::hasColumn(std::string colName) {
+    for (uint32_t idx = 0; idx < columns.size(); idx++) {
+        if (columns[idx].first == colName) {
+            return true;
+        }
+    }
+    return false;
 }
 
 }

@@ -149,7 +149,7 @@ namespace db_agg {
         return channels;
     }
 
-    vector<string> QueryExecution::getArguments() {
+    vector<string>& QueryExecution::getArguments() {
         return arguments;
     }
 
@@ -160,5 +160,18 @@ namespace db_agg {
     shared_ptr<DependencyInjector> QueryExecution::getInjector() {
         return dependencyInjector;
     }
+
+    void QueryExecution::schedule() {
+        setScheduled();
+    }
+
+    void QueryExecution::cleanUp() {}
+
+    bool QueryExecution::isResourceAvailable() {
+        return true;
+    }
+
+    void QueryExecution::stop() {}
+
 }
 

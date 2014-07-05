@@ -44,7 +44,7 @@ class QueryExecution: public DataReceiver, public DataSender, public EventProduc
         std::vector<std::string> arguments;
     protected:
         void setData(std::shared_ptr<TableData> data);
-        std::vector<std::string> getArguments();
+        std::vector<std::string>& getArguments();
         std::map<std::string,std::shared_ptr<TableData>>& getDependencies();
         std::shared_ptr<DependencyInjector> getInjector();
     public:
@@ -75,11 +75,11 @@ class QueryExecution: public DataReceiver, public DataSender, public EventProduc
         bool isComplete();
         std::vector<Channel*> getChannels();
 
-        virtual void stop() = 0;
-        virtual void schedule() = 0;
+        virtual void stop();
+        virtual void schedule();
         virtual bool process() = 0;
-        virtual void cleanUp() = 0;
-        virtual bool isResourceAvailable() = 0;
+        virtual void cleanUp();
+        virtual bool isResourceAvailable();
         // Interfaces:
         // DataReceiver
         virtual void receive(std::string name, std::shared_ptr<TableData> data) override;

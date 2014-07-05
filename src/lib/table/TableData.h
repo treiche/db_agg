@@ -37,6 +37,7 @@ public:
     virtual void addRow(std::vector<std::string> row);
     uint32_t getColumnIndex(std::string colName);
     ColDef getColumn(std::string colName);
+    bool hasColumn(std::string colName);
     std::string getValue(uint64_t row, uint32_t col);
 };
 }

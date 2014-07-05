@@ -10,6 +10,7 @@
 
 #include "type/oids.h"
 
+#include "utils/logging.h"
 #include "utils/md5.h"
 
 #include "utils/File.h"
