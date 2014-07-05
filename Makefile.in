@@ -1,6 +1,6 @@
 CXX=@CXX@
 INCLUDES=-Isrc -Isrc/lib -Isrc/bin -Isrc/lib/core @INCLUDES@
-CXXFLAGS=@CXXFLAGS@ -Wall -Wconversion -c $(INCLUDES) -fPIC -rdynamic
+CXXFLAGS=@CXXFLAGS@ -c $(INCLUDES) -fPIC -rdynamic
 
 LIBS=@LIBS@
 LDFLAGS=$(LIBS)
