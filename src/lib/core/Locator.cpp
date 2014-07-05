@@ -9,7 +9,7 @@
 #include "core/Locator.h"
 
 #include <stdexcept>
-#include <log4cplus/logger.h>
+#include "utils/logging.h"
 
 using namespace std;
 using namespace log4cplus;
@@ -24,35 +24,35 @@ namespace db_agg {
             environment(environment) {}
 
     short Locator::compare(Locator& other) {
-        LOG4CPLUS_DEBUG(LOG,"compare " << getQName() << " and " << other.getQName());
+        LOG_DEBUG("compare " << getQName() << " and " << other.getQName());
         if (other.name.compare(name) != 0) {
-            LOG4CPLUS_DEBUG(LOG,name << " != " << other.name);
+            LOG_DEBUG(name << " != " << other.name);
             return -1;
         }
         string thisEnv = environment;
         string otherEnv = other.environment;
         if (environment.empty()) {
-            LOG4CPLUS_DEBUG(LOG, "this env empty, set to '" << Locator::defaultEnvironment << "'");
+            LOG_DEBUG("this env empty, set to '" << Locator::defaultEnvironment << "'");
             thisEnv = Locator::defaultEnvironment;
         }
         if (other.environment.empty()) {
-            LOG4CPLUS_DEBUG(LOG, "other env empty, set to '" << Locator::defaultEnvironment << "'");
+            LOG_DEBUG("other env empty, set to '" << Locator::defaultEnvironment << "'");
             otherEnv = Locator::defaultEnvironment;
         }
         if (thisEnv.compare(otherEnv) != 0) {
-            LOG4CPLUS_DEBUG(LOG,"'" << thisEnv << "' != '" << otherEnv << "'");
+            LOG_DEBUG("'" << thisEnv << "' != '" << otherEnv << "'");
             return -1;
         }
         if (shardId==other.shardId) {
-            LOG4CPLUS_DEBUG(LOG,shardId << " == " << other.shardId);
+            LOG_DEBUG(shardId << " == " << other.shardId);
             return 0;
         }
         if (shardId==-1 && other.shardId!=-1) {
-            LOG4CPLUS_DEBUG(LOG,shardId << " < " << other.shardId);
+            LOG_DEBUG(shardId << " < " << other.shardId);
             return other.shardId;
         }
         if (shardId!=-1 && other.shardId==-1) {
-            LOG4CPLUS_DEBUG(LOG,shardId << " > " << other.shardId);
+            LOG_DEBUG(shardId << " > " << other.shardId);
             return shardId;
         }
         return -1;

@@ -7,7 +7,7 @@
 
 #include "core/QueryProcessor.h"
 
-#include <log4cplus/logger.h>
+#include "utils/logging.h"
 
 #include "utils/utility.h"
 
@@ -65,16 +65,16 @@ void QueryProcessor::stop() {
 }
 
 void QueryProcessor::process(string query, string environment) {
-    LOG4CPLUS_DEBUG(LOG,"process query = " << query << " environment = " << environment);
+    LOG_DEBUG("process query = " << query << " environment = " << environment);
     Locator::setDefaultEnvironment(environment);
 
     vector<string> functions = extensionLoader.getAvailableExecutorNames();
-    LOG4CPLUS_DEBUG(LOG,"parse query with " << queryParameter.size() << " parameters");
+    LOG_DEBUG("parse query with " << queryParameter.size() << " parameters");
     vector<Query*> queries = queryParser.parse(query,externalSources,queryParameter,functions);
     for (auto query:queries) {
         executionGraph.addQuery(query);
     }
-    LOG4CPLUS_DEBUG(LOG,"parse query done");
+    LOG_DEBUG("parse query done");
     populateUrls(environment);
     populateTransitions();
     loadExternalSources();
@@ -113,11 +113,11 @@ void QueryProcessor::cleanUp() {
 }
 
 void QueryProcessor::loadExternalSources() {
-    LOG4CPLUS_INFO(LOG, "load externals");
+    LOG_INFO("load externals");
     /*
     for (auto query:executionGraph.getQueries()) {
         if (query->getType() == "external") {
-            LOG4CPLUS_DEBUG(LOG, "load external source " << query->getName());
+            LOG_DEBUG("load external source " << query->getName());
             shared_ptr<TableData> td = externalSources[query->getName()];
             for (auto& qe:executionGraph.getQueryExecutions(query)) {
                 qe->setResult(td);
@@ -136,13 +136,13 @@ void QueryProcessor::loadExternalSources() {
 
 
 void QueryProcessor::loadFromCache() {
-    LOG4CPLUS_INFO(LOG, "load items from cache");
+    LOG_INFO("load items from cache");
     for (auto& qr:executionGraph.getQueryExecutions()) {
         if (cacheRegistry.exists(qr->getId())) {
             string resultId = qr->getId();
             File path(cacheRegistry.getPath(resultId));
             if (path.exists()) {
-                LOG4CPLUS_INFO(LOG, "cache item for " << resultId << " exists");
+                LOG_INFO("cache item for " << resultId << " exists");
                 if (!disableCache) {
                     shared_ptr<TableData> data = cacheRegistry.getData(resultId);
                     qr->setResult(data);
@@ -162,14 +162,14 @@ void QueryProcessor::loadFromCache() {
                 fireEvent(ce);
             }
         } else {
-            LOG4CPLUS_INFO(LOG, "cache item for " << qr->getId() << " does not exist");
+            LOG_INFO("cache item for " << qr->getId() << " does not exist");
         }
     }
-    LOG4CPLUS_DEBUG(LOG, "load items from cache done");
+    LOG_DEBUG("load items from cache done");
     for (auto& qr:executionGraph.getQueryExecutions()) {
         if (qr->isDone()) {
             for (auto channel:qr->getChannels()) {
-                LOG4CPLUS_DEBUG(LOG, "open channel " << channel->getName());
+                LOG_DEBUG("open channel " << channel->getName());
                 if (channel->getState() != ChannelState::READY) {
                     continue;
                 }
@@ -182,9 +182,9 @@ void QueryProcessor::loadFromCache() {
 }
 
 void QueryProcessor::populateUrls(string environment) {
-    LOG4CPLUS_TRACE(LOG, "populate urls");
+    LOG_TRACE("populate urls");
     for (auto query:executionGraph.getQueries()) {
-        LOG4CPLUS_DEBUG(LOG, "    [" << query->getName() << "] = " << query->toString());
+        LOG_DEBUG("    [" << query->getName() << "] = " << query->toString());
         vector<shared_ptr<Url>> urls;
 
         if (query->getType() == "script") {
@@ -208,12 +208,12 @@ void QueryProcessor::populateUrls(string environment) {
             }
             urls = databaseRegistry.getUrls(dbId,env,query->getShardId());
             if (LOG.isEnabledFor(DEBUG_LOG_LEVEL)) {
-                LOG4CPLUS_DEBUG(LOG,
+                LOG_DEBUG(
                   "query " << query->getLocator().getQName() << " resolves to urls:" << endl <<
                   "[environment = " << query->getEnvironment() << "]"
                 );
                 for (auto& url:urls) {
-                    LOG4CPLUS_DEBUG(LOG, "    " << url->getUrl());
+                    LOG_DEBUG("    " << url->getUrl());
                 }
             }
         }
@@ -245,9 +245,9 @@ void QueryProcessor::populateUrls(string environment) {
                 linkPath += "_" + to_string(idx + 1);
             }
             string injectorName = query->getMetaData("injector","default");
-            LOG4CPLUS_DEBUG(LOG, "injector for query " << query->getName() << ":" << injectorName);
+            LOG_DEBUG("injector for query " << query->getName() << ":" << injectorName);
             shared_ptr<DependencyInjector> di = extensionLoader.getDependencyInjector(injectorName);
-            LOG4CPLUS_DEBUG(LOG, "create execution for " << query->getName() << " type = " << query->getType());
+            LOG_DEBUG("create execution for " << query->getName() << " type = " << query->getType());
             QueryExecution *exec = extensionLoader.getQueryExecution(query->getType());
             if (exec == nullptr) {
                 throw runtime_error("unhandled query execution type '" + query->getType() + "'");
@@ -263,11 +263,11 @@ void QueryProcessor::populateUrls(string environment) {
         }
     }
 
-    LOG4CPLUS_DEBUG(LOG, "populate urls done");
+    LOG_DEBUG("populate urls done");
 }
 
 void QueryProcessor::populateTransitions() {
-    LOG4CPLUS_TRACE(LOG, "populate transitions");
+    LOG_TRACE("populate transitions");
     for (auto query:executionGraph.getQueries()) {
         for (auto& dep:query->getDependencies()) {
             Query& sourceQuery = *dep.sourceQuery;
@@ -300,12 +300,12 @@ void QueryProcessor::populateTransitions() {
                         executionGraph.createChannel(t,targetExecution);
                     }
                 } else {
-                    LOG4CPLUS_TRACE(LOG, "build many-to-many sharded");
+                    LOG_TRACE("build many-to-many sharded");
                     Transition *t = new Transition(dep.locator.getQName(), srcSize, dstSize);
                     string shardingStrategyName = databaseRegistry.getShardingStrategyName(targetQuery.getDatabaseId());
                     string shardColSearchExpr = databaseRegistry.getShardColumn(targetQuery.getDatabaseId());
                     shared_ptr<ShardingStrategy> sharder = extensionLoader.getShardingStrategy(shardingStrategyName);
-                    LOG4CPLUS_TRACE(LOG,"set sharder to " << sharder);
+                    LOG_TRACE("set sharder to " << sharder);
                     t->setSharder(sharder);
                     t->setShardColSearchExpr(shardColSearchExpr);
                     for (size_t cnt=0; cnt< srcSize; cnt++) {
@@ -329,15 +329,15 @@ void QueryProcessor::populateTransitions() {
                 QueryExecution *targetExecution = &executionGraph.getQueryExecution(&targetQuery,0);
                 executionGraph.createChannel(t,targetExecution);
             } else if (dstSize > 1 && srcSize == 1) {
-                LOG4CPLUS_DEBUG(LOG, "prepare one-to-many transition");
+                LOG_DEBUG("prepare one-to-many transition");
                 Transition *t = new Transition(dep.locator.getQName(),srcSize,dstSize);
                 string shardingStrategyName = databaseRegistry.getShardingStrategyName(targetQuery.getDatabaseId());
                 if (shardingStrategyName.empty()) {
-                    LOG4CPLUS_WARN(LOG, "no sharding strategy for database " << targetQuery.getDatabaseId());
+                    LOG_WARN("no sharding strategy for database " << targetQuery.getDatabaseId());
                 } else {
-                    LOG4CPLUS_DEBUG(LOG, "sharder name " << shardingStrategyName);
+                    LOG_DEBUG("sharder name " << shardingStrategyName);
                     shared_ptr<ShardingStrategy> sharder = extensionLoader.getShardingStrategy(shardingStrategyName);
-                    LOG4CPLUS_TRACE(LOG,"set sharder to " << sharder);
+                    LOG_TRACE("set sharder to " << sharder);
                     t->setSharder(sharder);
                 }
                 QueryExecution *sourceExecution = &executionGraph.getQueryExecution(&sourceQuery,0);
@@ -350,16 +350,16 @@ void QueryProcessor::populateTransitions() {
             }
         }
     }
-    LOG4CPLUS_TRACE(LOG, "populate transitions done");
+    LOG_TRACE("populate transitions done");
 }
 
 void QueryProcessor::calculateExecutionIds() {
-    LOG4CPLUS_TRACE(LOG, "calculate execution ids");
+    LOG_TRACE("calculate execution ids");
     for (auto query:executionGraph.getQueries()) {
         for (auto exec:executionGraph.getQueryExecutions(query)) {
         	if (query->getType() == "external") {
         		string resultId = exec->getResult()->calculateMD5Sum();
-        	    LOG4CPLUS_DEBUG(LOG, "md5 of external " << query->getName() << " -> " << resultId);
+        	    LOG_DEBUG("md5 of external " << query->getName() << " -> " << resultId);
         	    exec->setId(resultId);
 				executionGraph.addQueryExecution(exec);
         	} else {
@@ -371,7 +371,7 @@ void QueryProcessor::calculateExecutionIds() {
         	}
         }
     }
-    LOG4CPLUS_TRACE(LOG, "calculate execution ids done");
+    LOG_TRACE("calculate execution ids done");
 }
 
 void QueryProcessor::checkConnections() {
@@ -415,13 +415,13 @@ vector<QueryExecution*> QueryProcessor::findExecutables() {
 }
 
 void QueryProcessor::cacheItem(string resultId) {
-    LOG4CPLUS_DEBUG(LOG, "save cache item "+resultId);
+    LOG_DEBUG("save cache item "+resultId);
     QueryExecution& exec = executionGraph.getQueryExecution(resultId);
     File linkPath{outputDir + "/" + exec.getName() + ".csv"};
     uint64_t rowCount = exec.getData()->getRowCount();
     cacheRegistry.registerItem(resultId,Time(),exec.getDuration(),linkPath.abspath(),"csv", rowCount);
     exec.getData()->save(cacheRegistry.getPath(resultId));
-    LOG4CPLUS_TRACE(LOG, "save data done");
+    LOG_TRACE("save data done");
     // TODO: has to be done on exit
     cacheRegistry.save();
     if (linkPath.exists()) {
@@ -433,13 +433,12 @@ void QueryProcessor::cacheItem(string resultId) {
 void QueryProcessor::handleEvent(Event& event) {
     if (event.type==EventType::PROCESSED) {
         QueryExecution& result = executionGraph.getQueryExecution(event.resultId);
-        LOG4CPLUS_DEBUG(LOG, "PROCESSED: " << result.getSql() << " id=" << result.getName());
+        LOG_DEBUG("PROCESSED: " << result.getSql() << " id=" << result.getName());
         result.setDone();
         if (result.getData()==nullptr) {
-            LOG4CPLUS_ERROR(LOG, "result not ready");
-            throw runtime_error("result not ready");
+            THROW_EXC("result not ready");
         }
-        LOG4CPLUS_DEBUG(LOG, "doTransitions");
+        LOG_DEBUG("doTransitions");
         vector<Channel*> outputChannels = executionGraph.getOutputChannels(&result);
         for (auto channel:outputChannels) {
             channel->open();
@@ -451,9 +450,9 @@ void QueryProcessor::handleEvent(Event& event) {
     }
     vector<QueryExecution*> exec = findExecutables();
     if (!exec.empty()) {
-        LOG4CPLUS_DEBUG(LOG, "found " << exec.size() << " executables");
+        LOG_DEBUG("found " << exec.size() << " executables");
         for (auto result:exec) {
-            LOG4CPLUS_DEBUG(LOG, "schedule executable  " << result->getSql());
+            LOG_DEBUG("schedule executable  " << result->getSql());
             string sql = result->inject(result->getSql(), copyThreshold);
             ExecutionHandler *eh = dynamic_cast<ExecutionHandler*>(result);
             // queryExecutor->addQuery(result->getId(), result->getConnectionUrl().getUrl(true,false,true), sql, eh);

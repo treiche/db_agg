@@ -8,7 +8,7 @@
 #include "File.h"
 
 #include <dirent.h>
-#include <log4cplus/logger.h>
+#include "utils/logging.h"
 #include <log4cplus/tstring.h>
 #include <stdio.h>
 #include <sys/stat.h>

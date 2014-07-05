@@ -7,7 +7,7 @@
 
 
 #include "PGConnection.h"
-#include <log4cplus/logger.h>
+#include "utils/logging.h"
 #include "utils/utility.h"
 
 using namespace std;

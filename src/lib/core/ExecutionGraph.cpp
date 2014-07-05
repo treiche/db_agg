@@ -7,7 +7,7 @@
 
 #include "ExecutionGraph.h"
 
-#include <log4cplus/logger.h>
+#include "utils/logging.h"
 #include <fstream>
 
 #include "graph/Channel.h"
@@ -36,8 +36,7 @@ ExecutionGraph::~ExecutionGraph() {
 
 void ExecutionGraph::addQueryExecution(QueryExecution *queryExecution) {
     if (queryExecutionsById.find(queryExecution->getId())!=queryExecutionsById.end()) {
-        LOG4CPLUS_ERROR(LOG, "execution with id " << queryExecution->getId() << " exists already");
-        throw runtime_error("duplicate result id");
+        THROW_EXC("duplicate result id. execution with id " << queryExecution->getId() << " exists already");
     }
     queryExecutionsById[queryExecution->getId()] = queryExecution;
     queryExecutions.push_back(queryExecution);
@@ -128,7 +127,7 @@ vector<Transition*> ExecutionGraph::getIncomingTransitions(QueryExecution *exec)
 }
 
 void ExecutionGraph::dumpExecutionPlan(string outputDir) {
-    LOG4CPLUS_INFO(LOG, "dump execution plan");
+    LOG_INFO("dump execution plan");
     ofstream out{outputDir + "/executionPlan.dot"};
     out << "digraph plan {" << endl;
     out << "    graph [rankdir=LR, splines=true]" << endl;
@@ -213,9 +212,9 @@ void ExecutionGraph::dumpExecutionPlan(string outputDir) {
     string cmd = "dot -q1 -Tpng -o " + outputDir+"/executionPlan.png "+ outputDir+"/executionPlan.dot";
     int exitCode = system(cmd.c_str());
     if (exitCode != 0) {
-        LOG4CPLUS_ERROR(LOG, "failed to create image from executionPlan.dot");
+        LOG_WARN("failed to create image from executionPlan.dot");
     }
-    LOG4CPLUS_DEBUG(LOG, "dump execution plan done");
+    LOG_DEBUG("dump execution plan done");
 }
 
 

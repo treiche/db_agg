@@ -8,7 +8,7 @@
 
 #include "utils/Template.h"
 
-#include <log4cplus/logger.h>
+#include "utils/logging.h"
 
 #include <vector>
 
@@ -24,7 +24,7 @@ Template::Template(string startDelimiter, string endDelimiter) {
     this->startDelimiter = startDelimiter;
     this->endDelimiter = endDelimiter;
     string re = escapeDelimiter(startDelimiter) + "([a-zA-Z0-9_]+)" + escapeDelimiter(endDelimiter);
-    LOG4CPLUS_DEBUG(LOG, "regex = " << re);
+    LOG_DEBUG("regex = " << re);
     regexp.setExpr(re);
 }
 
@@ -39,7 +39,7 @@ string Template::escapeDelimiter(string delimiter) {
 
 
 void Template::set(std::string name, std::string value) {
-    LOG4CPLUS_TRACE(LOG, "set var '" << name << "' to '" << value << "'");
+    LOG_TRACE("set var '" << name << "' to '" << value << "'");
     variables[name] = value;
 }
 
@@ -55,11 +55,9 @@ std::string Template::render(std::string tmpl) {
     int lastOffset = 0;
     vector<string> matches;
     while(regexp.find(tmpl,matches,offset)) {
-        LOG4CPLUS_DEBUG(LOG, "found " << matches[1] << " offset = " << offset);
+        LOG_DEBUG("found " << matches[1] << " offset = " << offset);
         if (variables.find(matches[1]) == variables.end()) {
-            string message = "unresolved variable '" + matches[1] + "'";
-            LOG4CPLUS_ERROR(LOG, message);
-            throw runtime_error(message);
+            THROW_EXC("unresolved variable '" << matches[1] << "'");
         }
         result += tmpl.substr(lastOffset,offset-lastOffset-matches[1].size()-startDelimiter.size()) + variables[matches[1]];
         lastOffset = offset + endDelimiter.size();

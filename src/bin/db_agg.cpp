@@ -67,7 +67,7 @@ void disableConsoleLogging() {
 }
 
 void cancel(int param) {
-    LOG4CPLUS_DEBUG(LOG, "cancel db_agg");
+    LOG_DEBUG("cancel db_agg");
     GlobalSignalHandler::getInstance().handleSignal(param);
 }
 

@@ -6,7 +6,7 @@
  */
 
 #include "ResourceQueryExecution.h"
-#include <log4cplus/logger.h>
+#include "utils/logging.h"
 
 #include "table/TableDataFactory.h"
 #include "excel/ExcelToTextFormat.h"
@@ -26,16 +26,16 @@ ResourceQueryExecution::ResourceQueryExecution(string name, string id, shared_pt
 
 
 void ResourceQueryExecution::stop() {
-    LOG4CPLUS_DEBUG(LOG,"stop");
+    LOG_DEBUG("stop");
 }
 
 void ResourceQueryExecution::schedule() {
-    LOG4CPLUS_DEBUG(LOG,"schedule");
+    LOG_DEBUG("schedule");
     setScheduled();
 }
 
 bool ResourceQueryExecution::process() {
-    LOG4CPLUS_DEBUG(LOG,"load resource from " << getUrl()->getPath() << " extension = " << getUrl()->getExtension());
+    LOG_DEBUG("load resource from " << getUrl()->getPath() << " extension = " << getUrl()->getExtension());
     ExecutionStateChangeEvent ec{getId(),"CONNECTED"};
     fireEvent(ec);
     shared_ptr<TableData> data;
@@ -58,7 +58,7 @@ bool ResourceQueryExecution::process() {
 }
 
 void ResourceQueryExecution::cleanUp() {
-    LOG4CPLUS_DEBUG(LOG,"cleanUp");
+    LOG_DEBUG("cleanUp");
 }
 
 bool ResourceQueryExecution::isResourceAvailable() {

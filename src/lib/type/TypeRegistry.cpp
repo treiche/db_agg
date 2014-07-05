@@ -1,6 +1,6 @@
 #include "TypeRegistry.h"
 
-#include <log4cplus/logger.h>
+#include "utils/logging.h"
 
 #include "utils/utility.h"
 #include "type/oids.h"

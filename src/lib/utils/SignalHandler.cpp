@@ -7,7 +7,7 @@
 
 #include "SignalHandler.h"
 
-#include <log4cplus/logger.h>
+#include "utils/logging.h"
 
 using namespace std;
 using namespace log4cplus;
@@ -17,10 +17,10 @@ static Logger LOG = Logger::getInstance(LOG4CPLUS_TEXT("SignalHandler"));
 
 void GlobalSignalHandler::handleSignal(int signal) {
     //cout << "GlobalSignalHandler::handle signal" << endl;
-    LOG4CPLUS_TRACE(LOG, "received signal " << signal);
+    LOG_TRACE("received signal " << signal);
     for (auto& child:childs) {
         //cout << "GlobalSignalHandler::handle forward " << signal << endl;
-        LOG4CPLUS_TRACE(LOG, "forward signal " << signal);
+        LOG_TRACE("forward signal " << signal);
         child->handleSignal(signal);
     }
 }

@@ -1,6 +1,6 @@
 #include "RegExpQueryParser.h"
 
-#include <log4cplus/logger.h>
+#include "utils/logging.h"
 #include <cstdlib>
 #include <iostream>
 #include <vector>
@@ -41,7 +41,7 @@ set<string> RegExpQueryParser::extractUsedNamespaces(std::string query) {
 vector<Query*> RegExpQueryParser::parse(string q, map<string,string>& externalSources, map<string,string>& queryParameter, vector<string> functions) {
     assert(!q.empty());
     vector<Query*> queries;
-    LOG4CPLUS_DEBUG(LOG,"start query parsing");
+    LOG_DEBUG("start query parsing");
     int offset = 0;
     vector<string> matches;
     set<string> locs;
@@ -76,7 +76,7 @@ vector<Query*> RegExpQueryParser::parse(string q, map<string,string>& externalSo
     string mainQuery(query, offset + 1, query.size() - offset);
     string sql = mainQuery;
     string formattedSql = cutBlock(mainQuery);
-    LOG4CPLUS_DEBUG(LOG, "main query = '" << formattedSql << "'");
+    LOG_DEBUG("main query = '" << formattedSql << "'");
     set<string> usedNamespaces = extractUsedNamespaces(sql);
     //Query *q = new Query("__main_query__", tq, usedNamespaces);
     string id = string(md5hex("__main_query__$-1:" + sql));
@@ -85,9 +85,9 @@ vector<Query*> RegExpQueryParser::parse(string q, map<string,string>& externalSo
     queries.push_back(new Query(id, "postgres", loc, sql, formattedSql, usedNamespaces));
 
     // create pseudo entries for external sources
-    LOG4CPLUS_DEBUG(LOG, "create " << externalSources.size() << "pseudo entries");
+    LOG_DEBUG("create " << externalSources.size() << "pseudo entries");
     for (auto& externalSource:externalSources) {
-        LOG4CPLUS_DEBUG(LOG,"create pseudo queries for external source " << externalSource.first);
+        LOG_DEBUG("create pseudo queries for external source " << externalSource.first);
         Locator loc(externalSource.first,-1,"");
         string id = string(md5hex(externalSource.first + ":" + externalSource.second + "$-1:"));
         set<string> empty;
@@ -97,14 +97,14 @@ vector<Query*> RegExpQueryParser::parse(string q, map<string,string>& externalSo
     detectDependencies(queries);
 
     for (auto query:queries) {
-        LOG4CPLUS_DEBUG(LOG, "    "  << query->toString());
+        LOG_DEBUG("    "  << query->toString());
         for (auto& dep:query->getDependencies()) {
             Query *src = getSourceQuery(dep, queries);
             if (src==nullptr) {
                 throw runtime_error("no source found for dependency " + dep.locator.getName());
             }
             dep.sourceQuery = src;
-            LOG4CPLUS_DEBUG(LOG, query->getLocator().getQName() << ": " << dep.locator.getQName() << " -> " << src->getLocator().getQName());
+            LOG_DEBUG(query->getLocator().getQName() << ": " << dep.locator.getQName() << " -> " << src->getLocator().getQName());
         }
     }
 
@@ -126,14 +126,14 @@ void RegExpQueryParser::detectDependencies(vector<Query*>& queries) {
         cnt++;
     }
     re+=")\\$?([0-9]*)\\$?([a-zA-Z0-9_]*)(\\s+([a-z0-9_$]+))?";
-    LOG4CPLUS_DEBUG(LOG, "REGEXP = " << re);
+    LOG_DEBUG("REGEXP = " << re);
     RegExp regexp(re);
     for (auto q:queries) {
         string qs = q->getQuery();
         vector<string> matches;
         int offset = 0;
         while(regexp.find(qs,matches,offset)) {
-            LOG4CPLUS_DEBUG(LOG, "found dependency " << matches[2] << " in " << q->getName());
+            LOG_DEBUG("found dependency " << matches[2] << " in " << q->getName());
             string name = matches[2];
             string alias = "";
             short shardId = -1;
@@ -154,15 +154,15 @@ void RegExpQueryParser::detectDependencies(vector<Query*>& queries) {
                     alias = matches[5];
                 }
             }
-            LOG4CPLUS_DEBUG(LOG, "with name = " << name);
-            LOG4CPLUS_DEBUG(LOG, "with shard = " << shardId);
-            LOG4CPLUS_DEBUG(LOG, "with environment = " << environment);
-            LOG4CPLUS_DEBUG(LOG, "with alias = " << alias);
+            LOG_DEBUG("with name = " << name);
+            LOG_DEBUG("with shard = " << shardId);
+            LOG_DEBUG("with environment = " << environment);
+            LOG_DEBUG("with alias = " << alias);
             Locator loc(name,shardId,environment);
             q->addDependency(loc, alias);
         }
         for (auto& dep:q->getDependencies()) {
-            LOG4CPLUS_DEBUG(LOG, "detected dependency " + dep.locator.getQName());
+            LOG_DEBUG("detected dependency " + dep.locator.getQName());
         }
     }
 }
@@ -205,7 +205,7 @@ Query* RegExpQueryParser::getSourceQuery(Dependency dep, vector<Query*>& queries
     for (auto query:queries) {
         int diff = query->getLocator().compare(dep.locator);
         if (diff>-1) {
-            LOG4CPLUS_DEBUG(LOG, "found candidate '" << query->getLocator().getQName());
+            LOG_DEBUG("found candidate '" << query->getLocator().getQName());
             src = query;
         }
         if (src==nullptr) {
@@ -218,7 +218,7 @@ Query* RegExpQueryParser::getSourceQuery(Dependency dep, vector<Query*>& queries
             }
         }
     }
-    LOG4CPLUS_TRACE(LOG,"getSourceQuery(" << dep.locator.getQName() << ") = " << (Query*)src);
+    LOG_TRACE("getSourceQuery(" << dep.locator.getQName() << ") = " << (Query*)src);
     return src;
 }
 

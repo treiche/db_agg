@@ -2,7 +2,7 @@
 
 #include <cstring>
 
-#include <log4cplus/logger.h>
+#include "utils/logging.h"
 #include <stdexcept>
 #include <iostream>
 #include <fstream>
@@ -54,7 +54,7 @@ namespace db_agg {
     }
 
     CsvTableData::~CsvTableData() {
-        LOG4CPLUS_DEBUG(LOG, "delete table data '" << fileName << "'");
+        LOG_DEBUG("delete table data '" << fileName << "'");
         if (data) {
             free(data);
         }
@@ -99,40 +99,40 @@ namespace db_agg {
     }
 
     void CsvTableData::loadColumns() {
-        LOG4CPLUS_DEBUG(LOG, "read columns from file '" << fileName << "'");
+        LOG_DEBUG("read columns from file '" << fileName << "'");
         ifstream is{fileName,ios::in | ios::binary | ios::ate};
         if (is.is_open()) {
-            LOG4CPLUS_DEBUG(LOG, "size of file " << is.tellg());
+            LOG_DEBUG("size of file " << is.tellg());
             size = is.tellg();
             is.seekg(0, ios::beg);
             string firstLine;
             getline(is,firstLine,'\n');
             if (!is.good()) {
-                LOG4CPLUS_ERROR(LOG, "failed getting first line. probably long line header");
+                THROW_EXC("failed getting first line. probably long line header");
             }
             readColumns(firstLine);
             is.close();
         } else {
-            throw runtime_error("unable to open file '" + fileName + "'");
+            THROW_EXC("unable to open file '" << fileName << "'");
         }
     }
 
     void CsvTableData::readData() {
-        LOG4CPLUS_DEBUG(LOG, "load file " << fileName);
-        LOG4CPLUS_DEBUG(LOG, "read data from file '" << fileName << "'");
+        LOG_DEBUG("load file " << fileName);
+        LOG_DEBUG("read data from file '" << fileName << "'");
         ifstream is{fileName,ios::in | ios::binary | ios::ate};
         if (is.is_open()) {
-            LOG4CPLUS_DEBUG(LOG, "size of file " << is.tellg());
+            LOG_DEBUG("size of file " << is.tellg());
             size = is.tellg();
             is.seekg(0, ios::beg);
             string firstLine;
             getline(is,firstLine,'\n');
             if (!is.good()) {
-                LOG4CPLUS_ERROR(LOG, "failed getting first line. probably long line header");
+                THROW_EXC("failed getting first line. probably long line header");
             }
             readColumns(firstLine);
             size -= is.tellg();
-            LOG4CPLUS_DEBUG(LOG, "offset after first line " << is.tellg());
+            LOG_DEBUG("offset after first line " << is.tellg());
             data = (char*)malloc(size);
             is.read(data, size);
             is.close();
@@ -142,7 +142,7 @@ namespace db_agg {
         ptr = 0;
         currentRow = 0;
         currentColumn = 0;
-        LOG4CPLUS_TRACE(LOG, "calculate row count");
+        LOG_TRACE("calculate row count");
         File indexFile{fileName + ".idx"};
         if (indexFile.exists()) {
             index.load(indexFile.abspath());
@@ -150,11 +150,11 @@ namespace db_agg {
             setRowCount(index.getRowCount());
         } else {
             calculateRowCount();
-            LOG4CPLUS_TRACE(LOG, "build index");
+            LOG_TRACE("build index");
             buildIndex();
         }
-        LOG4CPLUS_TRACE(LOG, "loading file done");
-        LOG4CPLUS_DEBUG(LOG, "load file " << fileName << " done");
+        LOG_TRACE("loading file done");
+        LOG_DEBUG("load file " << fileName << " done");
     }
 
     void CsvTableData::appendRaw(void *raw, uint64_t rsize) {
@@ -190,7 +190,7 @@ namespace db_agg {
 
     void CsvTableData::readColumns(string firstLine) {
         TableData::getColumns().clear();
-        LOG4CPLUS_DEBUG(LOG, "firstLine = " << firstLine);
+        LOG_DEBUG("firstLine = " << firstLine);
         vector<string> cols;
         vector<ColDef> colDefs;
         split(firstLine,'\t',cols);
@@ -198,27 +198,27 @@ namespace db_agg {
             vector<string> nt;
             split(col,':',nt);
             string name = nt[0];
-            LOG4CPLUS_TRACE(LOG, "column name = " << name);
+            LOG_TRACE("column name = " << name);
             string typeName;
             if (nt.size()>1) {
                 typeName = nt[1];
             } else {
                 typeName = "TEXT";
             }
-            LOG4CPLUS_TRACE(LOG, "column type = " << typeName);
+            LOG_TRACE("column type = " << typeName);
             TypeInfo *ti = TypeRegistry::getInstance().getTypeInfo(typeName);
             uint32_t typeId;
             if (ti==nullptr) {
-                LOG4CPLUS_WARN(LOG, "unknown type " + typeName + " for column " + name + ". treat as type TEXT ...");
+                LOG_WARN("unknown type " + typeName + " for column " + name + ". treat as type TEXT ...");
                 typeId = TEXT;
             } else {
                 typeId = ti->oid;
             }
-            LOG4CPLUS_DEBUG(LOG, "push column " << name << "[" << typeId << "]");
+            LOG_DEBUG("push column " << name << "[" << typeId << "]");
             //columns.push_back(pair<string,uint32_t>(name,typeId));
             colDefs.push_back(ColDef(name,typeId));
         }
-        LOG4CPLUS_DEBUG(LOG, "found " << colDefs.size() << " columns");
+        LOG_DEBUG("found " << colDefs.size() << " columns");
         //colCount = columns.size();
         setColumns(colDefs);
     }
@@ -234,13 +234,13 @@ namespace db_agg {
     }
 
     void CsvTableData::save(std::string filePath) {
-        LOG4CPLUS_DEBUG(LOG, "save data in file " + filePath);
+        LOG_DEBUG("save data in file " + filePath);
         ofstream os{filePath};
         for (size_t idx = 0; idx < getColCount(); idx++) {
             pair<string,uint32_t> p = getColumns()[idx];
             TypeInfo *ti =  TypeRegistry::getInstance().getTypeInfo((long int)p.second);
             if (ti == nullptr) {
-                LOG4CPLUS_WARN(LOG, "unknown type id '" << p.second << "' for columns '" << p.first << "'. assuming text");
+                LOG_WARN("unknown type id '" << p.second << "' for columns '" << p.first << "'. assuming text");
                 ti =  TypeRegistry::getInstance().getTypeInfo(TEXT);
             }
             os << p.first << ":" << ti->name;
@@ -286,7 +286,7 @@ namespace db_agg {
 
     inline void CsvTableData::loadOnDemand(string reason) {
         if (data == nullptr && !fileName.empty()) {
-            LOG4CPLUS_DEBUG(LOG, "load on demand -> " << reason);
+            LOG_DEBUG("load on demand -> " << reason);
             readData();
         }
     }

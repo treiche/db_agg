@@ -7,7 +7,7 @@
 
 
 #include "excel/ExcelToTextFormat.h"
-#include <log4cplus/logger.h>
+#include "utils/logging.h"
 
 #include "table/TableDataFactory.h"
 #include "utils/utility.h"
@@ -32,22 +32,21 @@ map<string,shared_ptr<TableData>> ExcelToTextFormat::transform(string excelFile)
     int error;
     this->archive = zip_open(excelFile.c_str(),ZIP_CHECKCONS,&error);
     if (this->archive==0) {
-    	LOG4CPLUS_ERROR(LOG,"unable to open excel file " << excelFile);
-        throw runtime_error("unable to open archive");
+        THROW_EXC("unable to open excel file " << excelFile);
     }
     map<string,shared_ptr<TableData>> result;
     uint32_t stringIndex = 0;
     parseEntry("xl/sharedStrings.xml", [&] (xmlTextReaderPtr reader) {
         int nodeType = xmlTextReaderNodeType(reader);
         string nodeName = (const char*)xmlTextReaderName(reader);
-        LOG4CPLUS_DEBUG(LOG,"name = " << nodeName << " type = " << nodeType );
+        LOG_DEBUG("name = " << nodeName << " type = " << nodeType );
         if (nodeType == XML_READER_TYPE_END_ELEMENT) {
         	if (nodeName == "si") {
         		stringIndex++;
         	}
         } else if (nodeType == XML_READER_TYPE_TEXT) {
             string strVal = (const char*)xmlTextReaderValue(reader);
-            LOG4CPLUS_TRACE(LOG,"register " << strVal);
+            LOG_TRACE("register " << strVal);
             if (sharedStrings.size()-1==stringIndex) {
             	sharedStrings[stringIndex] += strVal;
             } else {
@@ -55,7 +54,7 @@ map<string,shared_ptr<TableData>> ExcelToTextFormat::transform(string excelFile)
             }
         }
     });
-    LOG4CPLUS_TRACE(LOG, "parsed " << sharedStrings.size() << " shared string");
+    LOG_TRACE("parsed " << sharedStrings.size() << " shared string");
     parseEntry("xl/workbook.xml", [&] (xmlTextReaderPtr reader) {
         int nodeType = xmlTextReaderNodeType(reader);
         xmlChar* nodeName = xmlTextReaderName(reader);
@@ -64,11 +63,11 @@ map<string,shared_ptr<TableData>> ExcelToTextFormat::transform(string excelFile)
         	if (elementName == "sheet") {
         		xmlTextReaderMoveToAttribute(reader,(xmlChar*)"name");
         		string sheetName = (const char*)xmlTextReaderValue(reader);
-        		LOG4CPLUS_DEBUG(LOG,"sheetName = " << sheetName);
+        		LOG_DEBUG("sheetName = " << sheetName);
         		xmlTextReaderMoveToAttribute(reader,(xmlChar*)"sheetId");
         		string sheetId = (const char*)xmlTextReaderValue(reader);
-        		LOG4CPLUS_DEBUG(LOG,"sheetId = " << sheetId);
-        		LOG4CPLUS_TRACE(LOG, sheetId << " -> " << sheetName);
+        		LOG_DEBUG("sheetId = " << sheetId);
+        		LOG_TRACE(sheetId << " -> " << sheetName);
         		sheetNamesById[sheetId] = sheetName;
         	}
         }
@@ -79,7 +78,7 @@ map<string,shared_ptr<TableData>> ExcelToTextFormat::transform(string excelFile)
     	parseEntry("xl/worksheets/sheet" + sheet.first + ".xml", [&] (xmlTextReaderPtr reader) {
     		this->parseData(reader, &state);
     	});
-    	LOG4CPLUS_TRACE(LOG, "data = \n" << state.data);
+    	LOG_TRACE("data = \n" << state.data);
     	shared_ptr<TableData> data = TableDataFactory::getInstance().create("text", state.columns);
     	data->appendRaw((void*)state.data.c_str(),state.data.size());
     	result[sheet.second] = data;
@@ -91,22 +90,22 @@ void ExcelToTextFormat::parseData(xmlTextReaderPtr reader, ParseState *state) {
     int nodeType = xmlTextReaderNodeType(reader);
     string nodeName{(const char*)xmlTextReaderName(reader)};
     string delim = "\t";
-    // LOG4CPLUS_DEBUG(LOG, "parseData " << nodeName);
+    // LOG_DEBUG("parseData " << nodeName);
     if (nodeType == XML_READER_TYPE_TEXT && state->insideSheetData) {
 		string valueId = (const char *)xmlTextReaderValue(reader);
-		LOG4CPLUS_TRACE(LOG, "valueId = " << valueId << " is shared = " << state->sharedValue);
+		LOG_TRACE("valueId = " << valueId << " is shared = " << state->sharedValue);
 		string colVal = valueId;
 		if (state->sharedValue) {
 			int stringId = stoi(valueId);
 			colVal = sharedStrings[stringId];
 		}
-		LOG4CPLUS_TRACE(LOG, "colVal = " << colVal);
+		LOG_TRACE("colVal = " << colVal);
     	if (state->currentRow == 0) {
     		state->columns.push_back(colVal);
-    		LOG4CPLUS_TRACE(LOG, "got header " << colVal);
+    		LOG_TRACE("got header " << colVal);
     		state->currentCol++;
     	} else {
-    		LOG4CPLUS_TRACE(LOG, "append " << colVal);
+    		LOG_TRACE("append " << colVal);
     		if (state->currentCol >= state->columns.size()) {
     			return;
     		}
@@ -144,16 +143,16 @@ void ExcelToTextFormat::parseData(xmlTextReaderPtr reader, ParseState *state) {
     		auto coord = regionToPoint(region);
     		int gap = 0;
     		if (coord.second > state->columns.size()) {
-    			LOG4CPLUS_TRACE(LOG, "ignore orphan value");
+    			LOG_TRACE("ignore orphan value");
     			gap = state->columns.size() - state->currentCol;
     		} else {
     			gap = coord.second - state->currentCol;
     		}
     		if (gap > 0) {
-				LOG4CPLUS_TRACE(LOG, "coord = " << coord.first << "," << coord.second << " current col = " << state->currentCol);
-				LOG4CPLUS_TRACE(LOG, "col gap " << gap);
+				LOG_TRACE("coord = " << coord.first << "," << coord.second << " current col = " << state->currentCol);
+				LOG_TRACE("col gap " << gap);
 				for (uint32_t cnt=0;cnt<gap;cnt++) {
-					LOG4CPLUS_TRACE(LOG, "insert null value " << cnt);
+					LOG_TRACE("insert null value " << cnt);
 					state->data += "\\N";
 					if (state->currentCol < state->columns.size()-1) {
 						state->data += delim;
@@ -205,10 +204,10 @@ void ExcelToTextFormat::parseEntry(std::string entry,std::function<void (xmlText
         char *buf = new char[info.size+1];
         int ret = zip_fread(zipEntry,buf,info.size);
         if (ret != info.size) {
-            LOG4CPLUS_ERROR(LOG,"zip_fread returned " << ret);
+            LOG_ERROR("zip_fread returned " << ret);
         }
         zip_fclose(zipEntry);
-        LOG4CPLUS_DEBUG(LOG, "read " << ret << " bytes");
+        LOG_DEBUG("read " << ret << " bytes");
         xmlParserInputBufferPtr input = xmlParserInputBufferCreateMem(buf, info.size, XML_CHAR_ENCODING_UTF8);
         xmlTextReaderPtr reader = xmlNewTextReader(input,entry.c_str());
         ret = xmlTextReaderRead(reader);
@@ -219,7 +218,7 @@ void ExcelToTextFormat::parseEntry(std::string entry,std::function<void (xmlText
         xmlFreeParserInputBuffer(input);
         xmlFreeTextReader(reader);
         delete [] buf;
-        LOG4CPLUS_DEBUG(LOG,"found " << sheetNamesById.size() << " sheets");
+        LOG_DEBUG("found " << sheetNamesById.size() << " sheets");
     } else {
         throw runtime_error("entry " + entry + " not found");
     }
@@ -230,8 +229,7 @@ vector<std::string> ExcelToTextFormat::getSheetNames(std::string excelFile) {
     int error;
     this->archive = zip_open(excelFile.c_str(),ZIP_CHECKCONS,&error);
     if (this->archive==0) {
-        LOG4CPLUS_ERROR(LOG,"unable to open excel file " << excelFile);
-        throw runtime_error("unable to open archive");
+        THROW_EXC("unable to open excel file " << excelFile);
     }
     vector<string> sheetNames;
     parseEntry("xl/workbook.xml", [&] (xmlTextReaderPtr reader) {
@@ -242,11 +240,11 @@ vector<std::string> ExcelToTextFormat::getSheetNames(std::string excelFile) {
             if (elementName == "sheet") {
                 xmlTextReaderMoveToAttribute(reader,(xmlChar*)"name");
                 string sheetName = (const char*)xmlTextReaderValue(reader);
-                LOG4CPLUS_DEBUG(LOG,"sheetName = " << sheetName);
+                LOG_DEBUG("sheetName = " << sheetName);
                 xmlTextReaderMoveToAttribute(reader,(xmlChar*)"sheetId");
                 string sheetId = (const char*)xmlTextReaderValue(reader);
-                LOG4CPLUS_DEBUG(LOG,"sheetId = " << sheetId);
-                LOG4CPLUS_TRACE(LOG, sheetId << " -> " << sheetName);
+                LOG_DEBUG("sheetId = " << sheetId);
+                LOG_TRACE(sheetId << " -> " << sheetName);
                 sheetNames.push_back(sheetName);
             }
         }

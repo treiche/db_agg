@@ -3,7 +3,7 @@
 #include "postgres/PGConnection.h"
 #include "postgres/PGResult.h"
 
-#include <log4cplus/logger.h>
+#include "utils/logging.h"
 #include <log4cplus/loggingmacros.h>
 #include <log4cplus/tstring.h>
 #include <cstdint>
@@ -63,12 +63,12 @@ namespace db_agg {
     }
 
     AsyncQueryExecutor::~AsyncQueryExecutor() {
-        LOG4CPLUS_DEBUG(LOG, "delete async query executor");
+        LOG_DEBUG("delete async query executor");
         for (unsigned int taskNo = 0;taskNo < this->pImpl->tasks.size();taskNo++) {
             QueryTask *task = this->pImpl->tasks[taskNo];
-            LOG4CPLUS_DEBUG(LOG, "delete connection at " << *task->conn);
+            LOG_DEBUG("delete connection at " << *task->conn);
             if (task->conn.connected()) {
-                LOG4CPLUS_DEBUG(LOG, "release connection " << task->connectionUrl);
+                LOG_DEBUG("release connection " << task->connectionUrl);
                 task->conn.finish();
             }
             delete task;
@@ -93,35 +93,35 @@ namespace db_agg {
     }
 
     bool AsyncQueryExecutor::process() {
-        LOG4CPLUS_DEBUG(LOG, "start processing with " << this->pImpl->tasks.size() << " queries");
+        LOG_DEBUG("start processing with " << this->pImpl->tasks.size() << " queries");
         // PQinitOpenSSL(1,1);
         bool done = false;
         fireEvent(EventType::INITIALIZE,-1);
         try {
             done = this->loop();
         } catch(CancelException& ce) {
-            LOG4CPLUS_ERROR(LOG, "query execution canceled:" << endl);
+            LOG_ERROR("query execution canceled:" << endl);
             cleanUp("CANCEL");
             throw ce;
         } catch(AsyncQueryExecutorException& aqee) {
-            LOG4CPLUS_ERROR(LOG, "query execution failed: " << aqee.what());
-            LOG4CPLUS_ERROR(LOG, "query:\n" << aqee.getQuery());
+            LOG_ERROR("query execution failed: " << aqee.what());
+            LOG_ERROR("query:\n" << aqee.getQuery());
             cleanUp("");
             throw aqee;
         } catch(runtime_error& re) {
-            LOG4CPLUS_ERROR(LOG, "query execution failed: " << re.what());
+            LOG_ERROR("query execution failed: " << re.what());
             cleanUp("");
             throw re;
         } catch(exception& re) {
-            LOG4CPLUS_ERROR(LOG, "query execution failed: " << re.what());
+            LOG_ERROR("query execution failed: " << re.what());
             cleanUp("");
             throw re;
         } catch(...) {
             // TODO: find out how this works
             exception_ptr e = current_exception();
-            LOG4CPLUS_ERROR(LOG, "query execution failed:");
+            LOG_ERROR("query execution failed:");
             cleanUp("");
-            throw runtime_error("caught exception and stopped all tasks");
+            THROW_EXC("caught exception and stopped all tasks");
         }
         return done;
     }
@@ -133,10 +133,10 @@ namespace db_agg {
     }
 
     bool AsyncQueryExecutor::loop() {
-        LOG4CPLUS_DEBUG(LOG, "called loop with " << this->pImpl->tasks.size() << " tasks scheduled");
+        LOG_DEBUG("called loop with " << this->pImpl->tasks.size() << " tasks scheduled");
         bool tasksDone = true;
         for (size_t taskNo = 0; taskNo < this->pImpl->tasks.size(); taskNo++) {
-            LOG4CPLUS_TRACE(LOG, "process task " << taskNo);
+            LOG_TRACE("process task " << taskNo);
             bool taskDone = false;
             if (pImpl->cancelRequest) {
                 throw CancelException("cancellation requested");
@@ -166,21 +166,20 @@ bool AsyncQueryExecutor::processTask(int taskNo) {
             string connectionUrl = task->connectionUrl; // + " options='--statement-timeout=30000 --client-min-messages=debug1'";
             if (!connectAsync) {
                 task->conn = PGConnection::connectDb(connectionUrl.c_str());
-                LOG4CPLUS_INFO(LOG,"connecting to " << maskPassword(task->connectionUrl));
+                LOG_INFO("connecting to " << maskPassword(task->connectionUrl));
                 if (task->conn.connected()) {
                     task->state = QueryExecutionState::CONNECTED;
                     fireStateChangeEvent(taskNo, "CONNECTED");
                 } else {
-                    LOG4CPLUS_ERROR(LOG,"connecting to " << task->connectionUrl << " failed");
-                    throw runtime_error("connecting to " + task->connectionUrl + " failed");
+                    THROW_EXC("connecting to " << task->connectionUrl << " failed");
                 }
             } else {
                 task->conn = PGConnection::connectStart(connectionUrl.c_str());
                 if (task->conn.setnonblocking(1) == -1) {
-                    LOG4CPLUS_ERROR(LOG, "unable to set non blocking mode");
+                    LOG_WARN("unable to set non blocking mode");
                 }
                 if (task->conn.isnonblocking() != 1) {
-                    LOG4CPLUS_ERROR(LOG, "set non blocking mode failed");
+                    LOG_WARN("set non blocking mode failed");
                 }
                 task->state = QueryExecutionState::CONNECTING;
                 fireStateChangeEvent(taskNo, "CONNECTING");
@@ -188,26 +187,22 @@ bool AsyncQueryExecutor::processTask(int taskNo) {
         } else if (task->state == QueryExecutionState::CONNECTING) {
             PostgresPollingStatusType ppst = conn.connectPoll();
             if (ppst == PGRES_POLLING_FAILED) {
-                LOG4CPLUS_ERROR(LOG, "failed to connect to " << task->connectionUrl);
-                LOG4CPLUS_ERROR(LOG, "postgres message " << conn.errorMessage());
-                throw runtime_error("connection failed");
+                THROW_EXC("failed to connect to " << task->connectionUrl << ". postgres message: " << conn.errorMessage());
             }
             if (ppst == PGRES_POLLING_OK) {
                 task->state = QueryExecutionState::CONNECTED;
                 fireStateChangeEvent(taskNo, "CONNECTED");
             }
         } else if (task->state == QueryExecutionState::CONNECTED) {
-            LOG4CPLUS_DEBUG(LOG, "about to send query");
+            LOG_DEBUG("about to send query");
             if (!task->conn.sendQuery(task->query)) {
-                string message = task->conn.errorMessage();
-                LOG4CPLUS_ERROR(LOG, "sending query  " << task->query << " failed. message = " << message);
-                throw runtime_error("sending query  " + task->query + " failed. message = " + message + " connection = " + task->connectionUrl);
+                THROW_EXC("sending query  " << task->query << " failed. message = " << task->conn.errorMessage() << " connection = " << task->connectionUrl);
             }
             task->state = QueryExecutionState::QUERY_SENDING;
             fireStateChangeEvent(taskNo, "QUERY_SENDING");
         } else if (task->state == QueryExecutionState::QUERY_SENDING) {
             int ret = conn.flush();
-            LOG4CPLUS_DEBUG(LOG, "flush returned " << ret);
+            LOG_DEBUG("flush returned " << ret);
             if (ret==1) {
                 task->state = QueryExecutionState::QUERY_SENDING;
             } else {
@@ -216,14 +211,13 @@ bool AsyncQueryExecutor::processTask(int taskNo) {
             }
         } else if (task->state == QueryExecutionState::QUERY_SENT) {
             int cir = conn.consumeInput();
-            LOG4CPLUS_TRACE(LOG, "consume input returned " << cir);
+            LOG_TRACE("consume input returned " << cir);
             if (!cir) {
                 string message = conn.errorMessage();
-                LOG4CPLUS_ERROR(LOG, "consume input " << task->query << " failed. message = " << message);
-                throw string("query failure ") + message;
+                THROW_EXC("consume input " << task->query << " failed. message = " << conn.errorMessage());
             }
             if (conn.isBusy()==0) {
-                LOG4CPLUS_TRACE(LOG, "is not busy");
+                LOG_TRACE("is not busy");
 
                 PGResult *res = task->result;
                 if (res==nullptr) {
@@ -232,45 +226,45 @@ bool AsyncQueryExecutor::processTask(int taskNo) {
                     res = task->result;
                 }
 
-                LOG4CPLUS_DEBUG(LOG, "RESULT:" << res);
+                LOG_DEBUG("RESULT:" << res);
                 if (!*res) {
                     task->done = true;
                     task->state = QueryExecutionState::DONE;
                     fireStateChangeEvent(taskNo, "DONE");
-                    LOG4CPLUS_DEBUG(LOG, "RESULT IS NULL");
+                    LOG_DEBUG("RESULT IS NULL");
                     fireEvent(EventType::PROCESSED, taskNo);
                     return true;
                 }
                 ExecStatusType status = res->getStatusType();
-                LOG4CPLUS_DEBUG(LOG, "result status is " << status);
+                LOG_DEBUG("result status is " << status);
                 string ss = res->getStatusTypeAsString(status);
-                LOG4CPLUS_DEBUG(LOG, "result status is " << ss);
+                LOG_DEBUG("result status is " << ss);
                 if (status == PGRES_FATAL_ERROR) {
-                    LOG4CPLUS_ERROR(LOG, "get result returned fatal error");
+                    LOG_WARN("get result returned fatal error");
                     string em = conn.errorMessage();
-                    LOG4CPLUS_ERROR(LOG, "message = " << em);
-                    LOG4CPLUS_DEBUG(LOG, "query =\n" << task->query);
+                    LOG_WARN("message = " << em);
+                    LOG_DEBUG("query =\n" << task->query);
                     throw AsyncQueryExecutorException(em, task->query);
                 } else if (status == PGRES_COPY_IN) {
                     fireStateChangeEvent(taskNo, "COPY_IN");
-                    LOG4CPLUS_DEBUG(LOG, "got copy in res=" << res);
+                    LOG_DEBUG("got copy in res=" << res);
                     int copyDataResult = 0;
                     uint64_t rowCount = task->handler->getRowCount(task->queryNo);
-                    LOG4CPLUS_DEBUG(LOG, "rowCount = " << rowCount);
+                    LOG_DEBUG("rowCount = " << rowCount);
                     uint64_t rowsPerChunk = 100;
                     if (rowCount>0) {
                         do {
                             if (pImpl->cancelRequest) {
                                 throw CancelException("cancled while copy in");
                             }
-                            LOG4CPLUS_TRACE(LOG, "get row " << (task->lastRowSent+1));
+                            LOG_TRACE("get row " << (task->lastRowSent+1));
                             uint64_t rowsRead = 0;
                             vector<DataChunk> chunks;
                             task->handler->handleCopyIn(task->queryNo, task->lastRowSent + 1, rowsPerChunk, chunks, rowsRead);
                             string data = DataChunk::contiguous(chunks);
-                            LOG4CPLUS_TRACE(LOG, "data = " << data);
-                            LOG4CPLUS_TRACE(LOG, "rowsRead = " << rowsRead);
-                            LOG4CPLUS_TRACE(LOG, "lastRowSent = " << (task->lastRowSent+1));
+                            LOG_TRACE("data = " << data);
+                            LOG_TRACE("rowsRead = " << rowsRead);
+                            LOG_TRACE("lastRowSent = " << (task->lastRowSent+1));
                             copyDataResult = conn.putCopyData(data);
                             if (copyDataResult == 1) {
                                 task->lastRowSent += rowsRead;
@@ -280,42 +274,40 @@ bool AsyncQueryExecutor::processTask(int taskNo) {
                                     return false;
                                 }
                             } else if (copyDataResult == 0) {
-                                LOG4CPLUS_ERROR(LOG, "copy in would block. skip ...");
+                                LOG_DEBUG("copy in would block. skip ...");
                                 return false;
                             } else if (copyDataResult==-1) {
-                                LOG4CPLUS_ERROR(LOG, "copy data failed" << conn.errorMessage());
-                                throw runtime_error("copy data failed:" + conn.errorMessage());
+                                THROW_EXC("copy data failed: " << conn.errorMessage());
                             }
                         } while((task->lastRowSent+1)<rowCount);
                         int copyEndResult = conn.putCopyEnd("");
                         if (copyEndResult == 0) {
-                            LOG4CPLUS_ERROR(LOG, "putCopyEnd would block.");
+                            LOG_DEBUG("putCopyEnd would block.");
                             return false;
                         }
                         task->lastRowSent = -1;
                     } else {
                         int copyEndResult = conn.putCopyEnd("");
                         if (copyEndResult == 0) {
-                            LOG4CPLUS_ERROR(LOG, "putCopyEnd would block.");
+                            LOG_DEBUG("putCopyEnd would block.");
                         }
                     }
                 } else if (status == PGRES_COPY_OUT) {
                     fireStateChangeEvent(taskNo, "COPY_OUT");
-                    LOG4CPLUS_TRACE(LOG, "got copy out " << res);
+                    LOG_TRACE("got copy out " << res);
                     char *data = NULL;
                     int size=0;
                     do {
                         size = conn.getCopyData(data,true);
                         if (size == 0) {
-                            LOG4CPLUS_TRACE(LOG, "copy out would block . skip further processing!!! [received " << task->data.size() << " bytes]");
+                            LOG_TRACE("copy out would block . skip further processing!!! [received " << task->data.size() << " bytes]");
                             ReceiveDataEvent rde{task->id,task->rowsReceived};
                             EventProducer::fireEvent(rde);
                             return false;
                         } else if (size==-2) {
-                            LOG4CPLUS_ERROR(LOG, "an error occured !!! ");
-                            throw runtime_error("error occurred when reading COPY OUT data");
+                            THROW_EXC("error occurred when reading COPY OUT data");
                         } else if (size!=-1) {
-                            LOG4CPLUS_TRACE(LOG, "got data " << data);
+                            LOG_TRACE("got data " << data);
                             task->data += string(data,size);
                             task->rowsReceived++;
                         }
@@ -324,28 +316,28 @@ bool AsyncQueryExecutor::processTask(int taskNo) {
                         }
                     } while(size!=-1);
 
-                    LOG4CPLUS_TRACE(LOG, "received " << task->data.size() << " bytes");
+                    LOG_TRACE("received " << task->data.size() << " bytes");
                     if (!task->data.empty()) {
                         ReceiveDataEvent rde{task->id,task->rowsReceived};
                         EventProducer::fireEvent(rde);
-                        LOG4CPLUS_TRACE(LOG, "save in handler " << task->data.size() << " bytes");
+                        LOG_TRACE("save in handler " << task->data.size() << " bytes");
                         task->handler->handleCopyOut(task->queryNo,task->data);
-                        LOG4CPLUS_TRACE(LOG, "save in handler " << task->data.size() << " bytes done");
+                        LOG_TRACE("save in handler " << task->data.size() << " bytes done");
                     }
                     task->data.clear();
 
                 } else if (status == PGRES_TUPLES_OK) {
                     fireStateChangeEvent(taskNo, "TUPLES");
-                    LOG4CPLUS_DEBUG(LOG, "get result ");
+                    LOG_DEBUG("get result ");
                     vector<pair<string,uint32_t>> columns = res->getColumns();
                     string status = res->getCommandStatus();
-                    LOG4CPLUS_DEBUG(LOG, "status is " << status);
+                    LOG_DEBUG("status is " << status);
                     task->handler->handleTuples(task->queryNo, columns);
                     task->queryNo++;
                 } else if (status == PGRES_COMMAND_OK) {
                     fireStateChangeEvent(taskNo, "COMMAND");
                     string status = res->getCommandStatus();
-                    LOG4CPLUS_DEBUG(LOG, "command status is " << status);
+                    LOG_DEBUG("command status is " << status);
                     task->queryNo++;
                 }
                 if (res != nullptr) {
@@ -364,7 +356,7 @@ bool AsyncQueryExecutor::processTask(int taskNo) {
     }
 
     void AsyncQueryExecutor::fireEvent(EventType type, int taskNo) {
-        LOG4CPLUS_TRACE(LOG, "fire event " << taskNo);
+        LOG_TRACE("fire event " << taskNo);
         Event event{type};
         if (taskNo!=-1) {
             event.resultId = pImpl->tasks[taskNo]->id;
@@ -377,7 +369,7 @@ bool AsyncQueryExecutor::processTask(int taskNo) {
     }
 
     void AsyncQueryExecutor::cleanUp(int taskNo, string reason) {
-        LOG4CPLUS_INFO(LOG, "clean up task " << taskNo << "/" << pImpl->tasks.size());
+        LOG_INFO("clean up task " << taskNo << "/" << pImpl->tasks.size());
         QueryTask *task = pImpl->tasks[taskNo];
         if (!reason.empty()) {
             fireStateChangeEvent(taskNo, reason);
@@ -387,15 +379,15 @@ bool AsyncQueryExecutor::processTask(int taskNo) {
         if (pgCancel) {
             char buf[256];
             if (PQcancel(pgCancel,buf,256) == 0) {
-                LOG4CPLUS_ERROR(LOG, "cancelling failed " << buf);
+                LOG_ERROR("cancelling failed " << buf);
             }
             PQfreeCancel(pgCancel);
         }
         PGresult *result = nullptr;
         do {
-            LOG4CPLUS_TRACE(LOG, "get result");
+            LOG_TRACE("get result");
             result = conn.getResult();
-            LOG4CPLUS_TRACE(LOG, "get result = " << result);
+            LOG_TRACE("get result = " << result);
             if (result) {
                 PQclear(result);
                 result = nullptr;

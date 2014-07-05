@@ -8,7 +8,7 @@
 #include "extension/ExtensionLoader.h"
 
 #include <dlfcn.h>
-#include <log4cplus/logger.h>
+#include "utils/logging.h"
 #include <iostream>
 #include <utility>
 #include <vector>
@@ -23,32 +23,32 @@ namespace db_agg {
     static Logger LOG = Logger::getInstance(LOG4CPLUS_TEXT("ExtensionLoader"));
 
     ExtensionLoader::~ExtensionLoader() {
-        LOG4CPLUS_TRACE(LOG,"delete extension loader " << this);
+        LOG_TRACE("delete extension loader " << this);
         for (auto &ext:extensions) {
             delete ext.second;
         }
         for (auto &lib:libraries) {
             dlclose(lib.second);
         }
-        LOG4CPLUS_TRACE(LOG,"delete extension loader done");
+        LOG_TRACE("delete extension loader done");
     }
 
     void ExtensionLoader::loadExtensions(std::string extensionDir) {
-        LOG4CPLUS_DEBUG(LOG,"load extensions from " << extensionDir);
+        LOG_DEBUG("load extensions from " << extensionDir);
         File extDir(extensionDir);
         vector<string> childs;
         extDir.getChilds(childs);
         for (auto& child:childs) {
-            LOG4CPLUS_DEBUG(LOG,"load extension " << child);
+            LOG_DEBUG("load extension " << child);
             string path = extensionDir + "/" + child;
             void *handle = dlopen(path.c_str(),RTLD_NOW);
             if (!handle) {
-                LOG4CPLUS_WARN(LOG,"loading extension " << child << " failed. error: " << dlerror());
+                LOG_WARN("loading extension " << child << " failed. error: " << dlerror());
                 continue;
             }
             Extension *(*getExtension)() = (Extension *(*)())dlsym(handle,"getExtension");
             if (!getExtension) {
-                LOG4CPLUS_WARN(LOG,"no method getExtension found: " << dlerror());
+                LOG_WARN("no method getExtension found: " << dlerror());
             }
             extensions[child] = getExtension();
             libraries[child] = handle;

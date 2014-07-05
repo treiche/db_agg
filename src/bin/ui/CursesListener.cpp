@@ -7,7 +7,7 @@
 
 #include "CursesListener.h"
 
-#include <log4cplus/logger.h>
+#include "utils/logging.h"
 
 
 extern "C" {
@@ -41,7 +41,7 @@ CursesListener::~CursesListener() {
 
 void CursesListener::handleEvent(Event& event) {
 
-    LOG4CPLUS_DEBUG(LOG, "handleEvent " << (int)event.type);
+    LOG_DEBUG( "handleEvent " << (int)event.type);
     if (event.type == EventType::APPLICATION_INITIALIZED) {
         screenMutex.lock();
         setlocale(LC_ALL, "");
@@ -107,7 +107,7 @@ void CursesListener::handleEvent(Event& event) {
         clockThread = new std::thread(&CursesListener::updateClock,this);
 
     } else if (event.type == EventType::APPLICATION_FINISHED || event.type == EventType::APPLICATION_FAILED || event.type == EventType::APPLICATION_CANCELED) {
-        LOG4CPLUS_DEBUG(LOG, "got finish event "<<(int)event.type);
+        LOG_DEBUG( "got finish event "<<(int)event.type);
         running = false;
         clockThread->join();
         if (event.type == EventType::APPLICATION_FAILED) {
@@ -150,7 +150,7 @@ void CursesListener::handleEvent(Event& event) {
         screenMutex.unlock();
     } else if (event.type == EventType::RECEIVE_DATA) {
         ReceiveDataEvent& e = (ReceiveDataEvent&)event;
-        LOG4CPLUS_DEBUG(LOG, "recive data event for result " << e.resultId  << " received " << e.rowsReceived);
+        LOG_DEBUG("recive data event for result " << e.resultId  << " received " << e.rowsReceived);
         screenMutex.lock();
         print(e.resultId,"received",to_string(e.rowsReceived));
         attrset(COLOR_PAIR(1));
@@ -158,7 +158,7 @@ void CursesListener::handleEvent(Event& event) {
         screenMutex.unlock();
     } else if (event.type == EventType::SENT_DATA) {
         SentDataEvent& e = (SentDataEvent&)event;
-        LOG4CPLUS_DEBUG(LOG, "sent data event for result " << e.resultId  << " received " << e.rowsSent);
+        LOG_DEBUG("sent data event for result " << e.resultId  << " received " << e.rowsSent);
         screenMutex.lock();
         print(e.resultId,"sent",to_string(e.rowsSent));
         attrset(COLOR_PAIR(1));
@@ -198,7 +198,7 @@ void CursesListener::print(std::string resultId, std::string col, std::string va
 
 void CursesListener::updateClock() {
     using namespace chrono;
-    // LOG4CPLUS_DEBUG(LOG, "updateClock ");
+    // LOG_DEBUG("updateClock ");
     while(running) {
         screenMutex.lock();
         for (auto& p:timeSpent) {

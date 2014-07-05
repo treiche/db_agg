@@ -1,5 +1,5 @@
 
-#include <log4cplus/logger.h>
+#include "utils/logging.h"
 
 using namespace std;
 using namespace log4cplus;
@@ -34,25 +34,22 @@ namespace db_agg {
     static Logger LOG = Logger::getInstance(LOG4CPLUS_TEXT("DatabaseRegistry"));
 
     DatabaseRegistry::DatabaseRegistry(string regfile) {
-        LOG4CPLUS_DEBUG(LOG, "load database registry from " << regfile);
+        LOG_DEBUG("load database registry from " << regfile);
         File regFile(regfile);
         if (!regFile.exists()) {
             throw runtime_error("no file found " + regfile);
         }
         xmlParserCtxtPtr ctxt = xmlNewParserCtxt();
         if (ctxt==nullptr) {
-            LOG4CPLUS_ERROR(LOG, "Failed to allocate parser context");
-            throw runtime_error("Failed to allocate parser context");
+            THROW_EXC("Failed to allocate parser context");
         }
         xmlDocPtr doc = xmlCtxtReadFile(ctxt, regfile.c_str(), NULL, XML_PARSE_DTDVALID);
         if (doc == NULL) {
-            LOG4CPLUS_ERROR(LOG, "parsing failed");
-            throw runtime_error("parsing failed");
+            THROW_EXC("parsing failed");
         }
         if (ctxt->valid == 0) {
-            LOG4CPLUS_ERROR(LOG, "document is not valid !");
             xmlFreeDoc(doc);
-            throw runtime_error("document is not valid");
+            THROW_EXC("document is not valid");
         }
         xpathCtx = xmlXPathNewContext(doc);
         this->doc = doc;
@@ -61,10 +58,10 @@ namespace db_agg {
     }
 
     DatabaseRegistry::~DatabaseRegistry() {
-        LOG4CPLUS_TRACE(LOG, "delete database registry instance");
+        LOG_TRACE("delete database registry instance");
         xmlXPathFreeContext(xpathCtx);
         xmlFreeDoc(doc);
-        LOG4CPLUS_TRACE(LOG, "delete database registry instance done");
+        LOG_TRACE("delete database registry instance done");
     }
 
     vector<string> DatabaseRegistry::getSystems() {
@@ -103,7 +100,7 @@ namespace db_agg {
     vector<shared_ptr<Url>> DatabaseRegistry::getUrls(string database, string environment, short shardId) {
         assert(!database.empty());
         assert(!environment.empty());
-        LOG4CPLUS_DEBUG(LOG, "called getUrls(" << database << "," << environment << "," << shardId << ")");
+        LOG_DEBUG("called getUrls(" << database << "," << environment << "," << shardId << ")");
         string ss;
         if (shardId == -1) {
             ss += "//system[@name='" + string(environment) + "']//database-instance[@id='" + string(database) + "']";
@@ -111,10 +108,10 @@ namespace db_agg {
             ss += "//system[@name='" + string(environment) + "']//database-instance[@id='" + string(database) + "' and @shard='" + to_string(shardId) + "']";
         }
         xmlXPathObjectPtr xpathObj = xmlXPathEvalExpression((const xmlChar*)ss.c_str(), this->xpathCtx);
-        LOG4CPLUS_DEBUG(LOG, "xpath obj = " << xpathObj);
+        LOG_DEBUG("xpath obj = " << xpathObj);
         if (xpathObj==0) {
-            LOG4CPLUS_ERROR(LOG, ss.c_str());
-            throw runtime_error("xpath eval returned 0");
+            LOG_ERROR(ss);
+            THROW_EXC("xpath eval returned 0");
         }
         xmlNodeSetPtr nodes = xpathObj->nodesetval;
         
@@ -129,16 +126,16 @@ namespace db_agg {
             }
         
         }
-        LOG4CPLUS_DEBUG(LOG, "found " << found << " nodes");
+        LOG_DEBUG("found " << found << " nodes");
         xmlXPathFreeObject(xpathObj);
         return urls;
     }
 
     string DatabaseRegistry::evaluateXPath(string expr) {
         xmlXPathObjectPtr xpathObj = xmlXPathEvalExpression((const xmlChar*)expr.c_str(), this->xpathCtx);
-        LOG4CPLUS_DEBUG(LOG, "xpath obj = " << xpathObj);
+        LOG_DEBUG("xpath obj = " << xpathObj);
         if (xpathObj->nodesetval==0) {
-            LOG4CPLUS_ERROR(LOG, "no result found for '" << expr.c_str() << "'");
+            LOG_ERROR("no result found for '" << expr.c_str() << "'");
             return "";
         }
         xmlNodeSetPtr nodes = xpathObj->nodesetval;
@@ -170,14 +167,14 @@ namespace db_agg {
     string DatabaseRegistry::getDatabaseByNamespace(set<string> namespaces) {
         string ss = "/registry/database-definition[namespace/@name='" + *namespaces.begin() + "']/@name";
         xmlXPathObjectPtr xpathObj = xmlXPathEvalExpression((const xmlChar*)ss.c_str(), this->xpathCtx);
-        LOG4CPLUS_DEBUG(LOG, "xpath obj = " << xpathObj);
+        LOG_DEBUG("xpath obj = " << xpathObj);
         if (xpathObj->nodesetval==0) {
-            LOG4CPLUS_ERROR(LOG, "no result found for '" << ss.c_str() << "'");
+            LOG_WARN("no result found for '" << ss.c_str() << "'");
             return "";
         }
         xmlNodeSetPtr nodes = xpathObj->nodesetval;
         if (nodes->nodeNr!=1) {
-            throw runtime_error("unexpected result count "+nodes->nodeNr);
+            THROW_EXC("unexpected result count " << nodes->nodeNr);
         }
         xmlNodePtr node = nodes->nodeTab[0];
         xmlChar * sval = xmlXPathCastNodeToString(node);
@@ -191,9 +188,9 @@ namespace db_agg {
     string DatabaseRegistry::getDatabaseNamingStrategy() {
         string ss = "/registry/@databaseNamingStrategy";
         xmlXPathObjectPtr xpathObj = xmlXPathEvalExpression((const xmlChar*)ss.c_str(), this->xpathCtx);
-        LOG4CPLUS_DEBUG(LOG, "xpath obj = " << xpathObj);
+        LOG_DEBUG("xpath obj = " << xpathObj);
         if (xpathObj->nodesetval==0) {
-            LOG4CPLUS_ERROR(LOG, "no result found for '" << ss.c_str() << "'");
+            LOG_WARN("no result found for '" << ss.c_str() << "'");
             return "";
         }
         xmlNodeSetPtr nodes = xpathObj->nodesetval;

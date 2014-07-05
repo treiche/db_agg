@@ -11,7 +11,7 @@ extern "C" {
 #include <pwd.h>
 }
 
-#include <log4cplus/logger.h>
+#include "utils/logging.h"
 
 #include "utils/utility.h"
 #include "utils/PasswordManager.h"
@@ -105,16 +105,16 @@ namespace db_agg {
     pair<string,string> PasswordManager::getCredentialFromPgPass(Url *url) {
         pair<string,string> c;
         uid_t uid = getuid();
-        LOG4CPLUS_DEBUG(LOG,"uid=" << uid);
+        LOG_DEBUG("uid=" << uid);
         struct passwd *pw = getpwuid(uid);
         const char *homedir = pw->pw_dir;
-        LOG4CPLUS_DEBUG(LOG, "homedir=" << homedir);
+        LOG_DEBUG("homedir=" << homedir);
         homedir = getenv("HOME");
-        LOG4CPLUS_DEBUG(LOG, "homedir=" << homedir);
+        LOG_DEBUG("homedir=" << homedir);
 
         ifstream pgpass(string(homedir) + "/.pgpass");
 
-        LOG4CPLUS_DEBUG(LOG, "pgpass = " << pgpass);
+        LOG_DEBUG("pgpass = " << pgpass);
 
         if (pgpass) {
             while(pgpass) {
@@ -125,19 +125,19 @@ namespace db_agg {
                 split(line,':',columns);
                 if (columns.size() == 5) {
                     if (columns[0] == url->getHost() && columns[1] == to_string(url->getPort())) {
-                        LOG4CPLUS_DEBUG(LOG, "found entry for host " << columns[0]);
+                        LOG_DEBUG("found entry for host " << columns[0]);
                         c.first = columns[3];
                         c.second = columns[4];
-                        LOG4CPLUS_DEBUG(LOG, "return " << columns[3]);
+                        LOG_DEBUG("return " << columns[3]);
                         pgpass.close();
                         return c;
                     }
                 } else {
-                    LOG4CPLUS_WARN(LOG, "found line with " << columns.size() << " columns");
+                    LOG_WARN("found line with " << columns.size() << " columns");
                 }
             }
             pgpass.close();
-            LOG4CPLUS_DEBUG(LOG,"no credentials found");
+            LOG_DEBUG("no credentials found");
         }
         return c;
     }

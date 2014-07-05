@@ -10,7 +10,7 @@
 #include "core/PGQueryExecution.h"
 #include "core/ResourceQueryExecution.h"
 
-#include <log4cplus/logger.h>
+#include "utils/logging.h"
 
 using namespace std;
 using namespace log4cplus;

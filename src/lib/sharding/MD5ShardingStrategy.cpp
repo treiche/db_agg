@@ -7,7 +7,7 @@
 
 #include "MD5ShardingStrategy.h"
 
-#include <log4cplus/logger.h>
+#include "utils/logging.h"
 #include "utils/md5.h"
 
 using namespace std;
@@ -19,9 +19,9 @@ static Logger LOG = Logger::getInstance(LOG4CPLUS_TEXT("MD5ShardingStrategy"));
 int MD5ShardingStrategy::getShardId(std::string shardKey) {
     MD5 md5 = MD5(shardKey);
     const unsigned char *md5sum = md5.rawDigest();
-    LOG4CPLUS_TRACE(LOG, "md5 of " << shardKey << " is " << md5sum );
+    LOG_TRACE("md5 of " << shardKey << " is " << md5sum );
     int virtualShardId = (md5sum[15] & 0xff) + ((md5sum[14] & 0xff) << 8) + ((md5sum[13] & 0xff) << 16);
-    LOG4CPLUS_TRACE(LOG, "virtual shard id " << virtualShardId);
+    LOG_TRACE("virtual shard id " << virtualShardId);
     int concreteShardId = virtualShardId & (shardCount - 1);
     return concreteShardId + 1;
 }

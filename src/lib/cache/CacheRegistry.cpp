@@ -1,7 +1,7 @@
 #include "cache/CacheRegistry.h"
 
 #include <jansson.h>
-#include <log4cplus/logger.h>
+#include "utils/logging.h"
 #include <fstream>
 #include <stdexcept>
 #include <utility>
@@ -61,7 +61,7 @@ namespace db_agg {
         json_error_t error;
         json = json_load_file(cacheRegistryFile.c_str(), 0, &error);
         if (!json) {
-            LOG4CPLUS_DEBUG(LOG, "loading cache registry failed");
+            LOG_DEBUG("loading cache registry failed");
             return;
         }
         void *iter = json_object_iter(json);
@@ -107,7 +107,7 @@ namespace db_agg {
         for (auto& item:items) {
             File cacheFile(item.second.path);
             if (!cacheFile.exists()) {
-                LOG4CPLUS_INFO(LOG, "remove orphan "+item.second.path);
+                LOG_INFO("remove orphan "+item.second.path);
                 for (string link:item.second.links) {
                     File linkPath(link);
                     linkPath.remove();

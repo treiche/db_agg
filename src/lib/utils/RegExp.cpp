@@ -1,6 +1,6 @@
 #include "RegExp.h"
 
-#include <log4cplus/logger.h>
+#include "utils/logging.h"
 #include <iostream>
 
 extern "C" {
@@ -25,8 +25,8 @@ namespace db_agg {
     RegExp::RegExp(string re) {
         pImpl = new XImpl();
         compile(re);
-        //LOG4CPLUS_DEBUG(LOG, "re = " << re);
-        //LOG4CPLUS_DEBUG(LOG, "RegExp extra = " << pImpl->pcreExtra);
+        //LOG_DEBUG("re = " << re);
+        //LOG_DEBUG("RegExp extra = " << pImpl->pcreExtra);
     }
 
     void RegExp::setExpr(std::string re) {
@@ -63,7 +63,7 @@ namespace db_agg {
         int subStrVec[30];
         int ret = pcre_exec(pImpl->regexp, pImpl->pcreExtra, qs, len, 0, 0, subStrVec, 30);
         if (ret < 0) {
-            LOG4CPLUS_TRACE(LOG, "no more matches found");
+            LOG_TRACE("no more matches found");
             return result;
         }
         for (int cnt = 0; cnt < ret; cnt++) {

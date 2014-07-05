@@ -7,7 +7,7 @@
 
 #include "PGQueryExecution.h"
 
-#include <log4cplus/logger.h>
+#include "utils/logging.h"
 
 #include "type/oids.h"
 #include "table/TableDataFactory.h"
@@ -47,7 +47,7 @@ namespace db_agg {
         for (size_t idx = 0; idx < columns.size(); idx++) {
             auto column = columns[idx];
             if (column.first == "?column?") {
-                LOG4CPLUS_DEBUG(LOG,"column " << idx << "has unknown name/type. assume type TEXT");
+                LOG_DEBUG("column " << idx << "has unknown name/type. assume type TEXT");
                 cleaned.push_back(pair<string,uint32_t>(string("argument_") + to_string(idx),TEXT));
             } else {
                 cleaned.push_back(column);
@@ -67,7 +67,7 @@ namespace db_agg {
     }
 
     bool PGQueryExecution::process() {
-        LOG4CPLUS_DEBUG(LOG,"process postgres query '" << getName() << "'");
+        LOG_DEBUG("process postgres query '" << getName() << "'");
         return queryExecutor.process();
     }
 
@@ -90,7 +90,7 @@ namespace db_agg {
     }
 
     bool PGQueryExecution::isResourceAvailable() {
-        LOG4CPLUS_INFO(LOG, "check connection " + getUrl()->getUrl(false,true,false));
+        LOG_INFO("check connection " + getUrl()->getUrl(false,true,false));
         string pgurl = toPostgresUrl(getUrl());
         return PGConnection::ping(pgurl);
     }

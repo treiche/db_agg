@@ -8,6 +8,8 @@
 #ifndef LOGGING_H_
 #define LOGGING_H_
 
+#include <log4cplus/logger.h>
+
 #define LOG_TRACE(msg) \
     LOG4CPLUS_TRACE(LOG,msg);
 
@@ -24,9 +26,9 @@
     LOG4CPLUS_ERROR(LOG,msg);
 
 #define THROW_EXC(msg) \
-    LOG4CPLUS_FATAL(LOG,msg); \
     stringstream ss; \
     ss << msg; \
+    LOG4CPLUS_FATAL(LOG,ss.str()); \
     throw runtime_error(ss.str());
 
 #endif /* LOGGING_H_ */

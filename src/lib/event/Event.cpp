@@ -8,7 +8,7 @@
 
 #include "event/Event.h"
 
-#include <log4cplus/logger.h>
+#include "utils/logging.h"
 
 using namespace std;
 using namespace log4cplus;
@@ -21,9 +21,9 @@ void EventProducer::addEventListener(EventListener *listener) {
     listeners.push_back(listener);
 }
 void EventProducer::fireEvent(Event& event) {
-    LOG4CPLUS_DEBUG(LOG,"fireEvent to " << listeners.size() << " listeners");
+    LOG_DEBUG("fireEvent to " << listeners.size() << " listeners");
     for (auto& listener:listeners) {
-        LOG4CPLUS_DEBUG(LOG,"fireEvent");
+        LOG_DEBUG("fireEvent");
         listener->handleEvent(event);
     }
 }

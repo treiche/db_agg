@@ -10,7 +10,7 @@
 #include <cstdio>
 #include <stdexcept>
 #include <chrono>
-#include <log4cplus/logger.h>
+#include "utils/logging.h"
 
 #include "utility.h"
 
@@ -27,7 +27,7 @@ namespace db_agg {
         if (strftime(buf,512,format.c_str(),ltime)>512) {
             throw runtime_error("time buffer overflow");
         }
-        //LOG4CPLUS_TRACE(LOG, "create time " << buf);
+        //LOG_TRACE("create time " << buf);
         return std::string(buf);
     }
 
@@ -43,7 +43,7 @@ namespace db_agg {
     }
 
     Time::Time(string ts) {
-        //LOG4CPLUS_TRACE(LOG, "create time " << ts);
+        //LOG_TRACE("create time " << ts);
         int year, month, day, hour, minute, second, micros;
         sscanf(ts.c_str(), "%d-%d-%d %d:%d:%d.%d", &year, &month, &day, &hour,
                 &minute, &second, &micros);

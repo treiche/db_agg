@@ -10,7 +10,7 @@
 #include <fstream>
 
 
-#include <log4cplus/logger.h>
+#include "utils/logging.h"
 #include "type/oids.h"
 #include "type/TypeRegistry.h"
 
@@ -56,13 +56,13 @@ string TableData::getValue(uint64_t row, uint32_t col) {
 void TableData::save(std::string filePath) {
     vector<DataChunk> chunks;
     getRows(0,getRowCount(),chunks);
-    LOG4CPLUS_DEBUG(LOG, "save data in file " + filePath);
+    LOG_DEBUG("save data in file " + filePath);
     ofstream os{filePath};
     for (size_t idx = 0; idx < getColCount(); idx++) {
         pair<string,uint32_t> p = getColumns()[idx];
         TypeInfo *ti =  TypeRegistry::getInstance().getTypeInfo((long int)p.second);
         if (ti == nullptr) {
-            LOG4CPLUS_WARN(LOG, "unknown type id '" << p.second << "' for columns '" << p.first << "'. assuming text");
+            LOG_WARN("unknown type id '" << p.second << "' for columns '" << p.first << "'. assuming text");
             ti =  TypeRegistry::getInstance().getTypeInfo(TEXT);
         }
         os << p.first << ":" << ti->name;
@@ -136,13 +136,13 @@ std::string TableData::toColumnDefinitions() {
     for (auto col:cols) {
         string colName = col.first;
         uint32_t colType = col.second;
-        LOG4CPLUS_DEBUG(LOG, "process column " << colName);
+        LOG_DEBUG("process column " << colName);
         TypeInfo *ti = TypeRegistry::getInstance().getTypeInfo(colType);
         if (ti == nullptr) {
-            LOG4CPLUS_WARN(LOG, "unknown type id '" << colType << "' assuming text");
+            LOG_WARN("unknown type id '" << colType << "' assuming text");
             ti =  TypeRegistry::getInstance().getTypeInfo(TEXT);
         }
-        LOG4CPLUS_DEBUG(LOG, "type name is  " << ti->name);
+        LOG_DEBUG("type name is  " << ti->name);
         sql += "  " + colName + " " + ti->name;
         if (idx<len-1) {
             sql += ",";

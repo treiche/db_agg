@@ -1,6 +1,6 @@
 #include "core/Query.h"
 
-#include <log4cplus/logger.h>
+#include "utils/logging.h"
 #include <map>
 #include <sstream>
 
@@ -17,7 +17,7 @@ namespace db_agg {
      */
     Query::Query(string id, string type, Locator locator, string query, string formattedQuery, set<string> usedNamespaces) {
         this->id = id;
-        LOG4CPLUS_DEBUG(LOG, "query '" << locator.getQName() << "' id = " << id);
+        LOG_DEBUG("query '" << locator.getQName() << "' id = " << id);
         this->locator = locator;
         this->query = query;
         this->formattedQuery = formattedQuery;

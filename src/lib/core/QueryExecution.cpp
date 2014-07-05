@@ -7,7 +7,7 @@
 
 #include "QueryExecution.h"
 
-#include <log4cplus/logger.h>
+#include "utils/logging.h"
 
 #include "type/oids.h"
 #include "type/TypeRegistry.h"
@@ -41,16 +41,16 @@ namespace db_agg {
     }
 
     QueryExecution::~QueryExecution() {
-        LOG4CPLUS_TRACE(LOG, "delete query execution");
+        LOG_TRACE("delete query execution");
         if (data!=nullptr) {
             data.reset();
         }
     }
 
     void QueryExecution::release() {
-        LOG4CPLUS_TRACE(LOG, "use count before release = " << data.use_count());
+        LOG_TRACE("use count before release = " << data.use_count());
         data.reset();
-        LOG4CPLUS_TRACE(LOG, "use count after release = " << data.use_count());
+        LOG_TRACE("use count after release = " << data.use_count());
     }
 
 
@@ -59,7 +59,7 @@ namespace db_agg {
     }
 
     void QueryExecution::setResult(shared_ptr<TableData> data) {
-        LOG4CPLUS_DEBUG(LOG,"set result to " << data);
+        LOG_DEBUG("set result to " << data);
         this->data = data;
     }
 
@@ -73,12 +73,12 @@ namespace db_agg {
 
     string QueryExecution::inject(string query, size_t copyThreshold) {
             assert(dependencyInjector != nullptr);
-            LOG4CPLUS_DEBUG(LOG, "called inject " << query << " di = " << dependencyInjector);
+            LOG_DEBUG("called inject " << query << " di = " << dependencyInjector);
             return dependencyInjector->inject(query,dependencies,copyThreshold);
     }
 
     void QueryExecution::receive(string name, shared_ptr<TableData> data) {
-        LOG4CPLUS_DEBUG(LOG, "receive data " << data);
+        LOG_DEBUG("receive data " << data);
         if (dependencies.find(name)==dependencies.end()) {
             throw runtime_error("no dependency '" + name + "' declared");
         }

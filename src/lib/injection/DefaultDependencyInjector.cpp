@@ -7,7 +7,7 @@
 
 #include "DefaultDependencyInjector.h"
 
-#include <log4cplus/logger.h>
+#include "utils/logging.h"
 #include "type/oids.h"
 #include "type/TypeRegistry.h"
 #include "utils/RegExp.h"
@@ -24,7 +24,7 @@ DefaultDependencyInjector::~DefaultDependencyInjector() {
 }
 
 string DefaultDependencyInjector::inject(string query, map<string,shared_ptr<TableData>> dependencies, size_t copyThreshold) {
-    LOG4CPLUS_DEBUG(LOG, "called inject " << query);
+    LOG_DEBUG("called inject " << query);
     for (auto dep:dependencies) {
         if (dep.second == nullptr) {
             throw runtime_error("can't inject sql because of missing dependency '" + dep.first + "'");
@@ -37,7 +37,7 @@ string DefaultDependencyInjector::inject(string query, map<string,shared_ptr<Tab
     //steps.push_back(ExecutionStep{step,nullptr});
     // 1. Step
     for (pair<string,shared_ptr<TableData>> dependency:dependencies) {
-        LOG4CPLUS_DEBUG(LOG, "process dependency " << dependency.first);
+        LOG_DEBUG("process dependency " << dependency.first);
         step = "CREATE TEMPORARY TABLE " + dependency.first + "(\n";
         step += dependency.second->toColumnDefinitions();
         step += ") ON COMMIT DROP;\n";
@@ -76,7 +76,7 @@ string DefaultDependencyInjector::inject(string query, map<string,shared_ptr<Tab
     step = "COPY (" + query + ") TO STDOUT;\n";
     steps.push_back(ExecutionStep{Action::GET_RESULT,step,nullptr});
     sql += step;
-    LOG4CPLUS_DEBUG(LOG, "query = " << sql);
+    LOG_DEBUG("query = " << sql);
     //this->dependencies = dependencies;
     return sql;
 }

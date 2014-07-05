@@ -7,7 +7,7 @@
 
 #include "Channel.h"
 
-#include <log4cplus/logger.h>
+#include "utils/logging.h"
 
 
 using namespace std;
@@ -22,16 +22,14 @@ Channel::Channel(string name, DataReceiver *receiver): name(name), receiver(rece
 
 void Channel::open() {
     if (state != ChannelState::READY) {
-        string msg = "channel '" + name + "' is not ready. [state=" + to_string((int)state) + "]";
-        LOG4CPLUS_ERROR(LOG,msg);
-        throw runtime_error(msg);
+        THROW_EXC("channel '" << name << "' is not ready. [state=" << to_string((int)state) << "]");
     }
     state = ChannelState::OPEN;
 }
 
 void Channel::send(std::shared_ptr<TableData> data) {
     if (state != ChannelState::OPEN) {
-        throw runtime_error("channel is not open.");
+        THROW_EXC("channel is not open.");
     }
     receiver->receive(name, data);
 }

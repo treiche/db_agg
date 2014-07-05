@@ -9,7 +9,7 @@
 
 #include <fstream>
 
-#include <log4cplus/logger.h>
+#include "utils/logging.h"
 
 
 using namespace std;
