@@ -1,0 +1,18 @@
+db-agg (0.9.2-1) UNRELEASED; urgency=medium
+
+  [ Arnd Brusdeilins ]
+  * refactored for support of different server types besides postgres
+  * DataTableFactory for encapsulating of table data implementations
+  * introduction of ExecutionGraph in preparation of sending data in chunks
+  * reorganized header files for better extension development
+  * treat external files (xlsx/csv) as processable queries
+  * add missing Extension.cpp
+  * provide metadata inside query comments
+
+ -- Arnd Brusdeilins (launchpad ppa) <arnd@brusdeilins.net>  Sun, 15 Jun 2014 18:03:36 +0200
+
+dbagg (0.9.1) unstable; urgency=low
+
+  initial commit
+
+ -- Arnd Brusdeilins (launchpad ppa) <arnd@brusdeilins.net>  Sat,  30 Mar 2014 10:15:03 -0500

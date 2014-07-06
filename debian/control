@@ -1,0 +1,36 @@
+Source: db-agg
+Section: devel
+Priority: optional
+Maintainer: Arnd Brusdeilins <arnd@brusdeilins.net>
+Build-Depends: debhelper (>= 9), autotools-dev, libtool, libjansson-dev, libncurses5-dev, libncursesw5-dev, liblog4cplus-dev, libxml2-dev, cxxtest, libpcre3-dev, libzip-dev, libpq-dev
+Standards-Version: 3.9.5
+Homepage: https://github.com/zalando/db_agg
+#Vcs-Git: git://git.debian.org/collab-maint/db-agg.git
+#Vcs-Browser: http://git.debian.org/?p=collab-maint/db-agg.git;a=summary
+
+Package: db-agg
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: join multiple datasources with a single query
+ db_agg is a commandline tool which processes a single postgres sql query
+ consisting of multiple common table expressions (WITH statements) 
+ that are referring to different databases.
+
+Package: db-agg-dev
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: join multiple datasources with a single query
+ db_agg is a commandline tool which processes a single postgres sql query
+ consisting of multiple common table expressions (WITH statements) 
+ that are referring to different databases.
+
+Package: db-agg-dbg
+Section: debug
+Priority: extra
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: join multiple datasources with a single query
+ db_agg is a commandline tool which processes a single postgres sql query
+ consisting of multiple common table expressions (WITH statements)
+ that are referring to different databases.
+ This package provides the debugging symbols for db_agg.

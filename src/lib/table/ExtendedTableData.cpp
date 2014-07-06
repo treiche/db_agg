@@ -7,7 +7,6 @@
 
 #include <assert.h>
 #include "ExtendedTableData.h"
-#include "Data.h"
 
 using namespace std;
 
