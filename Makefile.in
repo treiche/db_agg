@@ -63,14 +63,14 @@ check:
 
 install:
 	@@INSTALL@ -d $(DESTDIR)@bindir@
-	@@INSTALL@ -s -t $(DESTDIR)@bindir@ build/bin/db_agg
-	@@INSTALL@ -s -t $(DESTDIR)@bindir@ build/bin/db_agg_config
+	@@INSTALL@ -t $(DESTDIR)@bindir@ build/bin/db_agg
+	@@INSTALL@ -t $(DESTDIR)@bindir@ build/bin/db_agg_config
 	@@INSTALL@ -d $(DESTDIR)@sysconfdir@/db_agg
 	@@INSTALL@ -m 0666 -t $(DESTDIR)@sysconfdir@/db_agg etc/*
 	@@INSTALL@ -d $(DESTDIR)@libdir@
 	libtool --mode=install install -c build/lib/libdb_agg.a $(DESTDIR)@libdir@/libdb_agg.a
 	ranlib $(DESTDIR)@libdir@/libdb_agg.a
-	libtool --mode=install install -s -c build/lib/libdb_agg.so $(DESTDIR)@libdir@/libdb_agg.so.@PACKAGE_VERSION@
+	libtool --mode=install install -c build/lib/libdb_agg.so $(DESTDIR)@libdir@/libdb_agg.so.@PACKAGE_VERSION@
 	(cd $(DESTDIR)@libdir@ && ln -s libdb_agg.so.@PACKAGE_VERSION@ libdb_agg.so)
 	@INSTALL@ -d $(DESTDIR)@includedir@/db_agg
 	@INSTALL@ -t $(DESTDIR)@includedir@/db_agg/ src/lib/db_agg.h src/installation.h

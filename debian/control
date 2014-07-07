@@ -11,6 +11,8 @@ Homepage: https://github.com/zalando/db_agg
 Package: db-agg
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
+Pre-Depends: ${misc:Pre-Depends}
+Multi-Arch: same
 Description: join multiple datasources with a single query
  db_agg is a commandline tool which processes a single postgres sql query
  consisting of multiple common table expressions (WITH statements) 
@@ -18,7 +20,10 @@ Description: join multiple datasources with a single query
 
 Package: db-agg-dev
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Multi-Arch: same
+Depends:
+    db-agg (= ${binary:Version}),
+    ${misc:Depends}
 Description: join multiple datasources with a single query
  db_agg is a commandline tool which processes a single postgres sql query
  consisting of multiple common table expressions (WITH statements) 
@@ -28,7 +33,10 @@ Package: db-agg-dbg
 Section: debug
 Priority: extra
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Multi-Arch: same
+Depends:
+    db-agg (= ${binary:Version}),
+    ${misc:Depends}
 Description: join multiple datasources with a single query
  db_agg is a commandline tool which processes a single postgres sql query
  consisting of multiple common table expressions (WITH statements)
