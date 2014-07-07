@@ -34,6 +34,8 @@ namespace db_agg {
         uint64_t rowCount = step.getDependency()->getRowCount();
         if (startRow + rows > rowCount) {
             rowsRead = rowCount - startRow;
+        } else {
+            rowsRead = rows;
         }
         step.getDependency()->getRows(startRow, rowsRead, chunks);
     }
