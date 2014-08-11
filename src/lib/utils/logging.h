@@ -10,6 +10,10 @@
 
 #include <log4cplus/logger.h>
 
+#define DECLARE_LOGGER(name) \
+    static log4cplus::Logger LOG = log4cplus::Logger::getInstance(LOG4CPLUS_TEXT(name));
+
+
 #define LOG_TRACE(msg) \
     LOG4CPLUS_TRACE(LOG,msg);
 
