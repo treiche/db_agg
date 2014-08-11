@@ -413,7 +413,7 @@ void QueryProcessor::calculateExecutionIds() {
                 executionGraph.addQueryExecution(exec);
             } else {
                 string md5data;
-                calculateExecutionId2(*exec,md5data);
+                calculateExecutionId(*exec,md5data);
                 string resultId(md5hex(md5data));
                 exec->setId(resultId);
                 LOG_DEBUG("md5 of query " << query->getName() << " -> " << exec->getId());
