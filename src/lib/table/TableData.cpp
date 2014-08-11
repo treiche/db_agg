@@ -11,6 +11,7 @@
 
 
 #include "utils/logging.h"
+#include "utils/utility.h"
 #include "type/oids.h"
 #include "type/TypeRegistry.h"
 
@@ -143,7 +144,7 @@ std::string TableData::toColumnDefinitions() {
             ti =  TypeRegistry::getInstance().getTypeInfo(TEXT);
         }
         LOG_DEBUG("type name is  " << ti->name);
-        sql += "  " + colName + " " + ti->name;
+        sql += "  \"" + colName + "\" " + ti->name;
         if (idx<len-1) {
             sql += ",";
         }
@@ -159,7 +160,11 @@ uint32_t TableData::getColumnIndex(string colName) {
             return idx;
         }
     }
-    throw runtime_error("column with name '" + colName + "' not found.");
+    vector<string> availableColumns;
+    for (uint32_t idx = 0; idx < columns.size(); idx++) {
+        availableColumns.push_back(columns[idx].first);
+    }
+    THROW_EXC("column with name '" << colName << "' not found. available columns: " << join(availableColumns,","));
 }
 
 ColDef TableData::getColumn(string colName) {
