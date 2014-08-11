@@ -405,20 +405,20 @@ void QueryProcessor::calculateExecutionIds() {
     LOG_TRACE("calculate execution ids");
     for (auto query:executionGraph.getQueries()) {
         for (auto exec:executionGraph.getQueryExecutions(query)) {
-        	if (query->getType() == "external") {
-        		string resultId = exec->getResult()->calculateMD5Sum();
-        	    LOG_DEBUG("md5 of external " << query->getName() << " -> " << resultId);
-        	    exec->setId(resultId);
-				executionGraph.addQueryExecution(exec);
-        	} else {
-				string md5data;
-				calculateExecutionId2(*exec,md5data);
-				string resultId(md5hex(md5data));
-				exec->setId(resultId);
+            if (query->getType() == "external") {
+                string resultId = exec->getResult()->calculateMD5Sum();
+                LOG_DEBUG("md5 of external " << query->getName() << " -> " << resultId);
+                exec->setId(resultId);
+                executionGraph.addQueryExecution(exec);
+            } else {
+                string md5data;
+                calculateExecutionId2(*exec,md5data);
+                string resultId(md5hex(md5data));
+                exec->setId(resultId);
                 LOG_DEBUG("md5 of query " << query->getName() << " -> " << exec->getId());
                 dump_md5_sources(query->getName(), exec->getId(), md5data);
- 				executionGraph.addQueryExecution(exec);
-        	}
+                 executionGraph.addQueryExecution(exec);
+            }
         }
     }
     LOG_TRACE("calculate execution ids done");
