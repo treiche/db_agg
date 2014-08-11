@@ -153,11 +153,13 @@ void QueryProcessor::loadFromCache() {
             string resultId = qr->getId();
             File path(cacheRegistry.getPath(resultId));
             if (path.exists()) {
-                LOG_INFO("cache item for " << resultId << " exists");
+                LOG_INFO("cache item for " << qr->getName() << "[" << resultId << "] exists");
                 if (!disableCache) {
                     shared_ptr<TableData> data = cacheRegistry.getData(resultId);
                     qr->setResult(data);
                     qr->setDone();
+                    // close all incoming channels here
+                    // executionGraph.getSources(qr);
                     //qr.second->doTransitions();
                     File linkPath(outputDir + "/" + qr->getName() + ".csv");
                     if (!linkPath.exists()) {
@@ -173,19 +175,29 @@ void QueryProcessor::loadFromCache() {
                 fireEvent(ce);
             }
         } else {
-            LOG_INFO("cache item for " << qr->getId() << " does not exist");
+            LOG_INFO("cache item for " << qr->getName() << "[" << qr->getId() << "] does not exist");
         }
     }
     LOG_DEBUG("load items from cache done");
     for (auto& qr:executionGraph.getQueryExecutions()) {
         if (qr->isDone()) {
             for (auto channel:qr->getChannels()) {
+                vector<QueryExecution*> targets = executionGraph.getTargets(channel);
+                bool allDone = true;
+                for (auto target:targets) {
+                    allDone &= target->isDone();
+                }
+                if (allDone) {
+                    continue;
+                }
                 LOG_DEBUG("open channel " << channel->getName());
                 if (channel->getState() != ChannelState::READY) {
                     continue;
                 }
                 channel->open();
+                LOG_INFO("send data");
                 channel->send(qr->getData());
+                LOG_INFO("send data done");
                 channel->close();
             }
         }
