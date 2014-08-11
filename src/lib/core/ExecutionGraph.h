@@ -42,8 +42,11 @@ public:
     void createChannel(Transition *transition, QueryExecution *exec);
     std::vector<Channel*>& getOutputChannels(QueryExecution *exec);
     std::vector<QueryExecution*> getSources(Transition *transition);
+    std::vector<QueryExecution*> getTargets(Channel* source);
     std::vector<Transition*> getIncomingTransitions(QueryExecution *exec);
+    std::vector<QueryExecution*> getDependencies(QueryExecution *exec);
     void dumpExecutionPlan(std::string outputDir);
+    void dumpGraph(std::string outputDir);
 };
 }
 

@@ -113,6 +113,22 @@ vector<QueryExecution*> ExecutionGraph::getSources(Transition *transition) {
     return sources;
 }
 
+vector<QueryExecution*> ExecutionGraph::getDependencies(QueryExecution *exec) {
+    vector<Transition*> transitions = getIncomingTransitions(exec);
+    vector<QueryExecution*> dependencies;
+    for (auto transition:transitions) {
+        vector<QueryExecution*> sources = getSources(transition);
+        for (QueryExecution *source:sources) {
+            dependencies.push_back(source);
+            vector<QueryExecution*> transientDependencies = getDependencies(source);
+            for (auto transientDependency:transientDependencies) {
+                dependencies.push_back(transientDependency);
+            }
+        }
+    }
+    return dependencies;
+}
+
 vector<Transition*> ExecutionGraph::getIncomingTransitions(QueryExecution *exec) {
     vector<Transition*> trans;
     for (auto transition:transToExec) {
@@ -126,6 +142,61 @@ vector<Transition*> ExecutionGraph::getIncomingTransitions(QueryExecution *exec)
     return trans;
 }
 
+vector<QueryExecution*> ExecutionGraph::getTargets(Channel* sourceChannel) {
+    vector<QueryExecution*> targets;
+    Transition *t = dynamic_cast<Transition*>(sourceChannel->receiver);
+    for (auto targetChannel:transToExec[t]) {
+        QueryExecution *target = dynamic_cast<QueryExecution*>(targetChannel->receiver);
+        targets.push_back(target);
+    }
+    return targets;
+}
+
+void ExecutionGraph::dumpGraph(string outputDir) {
+    ofstream out{outputDir + "/executionPlan.graphml"};
+    out << R"(
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns"  
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns
+     http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+   <graph id="executionPlan" edgedefault="directed">
+)";
+    for (auto& query:queries) {
+        out << "<node id='" << query->getId() << "'/>\n";
+        for (auto exec:executionsByQuery[query]) {
+            out << "<node id='" << exec << "'/>\n";
+        }
+    }
+    for (auto& t:transitions) {
+        out << "<node id='" << t << "'/>\n";
+    }
+
+    for (auto& query:queries) {
+        for (auto exec:executionsByQuery[query]) {
+            out << "<edge source='" << query->getId() << "' target='" << exec << "'/>\n";
+        }
+    }
+
+    for (auto& exec:execToTrans) {
+        for (auto channel:exec.second) {
+            DataReceiver *receiver = channel->receiver;
+            Transition *transition = dynamic_cast<Transition*>(receiver);
+            out << "<edge source='" << exec.first << "' target='" << transition << "'/>\n";
+        }
+    }
+
+    for (auto& trans:transToExec) {
+        for (auto channel:trans.second) {
+            DataReceiver *receiver = channel->receiver;
+            QueryExecution *exec = dynamic_cast<QueryExecution*>(receiver);
+            out << "<edge source='" << trans.first << "' target='" << exec << "'/>\n";
+        }
+    }
+
+    out << "</graph></graphml>";
+    out.close();
+}
+
 void ExecutionGraph::dumpExecutionPlan(string outputDir) {
     LOG_INFO("dump execution plan");
     ofstream out{outputDir + "/executionPlan.dot"};
@@ -136,80 +207,73 @@ void ExecutionGraph::dumpExecutionPlan(string outputDir) {
     int clusterNo = 0;
     for (auto& query:queries) {
         out << "    subgraph cluster_" << ++clusterNo <<  " {" << endl;
-        out << "        label = \"" << query->getLocator().getQName() << "\""<< endl;
-        string label;
-        string formattedQuery = query->getFormattedQuery();
-        for (auto c:formattedQuery) {
-            if (c=='\n') {
-                label += "\\l";
-            } else if (c==' ') {
-                label += "\xC2\xA0";
-            } else if (c=='"') {
-                label += "\\\"";
-            } else {
-                label += c;
+        out << "        label = \"" << query->getLocator().getQName() << " [" << query->getType() << "]\""<< endl;
+        if (true) {
+            string label;
+            string formattedQuery = query->getFormattedQuery();
+            for (auto c:formattedQuery) {
+                if (c=='\n') {
+                    label += "\\l";
+                } else if (c==' ') {
+                    label += "\xC2\xA0";
+                } else if (c=='"') {
+                    label += "\\\"";
+                } else {
+                    label += c;
+                }
             }
+            label += "\\l";
+            out << "        \"" + label + "\"";
+        } else {
+            out << "\" ";
         }
-        label += "\\l";
-        out << "        \"" + label + "\" [fontsize=7.0, fontname=\"Courier new\", shape=note]" << endl;
+        out << " [fontsize=7.0, fontname=\"Courier new\", shape=note]" << endl;
         // out << "  \"" << query.first << "\" [label=\"" << query.second.getLocator().getQName() << "\", fillcolor=red]" << endl;
         for (auto exec:executionsByQuery[query]) {
-            out << "        \"" << exec << "\" [label=\"" << exec->getName() << "\", fillcolor=green, height=0.2, fontsize=8.5]" << endl;
+            string fillcolor = "yellow";
+            if (exec->isDone()) {
+                fillcolor = "green";
+            }
+            out << "        \"" << exec << "\" [label=\"" << exec->getName() << "\", fillcolor=" << fillcolor << ", height=0.2, fontsize=8.5]" << endl;
         }
         out << "    }" << endl;
     }
 
-    int transitionNo = 0;
+    //int transitionNo = 0;
     for (auto& t:transitions) {
         out << "  \"" << t << "\" [color=blue, shape=circle, width=0.1, fixedsize=true, label=\"" << t->getName() << "\"]" << endl;
     }
-    // dump dependencies
-    /*
-    for (auto& query:queryParser.getQueries()) {
-        for (auto& dep:query.second.getDependencies()) {
-            out << "  \"" << query.first << "\" -> \"" << dep.sourceQuery->getId() << "\" [xlabel=\"" << dep.locator.getQName() << "\", arrowhead=none, style=dashed, color=gray]" << endl;
-        }
-        for (auto& exec:query.second.getQueryExecutions()) {
-            out << "  \"" << query.first << "\" -> \"" << exec.getId() << "\" [arrowhead=none, style=dashed, penwidth=0.1]" << endl;
-        }
-    }
-    */
 
-    transitionNo = 0;
-    /*
-    for (auto& t:transitions) {
-        ++transitionNo;
-        for (auto& source:t->getSources()) {
-            out << "  \"" << source->getId() << "\" -> \"transition_" << transitionNo << "\" [style=solid, fontsize=6.5]" << endl;
-        }
-        for (auto& target:t->getTargets()) {
-            out << "  \"transition_" << transitionNo << "\" -> \"" << target->getId() << "\" [style=solid, fontsize=6.5]" << endl;
-        }
-    }
-    */
-
-    transitionNo = 0;
+    //transitionNo = 0;
     for (auto& exec:execToTrans) {
-        ++transitionNo;
+        //++transitionNo;
         for (auto channel:exec.second) {
             DataReceiver *receiver = channel->receiver;
             Transition *transition = dynamic_cast<Transition*>(receiver);
-            out << "  \"" << exec.first << "\" -> \"" << transition << "\" [style=solid, fontsize=6.5]" << endl;
+            string style = "solid";
+            if (channel->getState() == ChannelState::CLOSED) {
+                style = "dashed";
+            }
+            out << "  \"" << exec.first << "\" -> \"" << transition << "\" [style=" << style << ", fontsize=6.5]" << endl;
         }
     }
 
     for (auto& trans:transToExec) {
-        ++transitionNo;
+        //++transitionNo;
         for (auto channel:trans.second) {
             DataReceiver *receiver = channel->receiver;
             QueryExecution *exec = dynamic_cast<QueryExecution*>(receiver);
-            out << "  \"" << trans.first << "\" -> \"" << exec << "\" [style=solid, fontsize=6.5]" << endl;
+            string style = "solid";
+            if (channel->getState() == ChannelState::CLOSED) {
+                style = "dashed";
+            }
+            out << "  \"" << trans.first << "\" -> \"" << exec << "\" [style=" << style << ", fontsize=6.5]" << endl;
         }
     }
 
     out << "}" << endl;
     out.close();
-    string cmd = "dot -q1 -Tpng -o " + outputDir+"/executionPlan.png "+ outputDir+"/executionPlan.dot";
+    string cmd = "dot -q1 -Tsvg -o " + outputDir+"/executionPlan.svg "+ outputDir+"/executionPlan.dot";
     int exitCode = system(cmd.c_str());
     if (exitCode != 0) {
         LOG_WARN("failed to create image from executionPlan.dot");

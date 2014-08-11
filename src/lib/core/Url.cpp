@@ -6,12 +6,16 @@
  */
 
 #include <iostream>
+#include <sstream>
 #include "Url.h"
 #include "utils/RegExp.h"
+#include "utils/utility.h"
 
 using namespace std;
 
 namespace db_agg {
+
+Url::Url() {}
 
 Url::Url(string url) {
     RegExp re("([a-z]+)?://([a-z\\.]+)?(:([0-9]+))?/([a-zA-Z0-9-\\./_]+)?(#([a-zA-Z_]+))?");
@@ -22,34 +26,59 @@ Url::Url(string url) {
     this->protocol = matches[1].substr.empty() ? "file" : matches[1].substr;
     this->host = matches[2].substr;
     this->port = matches[4].substr.empty() ? 0 : stoi(matches[4].substr);
-    this->path = matches[5].substr;
+    string pathItems = matches[5].substr;
+    split(pathItems, '/', this->path);
     if (matches.size() == 8) {
         this->fragment = matches[7].substr;
     }
 }
 
-Url::Url(string protocol, string host, int port, string path, string fragment):
+Url::Url(string protocol, string host, string port, string path, string fragment):
         protocol(protocol),
         host(host),
         port(port),
-        path(path),
         fragment(fragment)
-    { }
+    {
+        split(path, '/', this->path);
+
+    }
 
 string Url::getProtocol() {
     return protocol;
+}
+
+void Url::setProtocol(string protocol) {
+    this->protocol = protocol;
 }
 
 string Url::getHost() {
     return host;
 }
 
-int Url::getPort() {
+void Url::setHost(string host) {
+    this->host = host;
+}
+
+string Url::getPort() {
     return port;
 }
 
+void Url::setPort(string port) {
+    this->port = port;
+}
+
 string Url::getPath() {
-    return path;
+    return join(path,"/");
+}
+
+void Url::setPath(string path) {
+    this->path.clear();
+    split(path, '/', this->path);
+}
+
+
+void Url::addPathItem(string pathItem) {
+    this->path.push_back(pathItem);
 }
 
 string Url::getUser() {
@@ -85,8 +114,9 @@ string Url::getFragment() {
 }
 
 string Url::getExtension() {
-    size_t idx = path.find_last_of(".");
-    return path.substr(idx+1);
+    string lastItem = path.back();
+    size_t idx = lastItem.find_last_of(".");
+    return lastItem.substr(idx+1);
 }
 
 string Url::getUrl() {
@@ -94,13 +124,13 @@ string Url::getUrl() {
 }
 
 string Url::getUrl(bool includeParameters, bool includeCredentials, bool maskPassword) {
-    string url = protocol + "://" + host + ":" + to_string(port) + "/" + path;
+    string url = protocol + "://" + host + ":" + port + "/" + join(path,"/");
     if (includeParameters && !parameters.empty()) {
         url += "?";
         int len = parameters.size();
         int idx = 0;
         for (auto& parameter:parameters) {
-            url += parameter.first + "=" + parameter.second;
+            url += encode(parameter.first) + "=" + encode(parameter.second);
             idx++;
             if (idx!=len || includeCredentials) {
                 url += "&";
@@ -119,6 +149,60 @@ string Url::getUrl(bool includeParameters, bool includeCredentials, bool maskPas
         url += "#" + fragment;
     }
     return url;
+}
+
+bool Url::matches(std::shared_ptr<Url> wildcardUrl) {
+    if (wildcardUrl->protocol != "*" && wildcardUrl->protocol != protocol) {
+        return false;
+    }
+    if (wildcardUrl->host != "*" && wildcardUrl->host != host) {
+        return false;
+    }
+    if (wildcardUrl->port != "*" && wildcardUrl->port != port) {
+        return false;
+    }
+
+    size_t len = this->path.size();
+    if (wildcardUrl->path.size() < len) {
+        len = wildcardUrl->path.size();
+    }
+
+    for (size_t idx = 0; idx < len; idx++) {
+        if (wildcardUrl->path[idx] != "*" && wildcardUrl->path[idx] != this->path[idx]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+string Url::encode(string data) {
+    stringstream encoded;
+    string reserved = "!#$%&'()*+,/:;=?@[]";
+    for (size_t idx = 0; idx < data.size(); idx++) {
+        char c = data[idx];
+        if (reserved.find(c) != string::npos) {
+            encoded << "%" << std::hex << (int)c;
+        } else {
+            encoded << c;
+        }
+
+    }
+    return encoded.str();
+}
+
+string Url::decode(std::string data) {
+    stringstream decoded;
+    for (size_t idx = 0; idx < data.size(); idx++) {
+        char c = data[idx];
+        if (c=='%') {
+        }
+    }
+    return decoded.str();
+}
+
+
+shared_ptr<Url> Url::getWildcardUrl() {
+    return shared_ptr<Url>(new Url("*","*","*","*","*"));
 }
 
 }
