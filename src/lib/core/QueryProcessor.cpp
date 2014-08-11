@@ -389,6 +389,18 @@ void QueryProcessor::populateTransitions() {
     LOG_TRACE("populate transitions done");
 }
 
+void dump_md5_sources(string queryName, string md5, string source) {
+    File md5dir{"md5"};
+    if (!md5dir.exists()) {
+        md5dir.mkdir();
+    }
+    string fileName = "md5/" + queryName + "_" + md5 + ".txt";
+    ofstream os{fileName};
+    os.write(source.c_str(),source.size());
+    os.close();
+}
+
+
 void QueryProcessor::calculateExecutionIds() {
     LOG_TRACE("calculate execution ids");
     for (auto query:executionGraph.getQueries()) {
@@ -400,9 +412,11 @@ void QueryProcessor::calculateExecutionIds() {
 				executionGraph.addQueryExecution(exec);
         	} else {
 				string md5data;
-				calculateExecutionId(*exec,md5data);
+				calculateExecutionId2(*exec,md5data);
 				string resultId(md5hex(md5data));
 				exec->setId(resultId);
+                LOG_DEBUG("md5 of query " << query->getName() << " -> " << exec->getId());
+                dump_md5_sources(query->getName(), exec->getId(), md5data);
  				executionGraph.addQueryExecution(exec);
         	}
         }
@@ -428,15 +442,17 @@ void QueryProcessor::checkConnections() {
 }
 
 void QueryProcessor::calculateExecutionId(QueryExecution& exec, string& md5data) {
+    auto dependencies = executionGraph.getDependencies(&exec);
+    sort(dependencies.begin(), dependencies.end(), [] (QueryExecution *qe1, QueryExecution *qe2) {
+        string key1 = qe1->getUrl()->getUrl(false,false,false) + qe1->getSql();
+        string key2 = qe2->getUrl()->getUrl(false,false,false) + qe2->getSql();
+        return key1 > key2;
+    });
     string url = exec.getUrl()->getUrl(false,false,true);
-    md5data.append(url + exec.getSql());
-    vector<Transition*> inc = executionGraph.getIncomingTransitions(&exec);
-    for (Transition *t:inc) {
-        vector<QueryExecution*> sources = executionGraph.getSources(t);
-        for (QueryExecution *src:sources) {
-            md5data.append(" || ");
-            this->calculateExecutionId(*src,md5data);
-        }
+    md5data.append(url + '\n' + exec.getSql());
+    for (auto dependency:dependencies) {
+        md5data.append("\n");
+        md5data.append(dependency->getUrl()->getUrl(false,false,false) + "\n" + dependency->getSql());
     }
 }
 
