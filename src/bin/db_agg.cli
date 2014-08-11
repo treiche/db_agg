@@ -103,6 +103,13 @@
             <shortDescription>only dump execution plan and exit</shortDescription>
             <type>bool</type>
         </option>
+        <option>
+            <short>q</short>
+            <long>max-parallel-executions</long>
+            <args>true</args>
+            <shortDescription>maximal number of parallel executions</shortDescription>
+            <type>size_t</type>
+        </option>
     </optionGroup>
     <optionGroup>
         <name>cache</name>

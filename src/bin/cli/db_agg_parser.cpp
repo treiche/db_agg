@@ -23,7 +23,8 @@ static vector<OptionGroup> options = {
         { 'j', "search-password-in-pg-pass", true, "look for passwords in ~/.pgpass" } ,
         { 'p', "use-reg-exp-parser", true, "parse query with parser based on regular expression" } ,
         { 'a', "query-parameter", true, "query parameter" } ,
-        { 'z', "dont-execute", false, "only dump execution plan and exit" } 
+        { 'z', "dont-execute", false, "only dump execution plan and exit" } ,
+        { 'q', "max-parallel-executions", true, "maximal number of parallel executions" } 
     }},
     {"cache",{
         { 'd', "disable-cache", false, "don't load cached results" } 
@@ -89,6 +90,9 @@ void db_agg_parser::parse(int argc, char **argv, Configuration& config) {
             config.setQueryParameter(getOptionMapValue("query-parameter"));
         }
         config.setDontExecute(getFlag("dont-execute"));
+        if (hasOption("max-parallel-executions")) {
+            config.setMaxParallelExecutions(stoi(getOptionValue("max-parallel-executions")));
+        }
         config.setDisableCache(getFlag("disable-cache"));
     if (hasOption("output-dir")) {
         config.setOutputDir(getOptionValue("output-dir"));
@@ -142,6 +146,7 @@ void db_agg_parser::dumpConfiguration(Configuration& config) {
             cout << "        " << item.first << "=" << item.second << endl;
         }
         cout << "    dont-execute = " << config.getDontExecute() << endl;
+        cout << "    max-parallel-executions = " << config.getMaxParallelExecutions() << endl;
     cout << "cache:" << endl;
         cout << "    disable-cache = " << config.getDisableCache() << endl;
     cout << "files:" << endl;
