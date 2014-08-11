@@ -45,6 +45,7 @@ class QueryProcessor : public EventListener, public EventProducer {
     void loadExternalSources();
     void cleanUp();
     bool dontExecute;
+    size_t maxParallelExecutions = 1000;
 public:
     QueryProcessor(
             QueryParser& queryParser,
@@ -58,7 +59,8 @@ public:
             std::map<std::string,std::string> externalSources,
             size_t statementTimeout,
             std::map<std::string,std::string> queryParameter,
-            bool dontExecute
+            bool dontExecute,
+            size_t maxParallelExecutions
     );
     ~QueryProcessor();
     void process(std::string query, std::string environment);

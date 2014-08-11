@@ -125,7 +125,21 @@ void Application::bootstrap(Configuration& config) {
     	}
     }
     queryParameter = config.getQueryParameter();
-    queryProcessor = new QueryProcessor(*queryParser, *databaseRegistry,extensionLoader,*passwordManager,*cacheRegistry, resultDir, config.getDisableCache(), config.getCopyThreshold(), externalSources, config.getStatementTimeout(), queryParameter, config.getDontExecute());
+    queryProcessor = new QueryProcessor(
+            *queryParser,
+            *databaseRegistry,
+            extensionLoader,
+            *passwordManager,
+            *cacheRegistry,
+            resultDir,
+            config.getDisableCache(),
+            config.getCopyThreshold(),
+            externalSources,
+            config.getStatementTimeout(),
+            queryParameter,
+            config.getDontExecute(),
+            config.getMaxParallelExecutions()
+    );
     queryProcessor->addEventListener(this);
     LOG_DEBUG("load extensions");
     string extensionDir = findConfigurationFile(config.getExtensionDir(), false,false);

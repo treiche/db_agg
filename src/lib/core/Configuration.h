@@ -28,7 +28,7 @@ private:
     bool useRegExpParser{ true };
     map<string,string> queryParameter;
     bool dontExecute;
-    size_t maxParallelExecutions;
+    size_t maxParallelExecutions{ 1000 };
     bool disableCache;
     string outputDir{ "." };
     string resultDir{ "{outputDir}/{queryName}/{environment}" };

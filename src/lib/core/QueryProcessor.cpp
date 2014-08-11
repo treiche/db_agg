@@ -40,7 +40,8 @@ QueryProcessor::QueryProcessor(
     map<string,string> externalSources,
     size_t statementTimeout,
     map<string,string> queryParameter,
-    bool dontExecute):
+    bool dontExecute,
+    size_t maxParallelExecutions):
     queryParser(queryParser),
     databaseRegistry(registry),
     extensionLoader(extensionLoader),
@@ -52,7 +53,8 @@ QueryProcessor::QueryProcessor(
     externalSources(externalSources),
     statementTimeout(statementTimeout),
     queryParameter(queryParameter),
-    dontExecute(dontExecute) {
+    dontExecute(dontExecute),
+    maxParallelExecutions(maxParallelExecutions) {
 }
 
 QueryProcessor::~QueryProcessor() {
@@ -92,14 +94,13 @@ void QueryProcessor::process(string query, string environment) {
     checkConnections();
 
     set<QueryExecution*> runningQueries;
-    size_t maxExecutions = 2;
     bool done = false;
     do {
         done = true;
         for (auto exec:executionGraph.getQueryExecutions()) {
             try {
                 if (!exec->isDone() && exec->isComplete()) {
-                    if (runningQueries.size() < maxExecutions || runningQueries.find(exec) != runningQueries.end()) {
+                    if (runningQueries.size() < maxParallelExecutions || runningQueries.find(exec) != runningQueries.end()) {
                         runningQueries.insert(exec);
                         bool execDone = exec->process();
                         if (execDone) {
@@ -107,7 +108,7 @@ void QueryProcessor::process(string query, string environment) {
                         }
                         done &= execDone;
                     } else {
-                        LOG_DEBUG("exec " << exec->getName() << " skipped as maxExecution limit is reached");
+                        LOG_DEBUG("exec " << exec->getName() << " skipped as maxExecution limit (" << maxParallelExecutions << ") is reached");
                     }
                 }
             } catch(CancelException& ce) {

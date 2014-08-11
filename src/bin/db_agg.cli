@@ -109,6 +109,7 @@
             <args>true</args>
             <shortDescription>maximal number of parallel executions</shortDescription>
             <type>size_t</type>
+            <default>1000</default>
         </option>
     </optionGroup>
     <optionGroup>
