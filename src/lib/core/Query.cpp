@@ -60,6 +60,7 @@ namespace db_agg {
         ss << "Query[";
         ss << "id=" << id << ",";
         ss << "locator = " << locator.getQName() << ",";
+        ss << "type = " << type << ",";
         ss << "query=" << query << ",";
         ss << "usedNamespaces=";
         unsigned int cnt=0;
