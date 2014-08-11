@@ -124,7 +124,7 @@ namespace db_agg {
                 vector<string> columns;
                 split(line,':',columns);
                 if (columns.size() == 5) {
-                    if (columns[0] == url->getHost() && columns[1] == to_string(url->getPort())) {
+                    if (columns[0] == url->getHost() && columns[1] == url->getPort()) {
                         LOG_DEBUG("found entry for host " << columns[0]);
                         c.first = columns[3];
                         c.second = columns[4];
