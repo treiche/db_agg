@@ -5,6 +5,10 @@
 #include <map>
 #include <vector>
 
+extern "C" {
+#include <jansson.h>
+}
+
 using namespace std;
 
 namespace db_agg {
@@ -24,6 +28,7 @@ private:
     bool useRegExpParser{ true };
     map<string,string> queryParameter;
     bool dontExecute;
+    size_t maxParallelExecutions;
     bool disableCache;
     string outputDir{ "." };
     string resultDir{ "{outputDir}/{queryName}/{environment}" };
@@ -35,6 +40,7 @@ private:
     string logConf{ "${HOME}/etc/log4cplus.properties" };
     string logFile{ "db_agg.log" };
 public:
+    void fromJson(std::string json);
     string getQueryFile();
     void setQueryFile(string queryFile);
     string getEnvironment();
@@ -61,6 +67,8 @@ public:
     void setQueryParameter(map<string,string> queryParameter);
     bool getDontExecute();
     void setDontExecute(bool dontExecute);
+    size_t getMaxParallelExecutions();
+    void setMaxParallelExecutions(size_t maxParallelExecutions);
     bool getDisableCache();
     void setDisableCache(bool disableCache);
     string getOutputDir();
