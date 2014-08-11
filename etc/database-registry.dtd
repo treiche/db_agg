@@ -9,7 +9,8 @@
 
 <!ELEMENT server (database-instance*)>
 <!ATTLIST server
-          port    CDATA   #IMPLIED>
+          port    CDATA   #IMPLIED
+          type    CDATA   #IMPLIED>
 
 <!ELEMENT database-instance EMPTY>
 <!ATTLIST database-instance

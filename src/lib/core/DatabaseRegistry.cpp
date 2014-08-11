@@ -96,6 +96,33 @@ namespace db_agg {
         throw runtime_error("can't find worker " + nodes->nodeNr);
     }
 
+    vector<shared_ptr<Url>> DatabaseRegistry::getUrls(string environment, string type) {
+        assert(!environment.empty());
+        assert(!type.empty());
+        string expr = "//system[@name='" + string(environment) + "']//server[@type='" + type + "']";
+        LOG_DEBUG("xpath expr = '" << expr << "'");
+        xmlXPathObjectPtr xpathObj = xmlXPathEvalExpression((const xmlChar*)expr.c_str(), this->xpathCtx);
+        LOG_DEBUG("xpath obj = " << xpathObj);
+        if (xpathObj==0) {
+            LOG_ERROR(expr);
+            THROW_EXC("xpath eval returned 0");
+        }
+        xmlNodeSetPtr nodes = xpathObj->nodesetval;
+
+        int found = nodes->nodeNr;
+        vector<shared_ptr<Url>> urls;
+        for (int cnt=0;cnt<found;cnt++) {
+            xmlNodePtr node = nodes->nodeTab[cnt];
+            if(node->type == XML_ELEMENT_NODE) {
+                shared_ptr<Url> c = getUrlFromServerNode((xmlElementPtr)node);
+                urls.push_back(c);
+            }
+
+        }
+        LOG_DEBUG("found " << found << " nodes");
+        xmlXPathFreeObject(xpathObj);
+        return urls;
+    }
 
     vector<shared_ptr<Url>> DatabaseRegistry::getUrls(string database, string environment, short shardId) {
         assert(!database.empty());
@@ -206,6 +233,16 @@ namespace db_agg {
         return result;
     }
 
+    shared_ptr<Url> DatabaseRegistry::getUrlFromServerNode(xmlElementPtr serverNode) {
+        xmlElementPtr hostNode = (xmlElementPtr)serverNode->parent;
+        string protocol = getAttribute(serverNode,"type");
+        string hostAddr = getAttribute(hostNode,"name");
+        string port = getAttribute(serverNode,"port");
+        shared_ptr<Url> url(new Url(protocol,hostAddr,port,""));
+        return url;
+    }
+
+
     shared_ptr<Url> DatabaseRegistry::getUrl(xmlElementPtr databaseNode) {
         string database = getAttribute(databaseNode, "id");
         xmlElementPtr serverNode = (xmlElementPtr)databaseNode->parent;
@@ -216,7 +253,7 @@ namespace db_agg {
         if (hasAttribute(databaseNode,"shard")) {
             shard = atoi(getAttribute(databaseNode,"shard").c_str());
         }
-        int port = atoi(getAttribute(serverNode,"port").c_str());
+        string port = getAttribute(serverNode,"port");
         string hostAddr = getAttribute(hostNode,"name");
         string databaseName;
         if (hasAttribute(databaseNode,"name")) {

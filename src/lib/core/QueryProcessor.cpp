@@ -188,13 +188,21 @@ void QueryProcessor::populateUrls(string environment) {
         vector<shared_ptr<Url>> urls;
 
         if (query->getType() == "script") {
-            shared_ptr<Url> url(new Url("file","",-1,"script.sh"));
+            shared_ptr<Url> url(new Url("file","","","script.sh"));
             urls.push_back(url);
         } else
 
         if (query->getType() == "resource") {
             shared_ptr<Url> url(new Url(query->getQuery()));
             urls.push_back(url);
+        } else if (query->getType() == "memcached") {
+            string env = query->getEnvironment();
+            if (env.compare("") == 0) {
+                env = environment;
+            }
+            urls = databaseRegistry.getUrls(env,query->getType());
+            // cout << "urls = " << urls.size() << endl;
+            // urls.push_back(urls[0]);
         } else
         if (query->getUsedNamespaces().empty()) {
             // get worker url
