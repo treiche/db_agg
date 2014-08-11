@@ -226,11 +226,16 @@ void QueryProcessor::populateUrls(string environment) {
             }
         }
         if (urls.empty()) {
-            throw runtime_error("no url found for " +  query->getName());
+            THROW_EXC("no url found for " <<  query->getName());
         }
 
         for (auto& url:urls) {
         	url->setParameter("statementTimeout", to_string(statementTimeout));
+        	string searchPath = query->getMetaData("search_path","");
+        	if (searchPath != "") {
+        	    LOG_DEBUG("set search_path to " << searchPath)
+        	    url->setParameter("search_path", searchPath);
+        	}
         }
 
         vector<string> deps;
