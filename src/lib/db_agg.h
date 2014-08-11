@@ -8,6 +8,8 @@
 #ifndef DB_AGG_H_
 #define DB_AGG_H_
 
+#include "core/Configuration.h"
+
 #include "type/oids.h"
 
 #include "utils/logging.h"
