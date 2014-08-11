@@ -63,7 +63,7 @@ string maskPassword(std::string url) {
     bool insidePassword = false;
     for (size_t idx=0; idx < url.size(); idx++) {
         char c = url[idx];
-        if (idx>pos+8) {
+        if (idx == pos+9) {
             insidePassword = true;
         }
         if (c==' ') {
