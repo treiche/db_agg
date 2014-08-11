@@ -90,13 +90,24 @@ void QueryProcessor::process(string query, string environment) {
     }
     checkConnections();
 
+    set<QueryExecution*> runningQueries;
+    size_t maxExecutions = 2;
     bool done = false;
     do {
         done = true;
         for (auto exec:executionGraph.getQueryExecutions()) {
             try {
                 if (!exec->isDone() && exec->isComplete()) {
-                    done &= exec->process();
+                    if (runningQueries.size() < maxExecutions || runningQueries.find(exec) != runningQueries.end()) {
+                        runningQueries.insert(exec);
+                        bool execDone = exec->process();
+                        if (execDone) {
+                            runningQueries.erase(exec);
+                        }
+                        done &= execDone;
+                    } else {
+                        LOG_DEBUG("exec " << exec->getName() << " skipped as maxExecution limit is reached");
+                    }
                 }
             } catch(CancelException& ce) {
                 cleanUp();
