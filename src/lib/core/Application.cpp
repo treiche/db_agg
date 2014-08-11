@@ -71,6 +71,7 @@ void Application::bootstrap(Configuration& config) {
     LOG_DEBUG("load database registry");
     string databaseRegistryFile = findConfigurationFile(config.getDatabaseRegistryFile(), false, false);
     databaseRegistry = new DatabaseRegistry(databaseRegistryFile);
+    LOG_DEBUG("use database registry file: " << databaseRegistryFile);
     vector<string> environments = databaseRegistry->getSystems();
     bool environmentExists = false;
     for (auto& env:environments) {
@@ -191,11 +192,11 @@ bool Application::run() {
         LOG_ERROR("caught exception:" << re.what());
         ApplicationFailedEvent event{re.what()};
         fireEvent(event);
-    } catch(...) {
-        LOG_ERROR("application failed");
+    } /*catch(exception& e) {
+        LOG_ERROR("application failed:" << e.what());
         ApplicationFailedEvent event{""};
         fireEvent(event);
-    }
+    }*/
     return false;
 }
 
