@@ -102,22 +102,32 @@ void CursesListener::handleEvent(Event& event) {
             }
         }
         mvprintw(1,0,"%s",secondLine.c_str());
+        for (auto result:resultIdToLine) {
+            print(result.first,"received","0");
+        }
         wrefresh(stdscr);
         screenMutex.unlock();
         clockThread = new std::thread(&CursesListener::updateClock,this);
+        initialized = true;
 
     } else if (event.type == EventType::APPLICATION_FINISHED || event.type == EventType::APPLICATION_FAILED || event.type == EventType::APPLICATION_CANCELED) {
         LOG_DEBUG( "got finish event "<<(int)event.type);
         running = false;
-        clockThread->join();
+        if (initialized) {
+            clockThread->join();
+        }
         if (event.type == EventType::APPLICATION_FAILED) {
             ApplicationFailedEvent& e = (ApplicationFailedEvent&)event;
-            attrset(COLOR_PAIR(3));
-            if (e.reason.empty()) {
-                mvaddstr(resultIdToLine.size() + queryIdToLine.size()+3,0,"processing failed.\npress any key to exit...");
+            if (initialized) {
+                attrset(COLOR_PAIR(3));
+                if (e.reason.empty()) {
+                    mvaddstr(resultIdToLine.size() + queryIdToLine.size()+3,0,"processing failed.\npress any key to exit...");
+                } else {
+                    string message = "processing failed: " + e.reason + "\npress any key to exit...";
+                    mvaddstr(resultIdToLine.size() + queryIdToLine.size()+3,0,message.c_str());
+                }
             } else {
-                string message = "processing failed: " + e.reason + "\npress any key to exit...";
-                mvaddstr(resultIdToLine.size() + queryIdToLine.size()+3,0,message.c_str());
+                cout << "ERROR: " << e.reason << endl;
             }
         } else if (event.type == EventType::APPLICATION_CANCELED) {
             attrset(COLOR_PAIR(3));

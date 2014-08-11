@@ -33,6 +33,7 @@ public:
 class CursesListener: public EventListener {
 private:
     Application& application;
+    bool initialized = false;
     std::map<std::string,size_t> resultIdToLine;
     std::map<std::string,size_t> queryIdToLine;
     std::map<size_t,std::chrono::system_clock::time_point> timeSpent;
