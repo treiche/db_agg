@@ -54,9 +54,10 @@ namespace db_agg {
         timeinfo.tm_hour = hour;
         timeinfo.tm_min = minute;
         timeinfo.tm_sec = second;
-        timeinfo.tm_isdst = 0;
+        timeinfo.tm_isdst = -1;
         _time = mktime(&timeinfo);
     }
+
 }
 
 
