@@ -290,6 +290,10 @@ bool AsyncQueryExecutor::processTask(int taskNo) {
                         int copyEndResult = conn.putCopyEnd("");
                         if (copyEndResult == 0) {
                             LOG_DEBUG("putCopyEnd would block.");
+                        } else if (copyEndResult == -1) {
+                            THROW_EXC("putCopyEnd failed.");
+                        } else {
+                            fireStateChangeEvent(taskNo, "COPY_DONE");
                         }
                     }
                 } else if (status == PGRES_COPY_OUT) {
