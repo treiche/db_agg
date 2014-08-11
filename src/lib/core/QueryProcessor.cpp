@@ -83,6 +83,7 @@ void QueryProcessor::process(string query, string environment) {
     fireEvent(event);
     loadFromCache();
     executionGraph.dumpExecutionPlan(outputDir);
+    executionGraph.dumpGraph(outputDir);
     if (dontExecute) {
         Event fe{EventType::APPLICATION_FINISHED,""};
         fireEvent(fe);
