@@ -5,6 +5,10 @@
 #include <map>
 #include <vector>
 
+extern "C" {
+#include <jansson.h>
+}
+
 using namespace std;
 
 namespace ${namespace} {
@@ -20,6 +24,7 @@ private:
 {%- endfor %}
 {%- endfor %}
 public:
+    void fromJson(std::string json);
 {%- for argument in arguments %}
     ${argument.type} get${argument.method}();
     void set${argument.method}(${argument.type} ${argument.property});

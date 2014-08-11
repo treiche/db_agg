@@ -23,6 +23,83 @@ namespace ${namespace} {
     }
 {%- endfor %}
 
-
+void ${bean}::fromJson(std::string json) {
+    json_error_t *error;
+    json_t *jsConfig = json_loads(json.c_str(),0,error);
+    json_t *js = nullptr;
+    const char *key;
+    json_t *value;
+    size_t index;
+    {%- for option in arguments %}
+        js = json_object_get(jsConfig,"${option.property}");
+        if (js != nullptr) {
+        {%- if option.type == "string" %}
+            string ${option.property} = json_string_value(js);
+            set${option.method}(${option.property});
+        {%- endif %}
+        {%- if option.type == "bool" %}
+            if (json_is_true(js)) {
+                set${option.method}(true);
+            } else {
+                set${option.method}(false);
+            }
+        {%- endif %}
+        {%- if option.type == "size_t" %}
+            size_t ${option.property} = json_integer_value(js);
+            set${option.method}(${option.property});
+        {%- endif %}
+        {%- if option.type == "map<string,string>" %}
+            map<string,string> ${option.property};
+            json_object_foreach(js, key, value) {
+                ${option.property}[key] = json_string_value(value);
+            }
+            set${option.method}(${option.property});
+        {%- endif %}
+        {%- if option.type == "vector<string>" %}
+            vector<string> ${option.property};
+            json_array_foreach(js, index, value) {
+                ${option.property}.push_back(json_string_value(value));
+            }
+            set${option.method}(${option.property});
+        {%- endif %}
+        }
+    {%- endfor %}
+    {%- for optionGroup in optionGroups %}
+    {%- for option in optionGroup.options %}
+        js = json_object_get(jsConfig,"${option.property}");
+        if (js != nullptr) {
+        {%- if option.type == "string" %}
+            string ${option.property} = json_string_value(js);
+            set${option.method}(${option.property});
+        {%- endif %}
+        {%- if option.type == "bool" %}
+            if (json_is_true(js)) {
+                set${option.method}(true);
+            } else {
+                set${option.method}(false);
+            }
+        {%- endif %}
+        {%- if option.type == "size_t" %}
+            size_t ${option.property} = json_integer_value(js);
+            set${option.method}(${option.property});
+        {%- endif %}
+        {%- if option.type == "map<string,string>" %}
+            map<string,string> ${option.property};
+            json_object_foreach(js, key, value) {
+                ${option.property}[key] = json_string_value(value);
+            }
+            set${option.method}(${option.property});
+        {%- endif %}
+        {%- if option.type == "vector<string>" %}
+            vector<string> ${option.property};
+            json_array_foreach(js, index, value) {
+                ${option.property}.push_back(json_string_value(value));
+            }
+            set${option.method}(${option.property});
+        {%- endif %}
+        }
+    {%- endfor %}
+    {%- endfor %}
+}
 
 }
