@@ -195,6 +195,9 @@ namespace db_agg {
         vector<ColDef> colDefs;
         split(firstLine,'\t',cols);
         for (string col:cols) {
+            if (col.empty()) {
+                THROW_EXC("empty column definition");
+            }
             vector<string> nt;
             split(col,':',nt);
             string name = nt[0];
@@ -300,4 +303,70 @@ namespace db_agg {
         return DataChunk(data+startIndex,len);
     }
 
+    string CsvTableData::encode(string value) {
+        string result;
+        for (size_t idx=0; idx < value.size(); idx++) {
+            switch (value[idx]) {
+                case '\\':
+                    result += "\\\\";
+                    break;
+                case '\b':
+                    result += "\\b";
+                    break;
+                case '\f':
+                    result += "\\f";
+                    break;
+                case '\n':
+                    result += "\\n";
+                    break;
+                case '\r':
+                    result += "\\r";
+                    break;
+                case '\t':
+                    result += "\\t";
+                    break;
+                case '\v':
+                    result += "\\v";
+                    break;
+                default:
+                    result += value[idx];
+            }
+        }
+        return result;
+    }
+
+    string CsvTableData::decode(string value) {
+        string result;
+        for (size_t idx=0; idx < value.size(); idx++) {
+            if (value[idx] == '\\') {
+                switch (value[idx+1]) {
+                    case '\\':
+                        result += '\\';
+                        break;
+                    case 'b':
+                        result += '\b';
+                        break;
+                    case 'f':
+                        result += '\f';
+                        break;
+                    case 'n':
+                        result += '\n';
+                        break;
+                    case 'r':
+                        result += '\r';
+                        break;
+                    case 't':
+                        result += '\t';
+                        break;
+                    case 'v':
+                        result += '\v';
+                        break;
+                }
+                idx += 1;
+            } else {
+                result += value[idx];
+            }
+        }
+        return result;
+    }
 }

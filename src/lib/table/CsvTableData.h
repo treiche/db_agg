@@ -39,6 +39,8 @@ public:
     virtual std::string calculateMD5Sum() override;
     virtual DataChunk getColumn(uint64_t row, uint32_t col) override;
     virtual void addRow(std::vector<std::string> row) override;
+    static std::string decode(std::string value);
+    static std::string encode(std::string value);
     friend class TableDataFactory;
 };
 }
