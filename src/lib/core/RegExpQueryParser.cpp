@@ -188,12 +188,14 @@ void RegExpQueryParser::detectScriptQueries(vector<Query*>& queries, vector<stri
 }
 
 void RegExpQueryParser::extractMetaData(std::vector<Query*>& queries) {
-    RegExp re{"\\@([a-z]+)\\s*:\\s*([a-z]+)"};
+    RegExp re{"\\@([a-z_]+)\\s*:\\s*([a-zA-Z0-9_,]+)"};
     for (auto query:queries) {
+        LOG_INFO("extract metadata for query " << query->getQuery());
         int offset = 0;
         vector<string> matches;
         map<string,string> metaData;
         while(re.find(query->getQuery(),matches,offset)) {
+            LOG_INFO("found meta data " << matches[1] << " = " << matches[2]);
             metaData[matches[1]] = matches[2];
         }
         query->setMetaData(metaData);

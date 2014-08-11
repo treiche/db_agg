@@ -83,10 +83,34 @@ namespace db_agg {
     }
 
     string PGQueryExecution::toPostgresUrl(shared_ptr<Url> url) {
-        string pgurl = "host=" + url->getHost() + " port=" + to_string(url->getPort()) + " dbname=" + url->getPath();
+        string pgurl = "host=" + url->getHost() + " port=" + url->getPort() + " dbname=" + url->getPath();
         pgurl += " user=" + url->getUser() + " password=" + url->getPassword();
+        vector<string> options;
         if (url->hasParameter("statementTimeout")) {
-            pgurl += " options='--statement-timeout=" + url->getParameter("statementTimeout")+"'";
+            options.push_back("statementTimeout");
+        }
+        if (url->hasParameter("search_path")) {
+            options.push_back("search_path");
+        }
+        /*
+        if (!options.empty()) {
+            pgurl += " options='";
+            for (size_t idx = 0; idx < options.size(); idx++) {
+
+            }
+            pgurl += "'";
+        }
+        */
+        if (url->hasParameter("statementTimeout") || url->hasParameter("search_path")) {
+            pgurl += " options='";
+            if (url->hasParameter("statementTimeout")) {
+                pgurl += "--statement-timeout=" + url->getParameter("statementTimeout");
+            }
+            if (url->hasParameter("search_path")) {
+                pgurl += " --search-path=" + url->getParameter("search_path");
+            }
+            pgurl += "'";
+            // --pgurl += " options='--statement-timeout=" + url->getParameter("statementTimeout")+"'";
         }
         return pgurl;
     }
@@ -94,6 +118,7 @@ namespace db_agg {
     bool PGQueryExecution::isResourceAvailable() {
         LOG_INFO("check connection " + getUrl()->getUrl(false,true,false));
         string pgurl = toPostgresUrl(getUrl());
+        LOG_INFO("check:\n"+pgurl)
         return PGConnection::ping(pgurl);
     }
 }
