@@ -74,7 +74,7 @@ namespace db_agg {
     }
 
     // EventListener
-    void PGQueryExecution::handleEvent(Event& event) {
+    void PGQueryExecution::handleEvent(shared_ptr<Event> event) {
         fireEvent(event);
     }
 

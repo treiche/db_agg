@@ -34,7 +34,7 @@ public:
     virtual void cleanUp() override;
     virtual bool isResourceAvailable() override;
     // EventListener
-    virtual void handleEvent(Event& event) override;
+    virtual void handleEvent(std::shared_ptr<Event> event) override;
 };
 
 }

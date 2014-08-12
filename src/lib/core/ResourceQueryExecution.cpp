@@ -36,7 +36,7 @@ void ResourceQueryExecution::schedule() {
 
 bool ResourceQueryExecution::process() {
     LOG_DEBUG("load resource from " << getUrl()->getPath() << " extension = " << getUrl()->getExtension());
-    ExecutionStateChangeEvent ec{getId(),"CONNECTED"};
+    shared_ptr<Event> ec(new ExecutionStateChangeEvent(getId(),"CONNECTED"));
     fireEvent(ec);
     shared_ptr<TableData> data;
     if (getUrl()->getExtension() == "xlsx") {
@@ -47,11 +47,11 @@ bool ResourceQueryExecution::process() {
         data = TableDataFactory::getInstance().load("/" + getUrl()->getPath());
     }
     setResult(data);
-    Event event{EventType::PROCESSED,getId()};
+    shared_ptr<Event> event(new Event(EventType::PROCESSED,getId()));
     fireEvent(event);
-    ReceiveDataEvent rde{getId(),data->getRowCount()};
+    shared_ptr<Event> rde(new ReceiveDataEvent(getId(),data->getRowCount()));
     fireEvent(rde);
-    ExecutionStateChangeEvent e{getId(),"DONE"};
+    shared_ptr<Event> e(new ExecutionStateChangeEvent(getId(),"DONE"));
     EventProducer::fireEvent(e);
     setDone();
     return true;

@@ -20,7 +20,7 @@ static Logger LOG = Logger::getInstance(LOG4CPLUS_TEXT("Event"));
 void EventProducer::addEventListener(EventListener *listener) {
     listeners.push_back(listener);
 }
-void EventProducer::fireEvent(Event& event) {
+void EventProducer::fireEvent(shared_ptr<Event> event) {
     LOG_DEBUG("fireEvent to " << listeners.size() << " listeners");
     for (auto& listener:listeners) {
         LOG_DEBUG("fireEvent");

@@ -10,6 +10,7 @@
 
 #include <string>
 #include <vector>
+#include <memory>
 
 #include "utils/Time.h"
 
@@ -36,6 +37,7 @@ public:
     Event(EventType type, std::string resultId):
         type(type),
         resultId(resultId) {}
+    ~Event() {}
 };
 
 class CacheLoadEvent: public Event {
@@ -56,6 +58,7 @@ public:
     ExecutionStateChangeEvent(std::string resultId, std::string state):
         Event(EventType::EXECUTION_STATE_CHANGE, resultId),
         state(state) { }
+    ~ExecutionStateChangeEvent() {}
     std::string state;
 };
 
@@ -87,7 +90,7 @@ public:
 
 class EventListener {
 public:
-    virtual void handleEvent(Event& event) {}
+    virtual void handleEvent(std::shared_ptr<Event> event) {}
     virtual ~EventListener() {}
 };
 
@@ -96,7 +99,7 @@ private:
     std::vector<EventListener*> listeners;
 public:
     void addEventListener(EventListener *listener);
-    void fireEvent(Event& event);
+    void fireEvent(std::shared_ptr<Event> event);
 };
 
 }

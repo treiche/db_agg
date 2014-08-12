@@ -81,13 +81,13 @@ void QueryProcessor::process(string query, string environment) {
     populateTransitions();
     loadExternalSources();
     calculateExecutionIds();
-    Event event{EventType::APPLICATION_INITIALIZED,""};
+    shared_ptr<Event> event(new Event(EventType::APPLICATION_INITIALIZED,""));
     fireEvent(event);
     loadFromCache();
     executionGraph.dumpExecutionPlan(outputDir);
     executionGraph.dumpGraph(outputDir);
     if (dontExecute) {
-        Event fe{EventType::APPLICATION_FINISHED,""};
+        shared_ptr<Event> fe(new Event(EventType::APPLICATION_FINISHED,""));
         fireEvent(fe);
         return;
     }
@@ -167,13 +167,13 @@ void QueryProcessor::loadFromCache() {
                     if (!linkPath.exists()) {
                         linkPath.linkTo(path);
                     }
-                    ExecutionStateChangeEvent event{qr->getId(),"CACHED"};
+                    shared_ptr<Event> event(new ExecutionStateChangeEvent(qr->getId(),"CACHED"));
                     fireEvent(event);
-                    ReceiveDataEvent re{resultId,cacheRegistry.getRowCount(resultId)};
+                    shared_ptr<Event> re(new ReceiveDataEvent(resultId,cacheRegistry.getRowCount(resultId)));
                     fireEvent(re);
                 }
                 CacheItem& ci = cacheRegistry.get(resultId);
-                CacheLoadEvent ce{resultId,ci.lastExecuted,ci.lastDuration,ci.rowCount};
+                shared_ptr<Event> ce(new CacheLoadEvent(resultId,ci.lastExecuted,ci.lastDuration,ci.rowCount));
                 fireEvent(ce);
             }
         } else {
@@ -430,10 +430,10 @@ void QueryProcessor::checkConnections() {
     for (auto query:executionGraph.getQueries()) {
         for (auto exec:executionGraph.getQueryExecutions(query)) {
             if (!exec->isDone()) {
-                ExecutionStateChangeEvent event{exec->getId(),"PING"};
+                shared_ptr<Event> event(new ExecutionStateChangeEvent(exec->getId(),"PING"));
                 fireEvent(event);
                 if (exec->isResourceAvailable()) {
-                    event.state = "OK";
+                    shared_ptr<Event> event(new ExecutionStateChangeEvent(exec->getId(),"OK"));
                     fireEvent(event);
                 } else {
                     throw runtime_error("resource " + exec->getUrl()->getUrl() + " is not available.");
@@ -484,9 +484,9 @@ void QueryProcessor::cacheItem(string resultId) {
     linkPath.linkTo(cacheRegistry.getPath(resultId));
 }
 
-void QueryProcessor::handleEvent(Event& event) {
-    if (event.type==EventType::PROCESSED) {
-        QueryExecution& result = executionGraph.getQueryExecution(event.resultId);
+void QueryProcessor::handleEvent(shared_ptr<Event> event) {
+    if (event->type==EventType::PROCESSED) {
+        QueryExecution& result = executionGraph.getQueryExecution(event->resultId);
         LOG_DEBUG("PROCESSED: " << result.getSql() << " id=" << result.getName());
         result.setDone();
         if (result.getData()==nullptr) {
@@ -499,7 +499,7 @@ void QueryProcessor::handleEvent(Event& event) {
             channel->send(result.getData());
             channel->close();
         }
-        cacheItem(event.resultId);
+        cacheItem(event->resultId);
         result.release();
     }
     vector<QueryExecution*> exec = findExecutables();

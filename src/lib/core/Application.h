@@ -3,6 +3,7 @@
 
 #include <string>
 #include <map>
+#include <memory>
 
 #include "cache/CacheRegistry.h"
 #include "core/Configuration.h"
@@ -35,7 +36,7 @@ namespace db_agg {
                 return instance;
             }
             virtual ~Application();
-            virtual void handleEvent(Event& event) override;
+            virtual void handleEvent(std::shared_ptr<Event> event) override;
             void bootstrap(Configuration& config);
             bool run();
             QueryParser& getQueryParser() {

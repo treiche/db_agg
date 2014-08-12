@@ -39,10 +39,10 @@ CursesListener::~CursesListener() {
 
 }
 
-void CursesListener::handleEvent(Event& event) {
+void CursesListener::handleEvent(shared_ptr<Event> event) {
 
-    LOG_DEBUG( "handleEvent " << (int)event.type);
-    if (event.type == EventType::APPLICATION_INITIALIZED) {
+    LOG_DEBUG( "handleEvent " << (int)event->type);
+    if (event->type == EventType::APPLICATION_INITIALIZED) {
         screenMutex.lock();
         setlocale(LC_ALL, "");
         initscr();
@@ -110,26 +110,26 @@ void CursesListener::handleEvent(Event& event) {
         clockThread = new std::thread(&CursesListener::updateClock,this);
         initialized = true;
 
-    } else if (event.type == EventType::APPLICATION_FINISHED || event.type == EventType::APPLICATION_FAILED || event.type == EventType::APPLICATION_CANCELED) {
-        LOG_DEBUG( "got finish event "<<(int)event.type);
+    } else if (event->type == EventType::APPLICATION_FINISHED || event->type == EventType::APPLICATION_FAILED || event->type == EventType::APPLICATION_CANCELED) {
+        LOG_ERROR( "got finish event "<<(int)event->type);
         running = false;
         if (initialized) {
             clockThread->join();
         }
-        if (event.type == EventType::APPLICATION_FAILED) {
-            ApplicationFailedEvent& e = (ApplicationFailedEvent&)event;
+        if (event->type == EventType::APPLICATION_FAILED) {
+            auto e = (ApplicationFailedEvent*)event.get();
             if (initialized) {
                 attrset(COLOR_PAIR(3));
-                if (e.reason.empty()) {
+                if (e->reason.empty()) {
                     mvaddstr(resultIdToLine.size() + queryIdToLine.size()+3,0,"processing failed.\npress any key to exit...");
                 } else {
-                    string message = "processing failed: " + e.reason + "\npress any key to exit...";
+                    string message = "processing failed: " + e->reason + "\npress any key to exit...";
                     mvaddstr(resultIdToLine.size() + queryIdToLine.size()+3,0,message.c_str());
                 }
             } else {
-                cout << "ERROR: " << e.reason << endl;
+                cout << "ERROR: " << e->reason << endl;
             }
-        } else if (event.type == EventType::APPLICATION_CANCELED) {
+        } else if (event->type == EventType::APPLICATION_CANCELED) {
             attrset(COLOR_PAIR(3));
             mvaddstr(resultIdToLine.size() + queryIdToLine.size()+3,0,"processing canceled.\npress any key to exit...");
         } else {
@@ -139,48 +139,49 @@ void CursesListener::handleEvent(Event& event) {
         curs_set(1);
         wgetch(stdscr);
         endwin();
-    } else if (event.type == EventType::EXECUTION_STATE_CHANGE) {
-        ExecutionStateChangeEvent& e = (ExecutionStateChangeEvent&)event;
-        assert(!e.state.empty());
-        size_t lineNo = resultIdToLine[e.resultId];
-        if (e.state=="CONNECTED") {
+    } else if (event->type == EventType::EXECUTION_STATE_CHANGE) {
+        ExecutionStateChangeEvent *e = (ExecutionStateChangeEvent*)event.get();
+        assert(!e->resultId.empty());
+        assert(!e->state.empty());
+        size_t lineNo = resultIdToLine[e->resultId];
+        if (e->state=="CONNECTED") {
             timeSpent[lineNo] = std::chrono::system_clock::now();
-        } else if (e.state=="DONE") {
+        } else if (e->state=="DONE") {
             timeSpent.erase(lineNo);
         }
         screenMutex.lock();
-        if (e.state=="DONE") {
+        if (e->state=="DONE") {
             attrset(COLOR_PAIR(2));
-        } else if (e.state=="FAILED") {
+        } else if (e->state=="FAILED") {
             attrset(COLOR_PAIR(3));
         }
-        print(e.resultId, "status",e.state,true);
+        print(e->resultId, "status",e->state,true);
         attrset(COLOR_PAIR(1));
         wrefresh(stdscr);
         screenMutex.unlock();
-    } else if (event.type == EventType::RECEIVE_DATA) {
-        ReceiveDataEvent& e = (ReceiveDataEvent&)event;
-        LOG_DEBUG("recive data event for result " << e.resultId  << " received " << e.rowsReceived);
+    } else if (event->type == EventType::RECEIVE_DATA) {
+        auto e = (ReceiveDataEvent*)event.get();
+        LOG_DEBUG("recive data event for result " << e->resultId  << " received " << e->rowsReceived);
         screenMutex.lock();
-        print(e.resultId,"received",to_string(e.rowsReceived));
+        print(e->resultId,"received",to_string(e->rowsReceived));
         attrset(COLOR_PAIR(1));
         wrefresh(stdscr);
         screenMutex.unlock();
-    } else if (event.type == EventType::SENT_DATA) {
-        SentDataEvent& e = (SentDataEvent&)event;
-        LOG_DEBUG("sent data event for result " << e.resultId  << " received " << e.rowsSent);
+    } else if (event->type == EventType::SENT_DATA) {
+        auto e = (SentDataEvent*)event.get();
+        LOG_DEBUG("sent data event for result " << e->resultId  << " received " << e->rowsSent);
         screenMutex.lock();
-        print(e.resultId,"sent",to_string(e.rowsSent));
+        print(e->resultId,"sent",to_string(e->rowsSent));
         attrset(COLOR_PAIR(1));
         wrefresh(stdscr);
         screenMutex.unlock();
-    } else if (event.type == EventType::CACHE_LOADED) {
-        CacheLoadEvent& e = (CacheLoadEvent&)event;
+    } else if (event->type == EventType::CACHE_LOADED) {
+        auto e = (CacheLoadEvent*)event.get();
         screenMutex.lock();
-        print(e.resultId,"last executed",e.lastExecuted.to_string());
-        string lds = Time::getDuration(e.lastDuration);
-        print(e.resultId,"duration",lds);
-        print(e.resultId,"last rcvd",to_string(e.lastRowsReceived));
+        print(e->resultId,"last executed",e->lastExecuted.to_string());
+        string lds = Time::getDuration(e->lastDuration);
+        print(e->resultId,"duration",lds);
+        print(e->resultId,"last rcvd",to_string(e->lastRowsReceived));
         wrefresh(stdscr);
         screenMutex.unlock();
     }

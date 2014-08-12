@@ -268,7 +268,7 @@ bool AsyncQueryExecutor::processTask(int taskNo) {
                             copyDataResult = conn.putCopyData(data);
                             if (copyDataResult == 1) {
                                 task->lastRowSent += rowsRead;
-                                SentDataEvent rde{task->id,task->lastRowSent + 1};
+                                shared_ptr<Event> rde(new SentDataEvent(task->id,task->lastRowSent + 1));
                                 EventProducer::fireEvent(rde);
                                 if ((task->lastRowSent+1)<rowCount) {
                                     return false;
@@ -305,7 +305,7 @@ bool AsyncQueryExecutor::processTask(int taskNo) {
                         size = conn.getCopyData(data,true);
                         if (size == 0) {
                             LOG_TRACE("copy out would block . skip further processing!!! [received " << task->data.size() << " bytes]");
-                            ReceiveDataEvent rde{task->id,task->rowsReceived};
+                            shared_ptr<Event> rde(new ReceiveDataEvent(task->id,task->rowsReceived));
                             EventProducer::fireEvent(rde);
                             return false;
                         } else if (size==-2) {
@@ -322,7 +322,7 @@ bool AsyncQueryExecutor::processTask(int taskNo) {
 
                     LOG_TRACE("received " << task->data.size() << " bytes");
                     if (!task->data.empty()) {
-                        ReceiveDataEvent rde{task->id,task->rowsReceived};
+                        shared_ptr<Event> rde(new ReceiveDataEvent(task->id,task->rowsReceived));
                         EventProducer::fireEvent(rde);
                         LOG_TRACE("save in handler " << task->data.size() << " bytes");
                         task->handler->handleCopyOut(task->queryNo,task->data);
@@ -355,20 +355,20 @@ bool AsyncQueryExecutor::processTask(int taskNo) {
 
     void AsyncQueryExecutor::fireStateChangeEvent(int taskNo, std::string state) {
         QueryTask *task = pImpl->tasks[taskNo];
-        ExecutionStateChangeEvent event{task->id,state};
+        shared_ptr<Event> event(new ExecutionStateChangeEvent(task->id,state));
         EventProducer::fireEvent(event);
     }
 
     void AsyncQueryExecutor::fireEvent(EventType type, int taskNo) {
         LOG_TRACE("fire event " << taskNo);
-        Event event{type};
+        shared_ptr<Event> event(new Event(type));
         if (taskNo!=-1) {
-            event.resultId = pImpl->tasks[taskNo]->id;
+            event->resultId = pImpl->tasks[taskNo]->id;
         }
         EventProducer::fireEvent(event);
     }
 
-    void AsyncQueryExecutor::fireEvent(Event& event, int taskNo) {
+    void AsyncQueryExecutor::fireEvent(shared_ptr<Event> event, int taskNo) {
         EventProducer::fireEvent(event);
     }
 

@@ -13,6 +13,7 @@
 #include <array>
 #include <string>
 #include <chrono>
+#include <memory>
 
 #include "core/Application.h"
 
@@ -50,7 +51,7 @@ private:
 public:
     CursesListener(Application& application);
     virtual ~CursesListener();
-    virtual void handleEvent(Event& event) override;
+    virtual void handleEvent(shared_ptr<Event> event) override;
     virtual void updateClock();
     void print(std::string resultId, std::string col, std::string value, bool leftJustified = false);
 };

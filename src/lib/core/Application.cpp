@@ -185,7 +185,7 @@ string Application::findConfigurationFile(string name, bool createIfNeeded, bool
         return effectiveFile;
     }
 
-void Application::handleEvent(Event& event) {
+void Application::handleEvent(shared_ptr<Event> event) {
     LOG_DEBUG("received event");
     fireEvent(event);
     LOG_DEBUG("fired event");
@@ -195,16 +195,16 @@ bool Application::run() {
     LOG_DEBUG("run application");
     try {
         queryProcessor->process(query, environment);
-        Event event{EventType::APPLICATION_FINISHED,""};
+        shared_ptr<Event> event(new Event({EventType::APPLICATION_FINISHED,""}));
         fireEvent(event);
         return true;
     } catch(CancelException& ce) {
         LOG_ERROR("application canceled");
-        Event event{EventType::APPLICATION_CANCELED,""};
+        shared_ptr<Event> event(new Event({EventType::APPLICATION_CANCELED,""}));
         fireEvent(event);
     } catch(runtime_error& re) {
         LOG_ERROR("caught exception:" << re.what());
-        ApplicationFailedEvent event{re.what()};
+        shared_ptr<Event> event(new ApplicationFailedEvent(re.what()));
         fireEvent(event);
     } /*catch(exception& e) {
         LOG_ERROR("application failed:" << e.what());

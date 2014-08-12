@@ -64,7 +64,7 @@ public:
     );
     ~QueryProcessor();
     void process(std::string query, std::string environment);
-    void handleEvent(Event& event);
+    void handleEvent(std::shared_ptr<Event> event) override;
     void stop();
     ExecutionGraph& getExecutionGraph();
 };
