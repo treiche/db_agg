@@ -8,6 +8,7 @@
 #include "CursesListener.h"
 
 #include "utils/logging.h"
+#include "utils/string.h"
 
 
 extern "C" {
@@ -25,11 +26,23 @@ using namespace std;
 using namespace log4cplus;
 
 namespace db_agg {
-static Logger LOG = Logger::getInstance(LOG4CPLUS_TEXT("CursesListener"));
+DECLARE_LOGGER("CursesListener");
 
 static std::thread *clockThread;
 static std::mutex screenMutex;
 static bool running = true;
+
+Column::Column(ColumnType type, std::string label, size_t requestedWidth, size_t minimalWidth, bool leftJustified):
+    label(label),
+    // offset(0),
+    requestedWidth(requestedWidth),
+    minimalWidth(minimalWidth),
+    width(requestedWidth),
+    type(type),
+    leftJustified(leftJustified) {
+    assert(requestedWidth >= minimalWidth);
+}
+
 
 CursesListener::CursesListener(Application& application): application(application) {
 
@@ -44,7 +57,7 @@ void CursesListener::handleEvent(shared_ptr<Event> event) {
     LOG_DEBUG( "handleEvent " << (int)event->type);
     if (event->type == EventType::APPLICATION_INITIALIZED) {
         screenMutex.lock();
-        setlocale(LC_ALL, "");
+        //setlocale(LC_ALL, "");
         initscr();
         keypad(stdscr, TRUE);
         nonl();
@@ -59,52 +72,8 @@ void CursesListener::handleEvent(shared_ptr<Event> event) {
             init_pair(4, COLOR_RED, COLOR_WHITE);
         }
         attrset(COLOR_PAIR(1));
-
-        ExecutionGraph& executionGraph = application.getExecutionGraph();
-        vector<Query*> queries = executionGraph.getQueries();
-        size_t cnt = 2;
-        size_t statusOffset = 0;
-        for (auto query:queries) {
-            attron(A_BOLD|A_UNDERLINE);
-            mvaddstr(cnt,2,query->getName().c_str());
-            attroff(A_BOLD|A_UNDERLINE);
-            if (query->getName().size()+2 > statusOffset) {
-                statusOffset = query->getName().size()+2;
-            }
-            queryIdToLine[query->getId()] = cnt;
-            cnt++;
-
-            for (auto exec:executionGraph.getQueryExecutions(query)) {
-                mvaddstr(cnt,4,exec->getName().c_str());
-                if (exec->getName().size()+4 > statusOffset) {
-                    statusOffset = exec->getName().size()+4;
-                }
-                resultIdToLine[exec->getId()] = cnt;
-                cnt++;
-            }
-        }
-        for (auto result:resultIdToLine) {
-            mvaddstr(result.second,statusOffset+2,"-->");
-        }
-        columns[0].width = statusOffset + 6;
-        mvprintw(0,0,"%s","execution");
-        for (size_t idx=1;idx < columns.size(); idx++) {
-            columns[idx].offset = columns[idx-1].offset + columns[idx-1].width;
-            mvprintw(0,columns[idx].offset,"│%s",columns[idx].label.c_str());
-        }
-        string secondLine = "━";
-        for (size_t col=0; col < columns.size(); col++) {
-            for (size_t idx=0; idx < columns[col].width-1;idx++) {
-                secondLine += "━";
-            }
-            if (col < columns.size() -1) {
-                secondLine += "┷";
-            }
-        }
-        mvprintw(1,0,"%s",secondLine.c_str());
-        for (auto result:resultIdToLine) {
-            print(result.first,"received","0");
-        }
+        calculateLayout();
+        refresh();
         wrefresh(stdscr);
         screenMutex.unlock();
         clockThread = new std::thread(&CursesListener::updateClock,this);
@@ -121,20 +90,20 @@ void CursesListener::handleEvent(shared_ptr<Event> event) {
             if (initialized) {
                 attrset(COLOR_PAIR(3));
                 if (e->reason.empty()) {
-                    mvaddstr(resultIdToLine.size() + queryIdToLine.size()+3,0,"processing failed.\npress any key to exit...");
+                    mvaddstr(statusOffset,0,"processing failed.\npress any key to exit...");
                 } else {
                     string message = "processing failed: " + e->reason + "\npress any key to exit...";
-                    mvaddstr(resultIdToLine.size() + queryIdToLine.size()+3,0,message.c_str());
+                    mvaddstr(statusOffset,0,message.c_str());
                 }
             } else {
                 cout << "ERROR: " << e->reason << endl;
             }
         } else if (event->type == EventType::APPLICATION_CANCELED) {
             attrset(COLOR_PAIR(3));
-            mvaddstr(resultIdToLine.size() + queryIdToLine.size()+3,0,"processing canceled.\npress any key to exit...");
+            mvaddstr(statusOffset,0,"processing canceled.\npress any key to exit...");
         } else {
             attrset(COLOR_PAIR(2));
-            mvaddstr(resultIdToLine.size() + queryIdToLine.size()+3,0,"processing done.\npress any key to exit...");
+            mvaddstr(statusOffset,0,"processing done.\npress any key to exit...");
         }
         curs_set(1);
         wgetch(stdscr);
@@ -143,11 +112,10 @@ void CursesListener::handleEvent(shared_ptr<Event> event) {
         ExecutionStateChangeEvent *e = (ExecutionStateChangeEvent*)event.get();
         assert(!e->resultId.empty());
         assert(!e->state.empty());
-        size_t lineNo = resultIdToLine[e->resultId];
         if (e->state=="CONNECTED") {
-            timeSpent[lineNo] = std::chrono::system_clock::now();
+            timeSpent[e->resultId] = std::chrono::system_clock::now();
         } else if (e->state=="DONE") {
-            timeSpent.erase(lineNo);
+            timeSpent.erase(e->resultId);
         }
         screenMutex.lock();
         if (e->state=="DONE") {
@@ -155,7 +123,7 @@ void CursesListener::handleEvent(shared_ptr<Event> event) {
         } else if (e->state=="FAILED") {
             attrset(COLOR_PAIR(3));
         }
-        print(e->resultId, "status",e->state,true);
+        print(e->resultId, ColumnType::STATUS,e->state);
         attrset(COLOR_PAIR(1));
         wrefresh(stdscr);
         screenMutex.unlock();
@@ -163,7 +131,7 @@ void CursesListener::handleEvent(shared_ptr<Event> event) {
         auto e = (ReceiveDataEvent*)event.get();
         LOG_DEBUG("recive data event for result " << e->resultId  << " received " << e->rowsReceived);
         screenMutex.lock();
-        print(e->resultId,"received",to_string(e->rowsReceived));
+        print(e->resultId,ColumnType::RECEIVED,thousand_grouping(e->rowsReceived));
         attrset(COLOR_PAIR(1));
         wrefresh(stdscr);
         screenMutex.unlock();
@@ -171,39 +139,43 @@ void CursesListener::handleEvent(shared_ptr<Event> event) {
         auto e = (SentDataEvent*)event.get();
         LOG_DEBUG("sent data event for result " << e->resultId  << " received " << e->rowsSent);
         screenMutex.lock();
-        print(e->resultId,"sent",to_string(e->rowsSent));
+        print(e->resultId,ColumnType::SENT,thousand_grouping(e->rowsSent));
         attrset(COLOR_PAIR(1));
         wrefresh(stdscr);
         screenMutex.unlock();
     } else if (event->type == EventType::CACHE_LOADED) {
         auto e = (CacheLoadEvent*)event.get();
         screenMutex.lock();
-        print(e->resultId,"last executed",e->lastExecuted.to_string());
+        print(e->resultId,ColumnType::LAST_EXECUTED,e->lastExecuted.to_string());
         string lds = Time::getDuration(e->lastDuration);
-        print(e->resultId,"duration",lds);
-        print(e->resultId,"last rcvd",to_string(e->lastRowsReceived));
+        print(e->resultId,ColumnType::LAST_DURATION,lds);
+        print(e->resultId,ColumnType::LAST_RECEIVED,thousand_grouping(e->lastRowsReceived));
         wrefresh(stdscr);
         screenMutex.unlock();
     }
 }
 
-void CursesListener::print(std::string resultId, std::string col, std::string value, bool leftJustified) {
-    size_t lineNo = resultIdToLine[resultId];
+void CursesListener::print(std::string resultId, ColumnType colType, std::string value) {
     size_t offset = 0;
     size_t width = 0;
+    bool leftJustified = false;
     for (auto& column:columns) {
-        if (column.label == col) {
-            offset = column.offset;
+        if (column.type == colType) {
+            if (!column.show) {
+                return;
+            }
             width = column.width;
+            leftJustified = column.leftJustified;
             break;
         }
     }
+    position& pos = resultIdToPosition[resultId][colType];
     string format = " %";
     if (leftJustified) {
         format += "-";
     }
     format.append(to_string(width - 2) + "s ");
-    mvprintw(lineNo,offset,format.c_str(),value.c_str());
+    mvprintw(pos.line,pos.col,format.c_str(),value.c_str());
 }
 
 
@@ -223,13 +195,7 @@ void CursesListener::updateClock() {
             long ms = rest / milliseconds(1);
             rest = (rest % milliseconds(1));
             string fmt = string_format(" %02d:%02d.%03d ",m,s,ms);
-            size_t offset = 0;
-            for (auto col:columns) {
-                if (col.label == "time spent") {
-                    offset = col.offset;
-                }
-            }
-            mvaddstr(p.first,offset,fmt.c_str());
+            print(p.first,ColumnType::TIME_SPENT,fmt);
         }
         wrefresh(stdscr);
         screenMutex.unlock();
@@ -237,5 +203,136 @@ void CursesListener::updateClock() {
     }
 }
 
+bool CursesListener::calculateRequiredSpace() {
+    size_t lines = 0;
+    size_t cols = 0;
+    size_t availableLines = LINES - 4;
+    ExecutionGraph& executionGraph = application.getExecutionGraph();
+    vector<Query*> queries = executionGraph.getQueries();
+    for (auto query:queries) {
+        if (!compactView) {
+            lines++;
+        }
+        for (auto exec:executionGraph.getQueryExecutions(query)) {
+            lines++;
+        }
+    }
+    for (size_t idx = 0; idx < columns.size(); idx++) {
+        if (columns[idx].show) {
+            cols += columns[idx].width;
+        }
+    }
+    if (lines > availableLines) {
+        clusterNo = lines / availableLines;
+        if (lines % availableLines > 0) {
+            clusterNo++;
+        }
+        LOG_INFO("calculate number of needed clusters: " << clusterNo)
+        clusterWidth = COLS / clusterNo;
+        LOG_INFO("calculate cluster width is " << clusterWidth);
+        if (cols > clusterWidth) {
+            return false;
+        }
+    } else {
+        clusterNo = 1;
+    }
+    LOG_INFO("calculated required space: [" << lines << "," << cols << "] cluster = " << clusterWidth);
+    statusOffset = LINES - 2;
+    return true;
+}
+
+void CursesListener::calculateLayout() {
+    size_t availableLines = LINES - 4;
+    LOG_INFO("calculate layout for screen [" << LINES << "," << COLS << "]");
+
+    while (!calculateRequiredSpace()) {
+        for (size_t idx = columns.size() - 1; idx >= 0; idx--) {
+            auto colDef = &columns[idx];
+            if (colDef->show) {
+                LOG_INFO("calculate disable column " << colDef->label)
+                colDef->show = false;
+                break;
+            }
+        }
+    }
+
+    ExecutionGraph& executionGraph = application.getExecutionGraph();
+    vector<Query*> queries = executionGraph.getQueries();
+
+    size_t line = 0;
+    size_t relLine = 0;
+    for (auto query:queries) {
+        if (!compactView) {
+        }
+        for (auto exec:executionGraph.getQueryExecutions(query)) {
+            size_t col = clusterWidth * (line / availableLines);
+            for (auto& colDef:columns) {
+                if (colDef.show) {
+                    position pos;
+                    pos.line = relLine + 2;
+                    pos.col = col;
+                    if (colDef.type == ColumnType::EXECUTION) {
+                        pos.value = exec->getName();
+                    } else {
+                        // pos.value = to_string(col);
+                    }
+                    resultIdToPosition[exec->getId()][colDef.type] = pos;
+                }
+                col += colDef.width;
+            }
+            line++;
+            relLine++;
+            if (relLine >= availableLines) {
+                relLine = 0;
+            }
+        }
+    }
+
+}
+
+void CursesListener::refresh() {
+    // print headers
+    attrset(COLOR_PAIR(1));
+    size_t col = 0;
+    size_t visibleColumns = 0;
+    for (auto colDef:columns) {
+        if (colDef.show) {
+            visibleColumns++;
+        }
+    }
+
+
+    for (size_t cluster = 0; cluster < clusterNo; cluster++) {
+        col = (cluster * clusterWidth);
+        size_t vc = 0;
+        for (auto colDef:columns) {
+            if (colDef.show) {
+                LOG_INFO("calculate col = " << col)
+                mvaddstr(0,col,colDef.label.c_str());
+                for (size_t idx = 0; idx < colDef.width - 1; idx++) {
+                    mvaddch(1,col+idx,ACS_HLINE);
+                }
+                if (vc < visibleColumns - 1) {
+                    mvaddch(1,col+colDef.width - 1,ACS_BTEE);
+                } else {
+                    mvaddch(1,col+colDef.width - 1,ACS_LRCORNER);
+                }
+                col += colDef.width;
+                vc++;
+            } else {
+                LOG_INFO("calculate col hidden " << colDef.label)
+            }
+        }
+    }
+    //mvaddstr(2,0,"012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567");
+    //mvaddstr(3,0,"          1         2         3         4         5         6         7         8         9         0         1         2         3         4         5         6");
+    for (auto r:resultIdToPosition) {
+        for (auto c:r.second) {
+            mvaddstr(c.second.line, c.second.col, c.second.value.c_str());
+        }
+    }
+    attrset(COLOR_PAIR(1));
+
+}
 
 }
