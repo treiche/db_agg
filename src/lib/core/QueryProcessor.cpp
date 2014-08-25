@@ -190,12 +190,10 @@ void QueryProcessor::loadFromCache() {
                     allDone &= target->isDone();
                 }
                 if (allDone) {
-                    qr->release();
                     continue;
                 }
                 LOG_DEBUG("open channel " << channel->getName());
                 if (channel->getState() != ChannelState::READY) {
-                    qr->release();
                     continue;
                 }
                 channel->open();

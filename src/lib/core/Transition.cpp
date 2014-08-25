@@ -27,6 +27,7 @@ int findShardColIndex(vector<pair<string,uint32_t>> columns, string searchExpr) 
 
 vector<shared_ptr<TableData>> split(shared_ptr<TableData> src, int dstSize, shared_ptr<ShardingStrategy> sharder, string shardColSearchExpr) {
     assert(sharder != nullptr);
+    assert(src.get() != nullptr);
     LOG_DEBUG("split(" << src << "," << dstSize << "," << sharder << ")");
     sharder->setShardCount(dstSize);
     vector<shared_ptr<TableData>> splitted(dstSize);
@@ -80,6 +81,7 @@ void Transition::doTransition(string resultId, shared_ptr<TableData> data) {
 */
 
 void Transition::receive(string name, shared_ptr<TableData> data) {
+    assert(data.get() != nullptr);
     LOG_DEBUG("receive data " << data);
     receivedData.push_back(data);
     if (receivedData.size() == srcSize) {
