@@ -28,8 +28,9 @@ public:
     ~RegExp();
     void setExpr(std::string re);
     std::vector<match> exec(std::string str);
-
     bool find(std::string str, std::vector<std::string>& matches, int& offset);
+    std::vector<std::string> split(std::string value);
+    std::string replace(std::string value, std::string replace);
 };
 }
 

@@ -1,6 +1,7 @@
 #include "RegExp.h"
 
 #include "utils/logging.h"
+#include "utils/string.h"
 #include <iostream>
 
 extern "C" {
@@ -95,5 +96,65 @@ namespace db_agg {
             }
         }
         return true;
+    }
+
+    vector<string> RegExp::split(string str) {
+        const char *qs = str.c_str();
+        int len = str.length();
+        int subStrVec[30];
+        int ret = 0;
+        int offset = 0;
+        int lastOffset = 0;
+        vector<string> splitted;
+        do {
+            ret = pcre_exec(pImpl->regexp, pImpl->pcreExtra, qs, len, offset, 0, subStrVec, 30);
+            if (ret > 0) {
+                if (subStrVec[0]==subStrVec[1]) {
+                    offset++;
+                    continue;
+                }
+                offset = subStrVec[1];
+                splitted.push_back(string(qs + lastOffset, subStrVec[0] - lastOffset));
+                lastOffset = offset;
+            }
+        } while(ret > 0);
+        if (offset < len) {
+            splitted.push_back(string(qs + offset, len - offset));
+        }
+        return splitted;
+    }
+
+    string RegExp::replace(std::string value, std::string replace) {
+        const char *qs = value.c_str();
+        size_t len = value.size();
+        int offset = 0;
+        int groups[30];
+        int ret;
+        string result;
+        do {
+            ret = pcre_exec(pImpl->regexp, pImpl->pcreExtra, qs, len, offset, 0, groups, 30);
+            if (ret > 0) {
+                vector<string> matches;
+                string rpl = replace;
+                for (int idx = 0; idx < ret; idx++) {
+                    size_t start = groups[idx*2];
+                    size_t end = groups[(idx*2)+1];
+                    size_t len = end - start;
+                    string match(qs,start,len);
+                    matches.push_back(match);
+                    // find group in replacement
+                    string g = "\\" + to_string(idx);
+                    rpl = replace_all(rpl,g,match);
+                }
+                result += value.substr(offset, groups[0] - offset);
+                result += rpl;
+                offset = groups[1];
+            }
+        } while(ret > 0);
+        if (offset < value.size()) {
+            result += value.substr(offset);
+        }
+        //cout << "ret = " << ret << endl;
+        return result;
     }
 }
