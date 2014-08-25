@@ -14,6 +14,7 @@
 
 #include "core/RegExpQueryParser.h"
 #include "utils/utility.h"
+#include "utils/string.h"
 #include "utils/File.h"
 #include "excel/ExcelToTextFormat.h"
 #include "utils/Template.h"

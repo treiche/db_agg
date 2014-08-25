@@ -14,6 +14,7 @@ extern "C" {
 #include "utils/logging.h"
 
 #include "utils/utility.h"
+#include "utils/string.h"
 #include "utils/PasswordManager.h"
 
 using namespace std;

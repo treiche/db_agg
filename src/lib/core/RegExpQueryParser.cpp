@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "utils/utility.h"
+#include "utils/string.h"
 #include "utils/md5.h"
 #include "core/Query.h"
 #include "utils/RegExp.h"

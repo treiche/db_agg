@@ -8,6 +8,7 @@
 #include <iostream>
 #include <sstream>
 #include "Url.h"
+#include "utils/string.h"
 #include "utils/RegExp.h"
 #include "utils/utility.h"
 

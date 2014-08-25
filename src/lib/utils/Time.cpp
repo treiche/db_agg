@@ -11,8 +11,8 @@
 #include <stdexcept>
 #include <chrono>
 #include "utils/logging.h"
-
-#include "utility.h"
+#include "utils/utility.h"
+#include "utils/string.h"
 
 using namespace std;
 using namespace chrono;

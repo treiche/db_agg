@@ -9,6 +9,7 @@
 
 #include <dirent.h>
 #include "utils/logging.h"
+#include "utils/string.h"
 #include <log4cplus/tstring.h>
 #include <stdio.h>
 #include <sys/stat.h>
