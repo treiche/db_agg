@@ -59,10 +59,11 @@ void CursesListener::handleEvent(shared_ptr<Event> event) {
         screenMutex.lock();
         //setlocale(LC_ALL, "");
         initscr();
+        timeout(10);
         keypad(stdscr, TRUE);
         nonl();
         cbreak();
-        echo();
+        noecho();
         curs_set(0);
         if (has_colors()) {
             start_color();
@@ -106,6 +107,7 @@ void CursesListener::handleEvent(shared_ptr<Event> event) {
             mvaddstr(statusOffset,0,"processing done.\npress any key to exit...");
         }
         curs_set(1);
+        timeout(-1);
         wgetch(stdscr);
         endwin();
     } else if (event->type == EventType::EXECUTION_STATE_CHANGE) {
@@ -175,7 +177,10 @@ void CursesListener::print(std::string resultId, ColumnType colType, std::string
         format += "-";
     }
     format.append(to_string(width - 2) + "s ");
-    mvprintw(pos.line,pos.col,format.c_str(),value.c_str());
+    char buf[256];
+    sprintf(buf,format.c_str(),value.c_str());
+    mvaddstr(pos.line,pos.col,buf);
+    resultIdToPosition[resultId][colType].value = string(buf);
 }
 
 
@@ -199,7 +204,18 @@ void CursesListener::updateClock() {
         }
         wrefresh(stdscr);
         screenMutex.unlock();
-        this_thread::sleep_for(std::chrono::milliseconds(10));
+        int c = wgetch(stdscr);
+        if (c != -1) {
+            if (c == 410) {
+                screenMutex.lock();
+                clear();
+                calculateLayout();
+                refresh();
+                wrefresh(stdscr);
+                screenMutex.unlock();
+            }
+        }
+        //this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 }
 
@@ -245,6 +261,10 @@ void CursesListener::calculateLayout() {
     size_t availableLines = LINES - 4;
     LOG_INFO("calculate layout for screen [" << LINES << "," << COLS << "]");
 
+    for (auto& colDef:columns) {
+        colDef.show = true;
+    }
+
     while (!calculateRequiredSpace()) {
         for (size_t idx = columns.size() - 1; idx >= 0; idx--) {
             auto colDef = &columns[idx];
@@ -274,7 +294,7 @@ void CursesListener::calculateLayout() {
                     if (colDef.type == ColumnType::EXECUTION) {
                         pos.value = exec->getName();
                     } else {
-                        // pos.value = to_string(col);
+                        pos.value = resultIdToPosition[exec->getId()][colDef.type].value;
                     }
                     resultIdToPosition[exec->getId()][colDef.type] = pos;
                 }
@@ -295,12 +315,12 @@ void CursesListener::refresh() {
     attrset(COLOR_PAIR(1));
     size_t col = 0;
     size_t visibleColumns = 0;
+
     for (auto colDef:columns) {
         if (colDef.show) {
             visibleColumns++;
         }
     }
-
 
     for (size_t cluster = 0; cluster < clusterNo; cluster++) {
         col = (cluster * clusterWidth);
@@ -324,13 +344,13 @@ void CursesListener::refresh() {
             }
         }
     }
-    //mvaddstr(2,0,"012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567");
-    //mvaddstr(3,0,"          1         2         3         4         5         6         7         8         9         0         1         2         3         4         5         6");
+
     for (auto r:resultIdToPosition) {
         for (auto c:r.second) {
             mvaddstr(c.second.line, c.second.col, c.second.value.c_str());
         }
     }
+
     attrset(COLOR_PAIR(1));
 
 }
