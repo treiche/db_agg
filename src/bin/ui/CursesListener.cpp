@@ -172,14 +172,18 @@ void CursesListener::print(std::string resultId, ColumnType colType, std::string
         }
     }
     position& pos = resultIdToPosition[resultId][colType];
+    string widthAsString = to_string(width - 2);
     string format = " %";
     if (leftJustified) {
         format += "-";
     }
-    format.append(to_string(width - 2) + "s ");
+    format.append(widthAsString + "." + widthAsString + "s ");
     char buf[256];
     sprintf(buf,format.c_str(),value.c_str());
     mvaddstr(pos.line,pos.col,buf);
+    if (colType == ColumnType::EXECUTION) {
+        LOG_INFO("formatted '" << value << "' -> '" << buf << "'");
+    }
     resultIdToPosition[resultId][colType].value = string(buf);
 }
 
@@ -215,6 +219,7 @@ void CursesListener::updateClock() {
                 screenMutex.unlock();
             }
         }
+        this_thread::yield();
         //this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 }
@@ -291,12 +296,18 @@ void CursesListener::calculateLayout() {
                     position pos;
                     pos.line = relLine + 2;
                     pos.col = col;
+                    pos.value = resultIdToPosition[exec->getId()][colDef.type].value;
+                    /*
                     if (colDef.type == ColumnType::EXECUTION) {
                         pos.value = exec->getName();
                     } else {
                         pos.value = resultIdToPosition[exec->getId()][colDef.type].value;
                     }
+                    */
                     resultIdToPosition[exec->getId()][colDef.type] = pos;
+                    if (colDef.type == ColumnType::EXECUTION) {
+                        print(exec->getId(),colDef.type,exec->getName());
+                    }
                 }
                 col += colDef.width;
             }

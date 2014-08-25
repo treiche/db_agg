@@ -68,7 +68,7 @@ private:
     std::map<std::string,position> queryIdToLine;
     std::map<std::string,std::chrono::system_clock::time_point> timeSpent;
     std::vector<Column> columns = {
-            {ColumnType::EXECUTION,"execution",20, 15, true},
+            {ColumnType::EXECUTION,"execution",30, 15, true},
             {ColumnType::STATUS,"status",17, 10, true},
             {ColumnType::TIME_SPENT,"time spent",11, 11,true},
             {ColumnType::RECEIVED,"received", 13, 13, false},
