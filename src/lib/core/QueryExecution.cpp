@@ -48,9 +48,15 @@ namespace db_agg {
     }
 
     void QueryExecution::release() {
-        LOG_TRACE("use count before release = " << data.use_count());
+        LOG_INFO("use_count for result " << getName());
+        LOG_INFO("result use_count before release = " << data.use_count() << " unique = " << data.unique());
         data.reset();
-        LOG_TRACE("use count after release = " << data.use_count());
+        for (auto& dependency:dependencies) {
+            LOG_INFO("dependency " << dependency.first << " use_count before release = " << dependency.second.use_count());
+            dependency.second.reset();
+        }
+        LOG_INFO("use_count injector = " << dependencyInjector.use_count());
+        dependencyInjector.reset();
     }
 
 

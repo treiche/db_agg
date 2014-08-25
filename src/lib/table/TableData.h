@@ -23,7 +23,7 @@ protected:
     void setColumns(std::vector<ColDef> columns);
     TableData();
 public:
-    virtual ~TableData() {};
+    virtual ~TableData();
     virtual uint64_t getRowCount();
     virtual uint32_t getColCount();
     virtual std::vector<ColDef>& getColumns();

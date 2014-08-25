@@ -6,11 +6,19 @@
  */
 
 #include <assert.h>
+#include "utils/logging.h"
 #include "ExtendedTableData.h"
 
 using namespace std;
 
 namespace db_agg {
+
+DECLARE_LOGGER("ExtendedTableData");
+
+ExtendedTableData::~ExtendedTableData() {
+    LOG_INFO("use_count");
+}
+
 
 ExtendedTableData::ExtendedTableData(vector<shared_ptr<TableData>> tables) {
     vector<ColRef> refs;

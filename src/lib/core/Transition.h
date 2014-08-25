@@ -55,6 +55,8 @@ public:
     bool isDone() {
         return done;
     }
+
+    void release();
     friend std::ostream& operator<<(std::ostream& cout,const Transition& t);
 };
 

@@ -20,7 +20,10 @@ namespace db_agg {
 static Logger LOG = Logger::getInstance(LOG4CPLUS_TEXT("DefaultDependencyInjector"));
 
 DefaultDependencyInjector::~DefaultDependencyInjector() {
-
+    LOG_INFO("use_count delete injector");
+    for (auto& step:steps) {
+        step.release();
+    }
 }
 
 string DefaultDependencyInjector::inject(string query, map<string,shared_ptr<TableData>> dependencies, size_t copyThreshold) {

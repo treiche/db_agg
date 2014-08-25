@@ -11,6 +11,7 @@
 #include "utils/md5.h"
 #include "type/oids.h"
 #include "utils/utility.h"
+#include "utils/string.h"
 #include "utils/File.h"
 #include "type/TypeRegistry.h"
 #include "TableIndex.h"
@@ -54,7 +55,7 @@ namespace db_agg {
     }
 
     CsvTableData::~CsvTableData() {
-        LOG_DEBUG("delete table data '" << fileName << "'");
+        LOG_INFO("delete table data '" << fileName << "' use_count");
         if (data) {
             free(data);
         }

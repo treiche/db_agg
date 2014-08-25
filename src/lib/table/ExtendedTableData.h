@@ -23,6 +23,7 @@ private:
     ExtendedTableData(std::vector<ColRef> columns);
     void init(std::vector<ColRef> columns);
 public:
+    virtual ~ExtendedTableData();
     virtual void appendRaw(void *data, uint64_t size) override;
     virtual void getRows(uint64_t startRow, uint64_t rows, std::vector<DataChunk>& chunks) override;
     virtual void save(std::string filePath) override;

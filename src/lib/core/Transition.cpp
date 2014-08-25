@@ -102,11 +102,13 @@ void Transition::doTransition() {
         string message = "transition '" + name +"' already done !";
         LOG_WARN(message);
         done = true;
+        release();
         return;
     }
     if (done) {
         string message = "transition '" + name +"' already done !";
         LOG_WARN(message);
+        release();
         return;
     }
     LOG_DEBUG("do transition '" << name << "' with src = " << srcSize << " dst = " << dstSize);
@@ -126,6 +128,7 @@ void Transition::doTransition() {
             channel->close();
         }
         done=true;
+        release();
         return;
     } else if (dstSize > 1 && srcSize==1) {
         // split result
@@ -141,6 +144,7 @@ void Transition::doTransition() {
             }
             LOG_DEBUG("add dependency done");
             done = true;
+            release();
             return;
         } else {
             // split
@@ -159,6 +163,7 @@ void Transition::doTransition() {
             }
             LOG_DEBUG("add dependency done");
             done = true;
+            release();
             return;
         }
     } else if (srcSize>1 && dstSize>1) {
@@ -173,6 +178,7 @@ void Transition::doTransition() {
         LOG_DEBUG("add dependency done");
         done = true;
         joined.reset();
+        release();
         return;
     } else if (srcSize==1 && dstSize==1) {
         LOG_DEBUG("start one to one");
@@ -180,10 +186,17 @@ void Transition::doTransition() {
         channels[0]->send(receivedData[0]);
         channels[0]->close();
         done = true;
+        release();
         return;
     }
 
     throw runtime_error("transition type " + to_string(srcSize) + " -> " + to_string(dstSize) + " not implemented yet");
+}
+
+void Transition::release() {
+    for (auto& data:receivedData) {
+        data.reset();
+    }
 }
 
 std::ostream& operator<<(std::ostream& cout,const Transition& t) {

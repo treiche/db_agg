@@ -12,6 +12,7 @@
 
 #include "utils/logging.h"
 #include "utils/utility.h"
+#include "utils/string.h"
 #include "type/oids.h"
 #include "type/TypeRegistry.h"
 
@@ -25,6 +26,10 @@ static Logger LOG = Logger::getInstance(LOG4CPLUS_TEXT("TableData"));
 
 TableData::TableData() {
 
+}
+
+TableData::~TableData() {
+    LOG_INFO("destroy table data (use_count)");
 }
 
 void TableData::setRowCount(uint64_t rowCount) {
