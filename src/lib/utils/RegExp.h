@@ -27,10 +27,12 @@ public:
     RegExp(std::string re);
     ~RegExp();
     void setExpr(std::string re);
+    std::string getExpr();
     std::vector<match> exec(std::string str);
     bool find(std::string str, std::vector<std::string>& matches, int& offset);
     std::vector<std::string> split(std::string value);
-    std::string replace(std::string value, std::string replace);
+    std::string replace(std::string value, std::string replace, bool& matched);
+    bool matches(std::string value);
 };
 }
 

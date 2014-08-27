@@ -15,6 +15,7 @@ namespace db_agg {
     static Logger LOG = Logger::getInstance(LOG4CPLUS_TEXT("RegExp"));
 
     struct RegExp::XImpl {
+        string exp;
         pcre *regexp;
         pcre_extra *pcreExtra;
     };
@@ -25,13 +26,19 @@ namespace db_agg {
 
     RegExp::RegExp(string re) {
         pImpl = new XImpl();
+        pImpl->exp = re;
         compile(re);
         //LOG_DEBUG("re = " << re);
         //LOG_DEBUG("RegExp extra = " << pImpl->pcreExtra);
     }
 
     void RegExp::setExpr(std::string re) {
+        pImpl->exp = re;
         compile(re);
+    }
+
+    string RegExp::getExpr() {
+        return pImpl->exp;
     }
 
     void RegExp::compile(string re) {
@@ -124,23 +131,28 @@ namespace db_agg {
         return splitted;
     }
 
-    string RegExp::replace(std::string value, std::string replace) {
+    string RegExp::replace(std::string value, std::string replace, bool& matched) {
         const char *qs = value.c_str();
         size_t len = value.size();
         int offset = 0;
         int groups[30];
         int ret;
         string result;
+        matched = false;
         do {
             ret = pcre_exec(pImpl->regexp, pImpl->pcreExtra, qs, len, offset, 0, groups, 30);
             if (ret > 0) {
+                matched = true;
                 vector<string> matches;
                 string rpl = replace;
                 for (int idx = 0; idx < ret; idx++) {
                     size_t start = groups[idx*2];
                     size_t end = groups[(idx*2)+1];
                     size_t len = end - start;
-                    string match(qs,start,len);
+                    string match;
+                    if (len > 0) {
+                        match = string(qs,start,len);
+                    }
                     matches.push_back(match);
                     // find group in replacement
                     string g = "\\" + to_string(idx);
@@ -156,5 +168,16 @@ namespace db_agg {
         }
         //cout << "ret = " << ret << endl;
         return result;
+    }
+
+    bool RegExp::matches(std::string value) {
+        const char *qs = value.c_str();
+        size_t len = value.size();
+        int groups[30];
+        int ret = pcre_exec(pImpl->regexp, pImpl->pcreExtra, qs, len, 0, 0, groups, 30);
+        if (ret > 0) {
+            return true;
+        }
+        return false;
     }
 }
