@@ -45,6 +45,7 @@ class QueryProcessor : public EventListener, public EventProducer {
     void loadExternalSources();
     void cleanUp();
     bool dontExecute;
+    bool stopped = false;
     size_t maxParallelExecutions = 1000;
 public:
     QueryProcessor(

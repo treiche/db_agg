@@ -61,6 +61,7 @@ QueryProcessor::~QueryProcessor() {
 }
 
 void QueryProcessor::stop() {
+    stopped = true;
     for (auto exec:executionGraph.getQueryExecutions()) {
         exec->stop();
     }
@@ -110,6 +111,9 @@ void QueryProcessor::process(string query, string environment) {
                     } else {
                         LOG_DEBUG("exec " << exec->getName() << " skipped as maxExecution limit (" << maxParallelExecutions << ") is reached");
                     }
+                }
+                if (stopped) {
+                    throw CancelException("got cancellation request");
                 }
             } catch(CancelException& ce) {
                 cleanUp();
