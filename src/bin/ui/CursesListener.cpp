@@ -161,13 +161,12 @@ void CursesListener::print(std::string resultId, ColumnType colType, std::string
     size_t offset = 0;
     size_t width = 0;
     bool leftJustified = false;
+    bool show = false;
     for (auto& column:columns) {
         if (column.type == colType) {
-            if (!column.show) {
-                return;
-            }
             width = column.width;
             leftJustified = column.leftJustified;
+            show = column.show;
             break;
         }
     }
@@ -180,9 +179,8 @@ void CursesListener::print(std::string resultId, ColumnType colType, std::string
     format.append(widthAsString + "." + widthAsString + "s ");
     char buf[256];
     sprintf(buf,format.c_str(),value.c_str());
-    mvaddstr(pos.line,pos.col,buf);
-    if (colType == ColumnType::EXECUTION) {
-        LOG_INFO("formatted '" << value << "' -> '" << buf << "'");
+    if (show) {
+        mvaddstr(pos.line,pos.col,buf);
     }
     resultIdToPosition[resultId][colType].value = string(buf);
 }
