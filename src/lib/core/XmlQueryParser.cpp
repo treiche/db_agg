@@ -28,7 +28,7 @@ vector<Query*> XmlQueryParser::parse(string q, map<string,string>& externalSourc
         THROW_EXC("failed to parse xml queries");
     }
     int ret = xmlXIncludeProcess(doc);
-    if (ret != 0) {
+    if (ret < 0) {
         THROW_EXC("xinclude failed");
     }
     vector<Query*> queries;
