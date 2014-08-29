@@ -103,6 +103,16 @@ string File::abspath() {
     return pwd + path;
 }
 
+string File::realpath() {
+    char *ap = ::realpath(path.c_str(),nullptr);
+    if (ap == nullptr) {
+        THROW_EXC("unable to get abspath for '" << path << "'");
+    }
+    string res(ap);
+    free(ap);
+    return res;
+}
+
 bool File::rmdir() {
     vector<string> childs;
     getChilds(childs);

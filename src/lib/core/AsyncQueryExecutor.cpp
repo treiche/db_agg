@@ -27,7 +27,7 @@ using namespace log4cplus;
 namespace db_agg {
     static Logger LOG = Logger::getInstance(LOG4CPLUS_TEXT("AsyncQueryExecutor"));
 
-    enum class QueryExecutionState {
+    enum class PGQueryExecutionState {
         INITIAL,
         CONNECTING,
         CONNECTED,
@@ -46,7 +46,7 @@ namespace db_agg {
         PGResult *result;
         string data;
         bool done;
-        QueryExecutionState state;
+        PGQueryExecutionState state;
         ExecutionHandler *handler;
         uint64_t rowsReceived = 0;
         int64_t lastRowSent = -1;
@@ -87,7 +87,7 @@ namespace db_agg {
         qt->query = query;
         qt->queryNo = 0;
         qt->done = false;
-        qt->state = QueryExecutionState::INITIAL;
+        qt->state = PGQueryExecutionState::INITIAL;
         qt->handler = handler;
         this->pImpl->tasks.push_back(qt);
     }
@@ -145,7 +145,7 @@ namespace db_agg {
                 taskDone = this->processTask(taskNo);
             } catch(AsyncQueryExecutorException& e) {
                 QueryTask *task = pImpl->tasks[taskNo];
-                task->state = QueryExecutionState::FAILED;
+                task->state = PGQueryExecutionState::FAILED;
                 fireStateChangeEvent(taskNo, "FAILED");
                 throw runtime_error(e.what());
             }
@@ -161,14 +161,14 @@ bool AsyncQueryExecutor::processTask(int taskNo) {
         }
         // std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         PGConnection& conn = task->conn;
-        if (task->state == QueryExecutionState::INITIAL) {
+        if (task->state == PGQueryExecutionState::INITIAL) {
             bool connectAsync = false;
             string connectionUrl = task->connectionUrl; // + " options='--statement-timeout=30000 --client-min-messages=debug1'";
             if (!connectAsync) {
                 task->conn = PGConnection::connectDb(connectionUrl.c_str());
                 LOG_INFO("connecting to " << maskPassword(task->connectionUrl));
                 if (task->conn.connected()) {
-                    task->state = QueryExecutionState::CONNECTED;
+                    task->state = PGQueryExecutionState::CONNECTED;
                     fireStateChangeEvent(taskNo, "CONNECTED");
                 } else {
                     THROW_EXC("connecting to " << task->connectionUrl << " failed");
@@ -181,35 +181,35 @@ bool AsyncQueryExecutor::processTask(int taskNo) {
                 if (task->conn.isnonblocking() != 1) {
                     LOG_WARN("set non blocking mode failed");
                 }
-                task->state = QueryExecutionState::CONNECTING;
+                task->state = PGQueryExecutionState::CONNECTING;
                 fireStateChangeEvent(taskNo, "CONNECTING");
             }
-        } else if (task->state == QueryExecutionState::CONNECTING) {
+        } else if (task->state == PGQueryExecutionState::CONNECTING) {
             PostgresPollingStatusType ppst = conn.connectPoll();
             if (ppst == PGRES_POLLING_FAILED) {
                 THROW_EXC("failed to connect to " << task->connectionUrl << ". postgres message: " << conn.errorMessage());
             }
             if (ppst == PGRES_POLLING_OK) {
-                task->state = QueryExecutionState::CONNECTED;
+                task->state = PGQueryExecutionState::CONNECTED;
                 fireStateChangeEvent(taskNo, "CONNECTED");
             }
-        } else if (task->state == QueryExecutionState::CONNECTED) {
+        } else if (task->state == PGQueryExecutionState::CONNECTED) {
             LOG_DEBUG("about to send query");
             if (!task->conn.sendQuery(task->query)) {
                 THROW_EXC("sending query  " << task->query << " failed. message = " << task->conn.errorMessage() << " connection = " << task->connectionUrl);
             }
-            task->state = QueryExecutionState::QUERY_SENDING;
+            task->state = PGQueryExecutionState::QUERY_SENDING;
             fireStateChangeEvent(taskNo, "QUERY_SENDING");
-        } else if (task->state == QueryExecutionState::QUERY_SENDING) {
+        } else if (task->state == PGQueryExecutionState::QUERY_SENDING) {
             int ret = conn.flush();
             LOG_DEBUG("flush returned " << ret);
             if (ret==1) {
-                task->state = QueryExecutionState::QUERY_SENDING;
+                task->state = PGQueryExecutionState::QUERY_SENDING;
             } else {
-                task->state = QueryExecutionState::QUERY_SENT;
+                task->state = PGQueryExecutionState::QUERY_SENT;
                 fireStateChangeEvent(taskNo, "QUERY_SENT");
             }
-        } else if (task->state == QueryExecutionState::QUERY_SENT) {
+        } else if (task->state == PGQueryExecutionState::QUERY_SENT) {
             int cir = conn.consumeInput();
             LOG_TRACE("consume input returned " << cir);
             if (!cir) {
@@ -229,7 +229,7 @@ bool AsyncQueryExecutor::processTask(int taskNo) {
                 LOG_DEBUG("RESULT:" << res);
                 if (!*res) {
                     task->done = true;
-                    task->state = QueryExecutionState::DONE;
+                    task->state = PGQueryExecutionState::DONE;
                     fireStateChangeEvent(taskNo, "DONE");
                     LOG_DEBUG("RESULT IS NULL");
                     fireEvent(EventType::PROCESSED, taskNo);

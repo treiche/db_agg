@@ -30,6 +30,7 @@ public:
     bool mkdir();
     bool mkdirs();
     std::string abspath();
+    std::string realpath();
     std::string getParent();
     bool rmdir();
     bool remove();

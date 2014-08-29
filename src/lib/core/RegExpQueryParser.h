@@ -9,11 +9,6 @@
 
 namespace db_agg {
 class RegExpQueryParser : public QueryParser {
-    std::set<std::string> extractUsedNamespaces(std::string query);
-    void detectDependencies(std::vector<Query*>& queries);
-    Query *getSourceQuery(Dependency dep,std::vector<Query*>& queries);
-    void detectScriptQueries(std::vector<Query*>& queries, std::vector<std::string>& functions);
-    void extractMetaData(std::vector<Query*>& queries);
 public:
     RegExpQueryParser();
     virtual ~RegExpQueryParser();

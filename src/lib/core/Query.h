@@ -27,6 +27,7 @@ private:
     std::string query;
     std::string type;
     std::string formattedQuery;
+    std::string normalizedQuery;
     std::set<std::string> usedNamespaces;
     std::deque<Dependency> dependencies;
     std::string databaseId;
@@ -34,7 +35,7 @@ private:
     std::map<std::string,std::string> metaData;
 public:
     Query() {}
-    Query(std::string id, std::string type, Locator locator, std::string query, std::string formattedQuery, std::set<std::string> usedNamespaces);
+    Query(std::string id, std::string type, Locator locator, std::string query, std::string formattedQuery, std::string normalizedQuery, std::set<std::string> usedNamespaces);
     void addDependency(Locator locator, std::string alias);
     std::deque<Dependency>& getDependencies();
     void setDatabaseId(std::string databaseId);
@@ -42,6 +43,7 @@ public:
     Locator& getLocator();
     std::string getQuery();
     std::string getFormattedQuery();
+    std::string getNormalizedQuery();
     std::string toString();
     std::set<std::string>& getUsedNamespaces();
     short getShardId();

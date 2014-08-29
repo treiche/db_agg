@@ -15,12 +15,13 @@ namespace db_agg {
     /*!
      @todo test todo annotation
      */
-    Query::Query(string id, string type, Locator locator, string query, string formattedQuery, set<string> usedNamespaces) {
+    Query::Query(string id, string type, Locator locator, string query, string formattedQuery, string normalizedQuery, set<string> usedNamespaces) {
         this->id = id;
         LOG_DEBUG("query '" << locator.getQName() << "' id = " << id);
         this->locator = locator;
         this->query = query;
         this->formattedQuery = formattedQuery;
+        this->normalizedQuery = normalizedQuery;
         this->usedNamespaces = usedNamespaces;
         this->type = type;
     }
@@ -55,6 +56,10 @@ namespace db_agg {
         return formattedQuery;
     }
 
+    string Query::getNormalizedQuery() {
+        return normalizedQuery;
+    }
+
     string Query::toString() {
         stringstream ss;
         ss << "Query[";
@@ -62,6 +67,8 @@ namespace db_agg {
         ss << "locator = " << locator.getQName() << ",";
         ss << "type = " << type << ",";
         ss << "query=" << query << ",";
+        ss << "formatted=" << formattedQuery << ",";
+        ss << "normalized=" << normalizedQuery << ",";
         ss << "usedNamespaces=";
         unsigned int cnt=0;
         for (set<string>::iterator it=usedNamespaces.begin(); it!=usedNamespaces.end(); ++it) {

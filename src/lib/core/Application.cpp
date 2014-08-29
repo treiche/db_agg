@@ -13,6 +13,7 @@
 #include <fstream>
 
 #include "core/RegExpQueryParser.h"
+#include "core/XmlQueryParser.h"
 #include "utils/utility.h"
 #include "utils/string.h"
 #include "utils/File.h"
@@ -60,13 +61,18 @@ Application::~Application() {
 void Application::bootstrap(Configuration& config) {
     LOG_DEBUG("bootstrap application");
     passwordManager = new PasswordManager(config.getSearchPasswordInPgPass());
-    if (config.getUseRegExpParser()) {
-        queryParser = new RegExpQueryParser();
+    File queryFile{config.getQueryFile()};
+    string queryFileName = queryFile.getName();
+    if (queryFileName.find(".xml") != string::npos) {
+        queryParser = new XmlQueryParser();
     } else {
-        throw runtime_error("currently only RegExpQueryParser supported");
+        if (config.getUseRegExpParser()) {
+            queryParser = new RegExpQueryParser();
+        } else {
+            throw runtime_error("currently only RegExpQueryParser supported");
+        }
     }
     LOG_DEBUG("load query file '"+config.getQueryFile()+"'");
-    File queryFile{config.getQueryFile()};
     query = readFile(queryFile.abspath());
     environment = config.getEnvironment();
     LOG_DEBUG("load database registry");
@@ -89,7 +95,7 @@ void Application::bootstrap(Configuration& config) {
     cacheRegistry = new CacheRegistry(cacheDir, cacheRegistryFile);
 
     string outputDir = config.getOutputDir();
-    string queryFileName = queryFile.getName();
+    // string queryFileName = queryFile.getName();
     int extIdx = queryFileName.find(".");
     string queryName = queryFileName.substr(0,extIdx);
 
@@ -110,7 +116,9 @@ void Application::bootstrap(Configuration& config) {
     for (auto& externalCsvFile:config.getExternalSources()) {
         File f(externalCsvFile.second);
         if (f.exists()) {
-            externalSources[externalCsvFile.first] = "file://" + f.abspath();
+            externalSources[externalCsvFile.first] = "file://" + f.realpath();
+        } else {
+            THROW_EXC("external source '" << externalCsvFile.second << "' does not exist.");
         }
     }
     // load external excel files

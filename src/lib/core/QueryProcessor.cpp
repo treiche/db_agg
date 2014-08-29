@@ -295,7 +295,7 @@ void QueryProcessor::populateUrls(string environment) {
             if (exec == nullptr) {
                 throw runtime_error("unhandled query execution type '" + query->getType() + "'");
             }
-            exec->init(linkPath, resultId, url ,query->getQuery(),deps,di, query->getArguments());
+            exec->init(linkPath, resultId, url ,query->getNormalizedQuery(),deps,di, query->getArguments());
             exec->addEventListener(this);
             executionGraph.addQueryExecution(query,exec);
         }

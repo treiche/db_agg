@@ -27,6 +27,13 @@
 namespace db_agg {
 class Transition;
 
+enum class QueryExecutionState {
+    COMPLETE,
+    SCHEDULED,
+    RUNNING,
+    DONE
+};
+
 class QueryExecution: public DataReceiver, public DataSender, public EventProducer {
     private:
         std::shared_ptr<TableData> data;
