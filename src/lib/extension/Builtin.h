@@ -11,8 +11,7 @@
 #include <string>
 #include "Extension.h"
 #include "sharding/ShardingStrategy.h"
-#include "injection/DefaultDependencyInjector.h"
-#include "injection/NoResultInjector.h"
+#include "injection/DependencyInjector.h"
 
 namespace db_agg {
 class Builtin: public Extension {

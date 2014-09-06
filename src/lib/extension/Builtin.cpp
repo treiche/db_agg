@@ -9,6 +9,9 @@
 #include "sharding/MD5ShardingStrategy.h"
 #include "core/PGQueryExecution.h"
 #include "core/ResourceQueryExecution.h"
+#include "injection/DefaultDependencyInjector.h"
+#include "injection/NoResultInjector.h"
+#include "injection/WorkerInjection.h"
 
 #include "utils/logging.h"
 
@@ -21,7 +24,7 @@ static Logger LOG = Logger::getInstance(LOG4CPLUS_TEXT("Builtin"));
 map<ComponentType,vector<string>> Builtin::components = {
         {ComponentType::SHARDING_STRATEGY,{"md5"}},
         {ComponentType::QUERY_EXECUTION, {"resource","postgres"}},
-        {ComponentType::DEPENDENCY_INJECTOR, {"default","noresult"}}
+        {ComponentType::DEPENDENCY_INJECTOR, {"default","noresult","worker"}}
 };
 
 shared_ptr<ShardingStrategy> Builtin::getShardingStrategy(std::string name) {
@@ -45,6 +48,8 @@ shared_ptr<DependencyInjector> Builtin::getDependencyInjector(std::string name) 
         return shared_ptr<DependencyInjector>(new DefaultDependencyInjector());
     } else if (name == "noresult") {
         return shared_ptr<DependencyInjector>(new NoResultInjector());
+    } else if (name == "worker") {
+        return shared_ptr<DependencyInjector>(new WorkerInjection());
     }
     return nullptr;
 }
