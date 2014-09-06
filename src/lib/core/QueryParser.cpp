@@ -23,9 +23,36 @@ static RegExp NS_EXTRACT(R"((?<!distinct )(table|from|join)\s+([a-z_0-9]+)\.[a-z
 string QueryParser::normalizeQuery(std::string query) {
     string normalized;
     bool isWhitespace = false;
+    bool insideSingleLineComment = false;
+    bool insideMultiLineComment = false;
     char lastChar;
     for (size_t idx = 0; idx < query.size(); idx++) {
         char c = query[idx];
+        if (c == '/' && query[idx+1] == '*') {
+            insideMultiLineComment = true;
+            idx++;
+            continue;
+        }
+        if (c == '*' && query[idx+1] == '/') {
+            insideMultiLineComment = false;
+            idx++;
+            continue;
+        }
+        if (c == '-' && query[idx+1] == '-') {
+            insideSingleLineComment = true;
+            idx++;
+            continue;
+        }
+        if (c == '\n') {
+            insideSingleLineComment = false;
+            idx++;
+            continue;
+        }
+
+        if (insideSingleLineComment || insideMultiLineComment) {
+            continue;
+        }
+
         if (isspace(c) && isspace(lastChar)) {
             // skip
         } else {
