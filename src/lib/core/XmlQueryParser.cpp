@@ -43,6 +43,24 @@ vector<Query*> XmlQueryParser::parse(string q, map<string,string>& externalSourc
         child = child->next;
     }
 
+
+    // create pseudo entries for external sources
+    LOG_DEBUG("create " << externalSources.size() << "pseudo entries");
+    for (auto& externalSource:externalSources) {
+        LOG_DEBUG("create pseudo queries for external source " << externalSource.first);
+        Locator loc(externalSource.first,-1,"");
+        string id = string(md5hex(externalSource.first + ":" + externalSource.second + "$-1:"));
+        set<string> empty;
+        /*
+        File resourceFile(externalSource.second);
+        if (!resourceFile.exists()) {
+            THROW_EXC("the resource '" << externalSource.second << "' does not exist.");
+        }
+        string absolutePath = resourceFile.abspath();
+        */
+        queries.push_back(new Query(id, "resource", loc, externalSource.second, externalSource.second, externalSource.second, empty));
+    }
+
     detectDependencies(queries);
 
     for (auto query:queries) {
@@ -50,7 +68,7 @@ vector<Query*> XmlQueryParser::parse(string q, map<string,string>& externalSourc
         for (auto& dep:query->getDependencies()) {
             Query *src = getSourceQuery(dep, queries);
             if (src==nullptr) {
-                throw runtime_error("no source found for dependency " + dep.locator.getName());
+                THROW_EXC("no source found for dependency " + dep.locator.getName());
             }
             dep.sourceQuery = src;
             LOG_DEBUG(query->getLocator().getQName() << ": " << dep.locator.getQName() << " -> " << src->getLocator().getQName());
