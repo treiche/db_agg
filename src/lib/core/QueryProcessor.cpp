@@ -196,7 +196,7 @@ void QueryProcessor::loadFromCache() {
                 if (allDone) {
                     continue;
                 }
-                LOG_DEBUG("open channel " << channel->getName());
+                LOG_DEBUG("open channel " << channel->getTargetPort());
                 if (channel->getState() != ChannelState::READY) {
                     continue;
                 }

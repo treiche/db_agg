@@ -8,9 +8,10 @@
 #ifndef DATASENDER_H_
 #define DATASENDER_H_
 
-#include "Channel.h"
 
 namespace db_agg {
+class Channel;
+
 class DataSender {
 public:
     virtual ~DataSender() {};

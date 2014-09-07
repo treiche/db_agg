@@ -97,7 +97,7 @@ void Transition::doTransition() {
     bool channelsDone = true;
     for (auto channel:channels) {
         channelsDone &= channel->getState() == ChannelState::CLOSED;
-        LOG_DEBUG("channel '" << channel->getName() << "' is closed already");
+        LOG_DEBUG("channel '" << channel->getTargetPort() << "' is closed already");
     }
     LOG_DEBUG("channelsDone = " << channelsDone);
     if (channelsDone) {

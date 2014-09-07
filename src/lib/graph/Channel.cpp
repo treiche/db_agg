@@ -18,11 +18,19 @@ namespace db_agg {
 static Logger LOG = Logger::getInstance(LOG4CPLUS_TEXT("Channel"));
 
 
-Channel::Channel(string name, DataReceiver *receiver): name(name), receiver(receiver) {}
+// Channel::Channel(string targetPort, DataReceiver *target): targetPort(targetPort), target(target) {}
+
+Channel::Channel(DataSender *source, std::string sourcePort, DataReceiver *target, std::string targetPort):
+	source(source),
+	sourcePort(sourcePort),
+	target(target),
+	targetPort(targetPort) {
+
+}
 
 void Channel::open() {
     if (state != ChannelState::READY) {
-        THROW_EXC("channel '" << name << "' is not ready. [state=" << to_string((int)state) << "]");
+        THROW_EXC("channel '" << targetPort << "' is not ready. [state=" << to_string((int)state) << "]");
     }
     state = ChannelState::OPEN;
 }
@@ -31,7 +39,7 @@ void Channel::send(std::shared_ptr<TableData> data) {
     if (state != ChannelState::OPEN) {
         THROW_EXC("channel is not open.");
     }
-    receiver->receive(name, data);
+    target->receive(targetPort, data);
 }
 
 void Channel::close() {
@@ -45,8 +53,8 @@ ChannelState Channel::getState() {
     return state;
 }
 
-string Channel::getName() {
-    return name;
+string Channel::getTargetPort() {
+    return targetPort;
 }
 
 }

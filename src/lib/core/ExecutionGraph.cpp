@@ -83,18 +83,25 @@ vector<Query*>& ExecutionGraph::getQueries() {
 }
 
 void ExecutionGraph::createChannel(Transition *transition, QueryExecution *exec) {
-    Channel *channel = new Channel(transition->getName(),exec);
+    Channel *channel = new Channel(transition, "", exec, transition->getName());
     transition->addChannel(channel);
     channels.push_back(channel);
     transToExec[transition].push_back(channel);
 }
 
 void ExecutionGraph::createChannel(QueryExecution *exec, Transition *transition) {
-    Channel *channel = new Channel(exec->getName(), transition);
+    Channel *channel = new Channel(exec, string(""), transition, exec->getName());
     exec->addChannel(channel);
     channels.push_back(channel);
     execToTrans[exec].push_back(channel);
 }
+
+void ExecutionGraph::createChannel(DataSender *source, std::string sourcePort, DataReceiver *target, std::string targetPort) {
+    Channel *channel = new Channel(source, sourcePort, target, targetPort);
+    source->addChannel(channel);
+    channels.push_back(channel);
+}
+
 
 vector<Channel*>& ExecutionGraph::getOutputChannels(QueryExecution *exec) {
     return execToTrans[exec];
@@ -104,7 +111,7 @@ vector<QueryExecution*> ExecutionGraph::getSources(Transition *transition) {
     vector<QueryExecution*> sources;
     for (auto exec:execToTrans) {
         for (auto channel:exec.second) {
-            Transition *t = dynamic_cast<Transition*>(channel->receiver);
+            Transition *t = dynamic_cast<Transition*>(channel->target);
             if (t==transition) {
                 sources.push_back(exec.first);
             }
@@ -133,7 +140,7 @@ vector<Transition*> ExecutionGraph::getIncomingTransitions(QueryExecution *exec)
     vector<Transition*> trans;
     for (auto transition:transToExec) {
         for (auto channel:transition.second) {
-            QueryExecution *qe = dynamic_cast<QueryExecution*>(channel->receiver);
+            QueryExecution *qe = dynamic_cast<QueryExecution*>(channel->target);
             if (qe==exec) {
                 trans.push_back(transition.first);
             }
@@ -144,9 +151,9 @@ vector<Transition*> ExecutionGraph::getIncomingTransitions(QueryExecution *exec)
 
 vector<QueryExecution*> ExecutionGraph::getTargets(Channel* sourceChannel) {
     vector<QueryExecution*> targets;
-    Transition *t = dynamic_cast<Transition*>(sourceChannel->receiver);
+    Transition *t = dynamic_cast<Transition*>(sourceChannel->target);
     for (auto targetChannel:transToExec[t]) {
-        QueryExecution *target = dynamic_cast<QueryExecution*>(targetChannel->receiver);
+        QueryExecution *target = dynamic_cast<QueryExecution*>(targetChannel->target);
         targets.push_back(target);
     }
     return targets;
@@ -179,7 +186,7 @@ void ExecutionGraph::dumpGraph(string outputDir) {
 
     for (auto& exec:execToTrans) {
         for (auto channel:exec.second) {
-            DataReceiver *receiver = channel->receiver;
+            DataReceiver *receiver = channel->target;
             Transition *transition = dynamic_cast<Transition*>(receiver);
             out << "<edge source='" << exec.first << "' target='" << transition << "'/>\n";
         }
@@ -187,7 +194,7 @@ void ExecutionGraph::dumpGraph(string outputDir) {
 
     for (auto& trans:transToExec) {
         for (auto channel:trans.second) {
-            DataReceiver *receiver = channel->receiver;
+            DataReceiver *receiver = channel->target;
             QueryExecution *exec = dynamic_cast<QueryExecution*>(receiver);
             out << "<edge source='" << trans.first << "' target='" << exec << "'/>\n";
         }
@@ -248,7 +255,7 @@ void ExecutionGraph::dumpExecutionPlan(string outputDir) {
     for (auto& exec:execToTrans) {
         //++transitionNo;
         for (auto channel:exec.second) {
-            DataReceiver *receiver = channel->receiver;
+            DataReceiver *receiver = channel->target;
             Transition *transition = dynamic_cast<Transition*>(receiver);
             string style = "solid";
             if (channel->getState() == ChannelState::CLOSED) {
@@ -261,7 +268,7 @@ void ExecutionGraph::dumpExecutionPlan(string outputDir) {
     for (auto& trans:transToExec) {
         //++transitionNo;
         for (auto channel:trans.second) {
-            DataReceiver *receiver = channel->receiver;
+            DataReceiver *receiver = channel->target;
             QueryExecution *exec = dynamic_cast<QueryExecution*>(receiver);
             string style = "solid";
             if (channel->getState() == ChannelState::CLOSED) {

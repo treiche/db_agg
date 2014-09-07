@@ -40,6 +40,7 @@ public:
     std::vector<Query*>& getQueries();
     void createChannel(QueryExecution *exec, Transition *transition);
     void createChannel(Transition *transition, QueryExecution *exec);
+    void createChannel(DataSender *source, std::string sourcePort, DataReceiver *target, std::string targetPort);
     std::vector<Channel*>& getOutputChannels(QueryExecution *exec);
     std::vector<QueryExecution*> getSources(Transition *transition);
     std::vector<QueryExecution*> getTargets(Channel* source);
