@@ -42,15 +42,19 @@ namespace db_agg {
 
     QueryExecution::~QueryExecution() {
         LOG_TRACE("delete query execution");
-        if (data!=nullptr) {
-            data.reset();
+        for (auto& result:results) {
+			if (result.second.get() != nullptr) {
+				result.second.reset();
+			}
         }
     }
 
     void QueryExecution::release() {
         LOG_INFO("use_count for result " << getName());
-        LOG_INFO("result use_count before release = " << data.use_count() << " unique = " << data.unique());
-        data.reset();
+        for (auto& result:results) {
+        	LOG_INFO("result use_count before release = " << result.second.use_count() << " unique = " << result.second.unique());
+        	result.second.reset();
+        }
         for (auto& dependency:dependencies) {
             LOG_INFO("dependency " << dependency.first << " use_count before release = " << dependency.second.use_count());
             dependency.second.reset();
@@ -60,13 +64,13 @@ namespace db_agg {
     }
 
 
-    shared_ptr<TableData> QueryExecution::getResult() {
-        return data;
+    shared_ptr<TableData> QueryExecution::getResult(string shardId) {
+        return results[shardId];
     }
 
-    void QueryExecution::setResult(shared_ptr<TableData> data) {
-        LOG_DEBUG("set result to " << data);
-        this->data = data;
+    void QueryExecution::setResult(string shardId, shared_ptr<TableData> result) {
+        LOG_DEBUG("set result to " << result);
+        results[shardId] = result;
     }
 
     bool QueryExecution::isComplete() {
@@ -110,14 +114,6 @@ namespace db_agg {
 
     string QueryExecution::getName() {
         return name;
-    }
-
-    shared_ptr<TableData> QueryExecution::getData() {
-        return data;
-    }
-
-    void QueryExecution::setData(std::shared_ptr<TableData> data) {
-        this->data = data;
     }
 
     void QueryExecution::setScheduled() {

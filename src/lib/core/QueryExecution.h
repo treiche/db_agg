@@ -36,7 +36,7 @@ enum class QueryExecutionState {
 
 class QueryExecution: public DataReceiver, public DataSender, public EventProducer {
     private:
-        std::shared_ptr<TableData> data;
+        std::map<std::string,std::shared_ptr<TableData>> results;
         std::string id;
         std::shared_ptr<Url> url;
         std::string sql;
@@ -50,7 +50,6 @@ class QueryExecution: public DataReceiver, public DataSender, public EventProduc
         std::vector<Channel*> channels;
         std::vector<std::string> arguments;
     protected:
-        void setData(std::shared_ptr<TableData> data);
         std::vector<std::string>& getArguments();
         std::map<std::string,std::shared_ptr<TableData>>& getDependencies();
         std::shared_ptr<DependencyInjector> getInjector();
@@ -67,7 +66,6 @@ class QueryExecution: public DataReceiver, public DataSender, public EventProduc
         std::string getId();
         void setId(std::string id);
         std::string getName();
-        std::shared_ptr<TableData> getData();
         void setScheduled();
         bool isScheduled();
         void setDone();
@@ -76,8 +74,8 @@ class QueryExecution: public DataReceiver, public DataSender, public EventProduc
         size_t getDuration();
         std::shared_ptr<Url> getUrl();
         std::string getSql();
-        std::shared_ptr<TableData> getResult();
-        void setResult(std::shared_ptr<TableData> data);
+        std::shared_ptr<TableData> getResult(std::string shardId);
+        void setResult(std::string shardId, std::shared_ptr<TableData> data);
         std::string inject(std::string query, size_t copyThreshold);
         bool isComplete();
         std::vector<Channel*> getChannels();

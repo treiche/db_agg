@@ -162,7 +162,7 @@ void QueryProcessor::loadFromCache() {
                 LOG_INFO("cache item for " << qr->getName() << "[" << resultId << "] exists");
                 if (!disableCache) {
                     shared_ptr<TableData> data = cacheRegistry.getData(resultId);
-                    qr->setResult(data);
+                    qr->setResult("", data);
                     qr->setDone();
                     // close all incoming channels here
                     // executionGraph.getSources(qr);
@@ -202,7 +202,7 @@ void QueryProcessor::loadFromCache() {
                 }
                 channel->open();
                 LOG_INFO("send data");
-                channel->send(qr->getData());
+                channel->send(qr->getResult(""));
                 LOG_INFO("send data done");
                 channel->close();
             }
@@ -413,7 +413,7 @@ void QueryProcessor::calculateExecutionIds() {
     for (auto query:executionGraph.getQueries()) {
         for (auto exec:executionGraph.getQueryExecutions(query)) {
             if (query->getType() == "external") {
-                string resultId = exec->getResult()->calculateMD5Sum();
+                string resultId = exec->getResult("")->calculateMD5Sum();
                 LOG_DEBUG("md5 of external " << query->getName() << " -> " << resultId);
                 exec->setId(resultId);
                 executionGraph.addQueryExecution(exec);
@@ -477,9 +477,9 @@ void QueryProcessor::cacheItem(string resultId) {
     LOG_DEBUG("save cache item "+resultId);
     QueryExecution& exec = executionGraph.getQueryExecution(resultId);
     File linkPath{outputDir + "/" + exec.getName() + ".csv"};
-    uint64_t rowCount = exec.getData()->getRowCount();
+    uint64_t rowCount = exec.getResult("")->getRowCount();
     cacheRegistry.registerItem(resultId,Time(),exec.getDuration(),linkPath.abspath(),"csv", rowCount);
-    exec.getData()->save(cacheRegistry.getPath(resultId));
+    exec.getResult("")->save(cacheRegistry.getPath(resultId));
     LOG_TRACE("save data done");
     cacheRegistry.save(resultId);
     if (linkPath.exists()) {
@@ -493,14 +493,14 @@ void QueryProcessor::handleEvent(shared_ptr<Event> event) {
         QueryExecution& result = executionGraph.getQueryExecution(event->resultId);
         LOG_DEBUG("PROCESSED: " << result.getSql() << " id=" << result.getName());
         result.setDone();
-        if (result.getData()==nullptr) {
+        if (result.getResult("")==nullptr) {
             THROW_EXC("result not ready");
         }
         LOG_DEBUG("doTransitions");
         vector<Channel*> outputChannels = executionGraph.getOutputChannels(&result);
         for (auto channel:outputChannels) {
             channel->open();
-            channel->send(result.getData());
+            channel->send(result.getResult(""));
             channel->close();
         }
         cacheItem(event->resultId);

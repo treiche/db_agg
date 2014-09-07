@@ -41,7 +41,7 @@ namespace db_agg {
     }
 
     void PGQueryExecution::handleCopyOut(size_t stepNo,string _data) {
-         getData()->appendRaw((void*)_data.c_str(),_data.size());
+         getResult("")->appendRaw((void*)_data.c_str(),_data.size());
     }
 
     void PGQueryExecution::handleTuples(size_t step, vector<pair<string, uint32_t> >& columns) {
@@ -55,7 +55,7 @@ namespace db_agg {
                 cleaned.push_back(column);
             }
         }
-        setData(TableDataFactory::getInstance().create("text",cleaned));
+        setResult("", TableDataFactory::getInstance().create("text",cleaned));
     }
 
     void PGQueryExecution::stop() {
