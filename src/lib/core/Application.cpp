@@ -91,8 +91,7 @@ void Application::bootstrap(Configuration& config) {
     }
     LOG_DEBUG("load cache registry");
     string cacheDir = findConfigurationFile(config.getCacheDir(),true,true);
-    string cacheRegistryFile = findConfigurationFile(config.getCacheRegistryFile(), false, false);
-    cacheRegistry = new CacheRegistry(cacheDir, cacheRegistryFile);
+    cacheRegistry = new CacheRegistry(cacheDir);
 
     string outputDir = config.getOutputDir();
     // string queryFileName = queryFile.getName();

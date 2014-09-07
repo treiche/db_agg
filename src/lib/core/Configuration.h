@@ -35,7 +35,6 @@ private:
     string cacheDir{ "${HOME}/cache" };
     string prefix{ "/usr/local/db_agg" };
     string databaseRegistryFile{ "${HOME}/etc/database-registry.xml" };
-    string cacheRegistryFile{ "${HOME}/cache/cache-registry.json" };
     string extensionDir{ "${HOME}/extensions" };
     string logConf{ "${HOME}/etc/log4cplus.properties" };
     string logFile{ "db_agg.log" };
@@ -81,8 +80,6 @@ public:
     void setPrefix(string prefix);
     string getDatabaseRegistryFile();
     void setDatabaseRegistryFile(string databaseRegistryFile);
-    string getCacheRegistryFile();
-    void setCacheRegistryFile(string cacheRegistryFile);
     string getExtensionDir();
     void setExtensionDir(string extensionDir);
     string getLogConf();

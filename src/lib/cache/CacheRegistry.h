@@ -24,14 +24,13 @@ struct CacheItem {
 class CacheRegistry {
     std::map<std::string,CacheItem> items;
     std::string cacheDir;
-    std::string cacheRegistryFile;
     void removeOrphans();
 public:
-    CacheRegistry(std::string cacheDir, std::string cacheRegistryFile);
+    CacheRegistry(std::string cacheDir);
     void registerItem(std::string id, Time lastExecuted, size_t lastDuration, std::string path, std::string format, uint64_t rowCount);
     bool exists(std::string id);
-    void save();
-    void load();
+    void save(std::string id);
+    void load(std::string id);
     std::string getPath(std::string id);
     std::shared_ptr<TableData> getData(std::string id);
     uint64_t getRowCount(std::string id);

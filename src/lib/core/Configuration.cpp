@@ -115,12 +115,6 @@ namespace db_agg {
     void Configuration::setDatabaseRegistryFile(string databaseRegistryFile) {
         this->databaseRegistryFile = databaseRegistryFile;
     }
-    string Configuration::getCacheRegistryFile() {
-        return cacheRegistryFile;
-    }
-    void Configuration::setCacheRegistryFile(string cacheRegistryFile) {
-        this->cacheRegistryFile = cacheRegistryFile;
-    }
     string Configuration::getExtensionDir() {
         return extensionDir;
     }
@@ -279,11 +273,6 @@ void Configuration::fromJson(std::string json) {
         if (js != nullptr) {
             string databaseRegistryFile = json_string_value(js);
             setDatabaseRegistryFile(databaseRegistryFile);
-        }
-        js = json_object_get(jsConfig,"cacheRegistryFile");
-        if (js != nullptr) {
-            string cacheRegistryFile = json_string_value(js);
-            setCacheRegistryFile(cacheRegistryFile);
         }
         js = json_object_get(jsConfig,"extensionDir");
         if (js != nullptr) {

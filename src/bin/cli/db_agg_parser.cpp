@@ -35,7 +35,6 @@ static vector<OptionGroup> options = {
         { 'c', "cache-dir", true, "path to the cache directory" } ,
         { 'P', "prefix", true, "path to the db_agg installation" } ,
         { 'k', "database-registry-file", true, "path to the database registry" } ,
-        { 'f', "cache-registry-file", true, "path to the cache registry" } ,
         { 'x', "extension-dir", true, "path to the extension directory" } ,
         { 'l', "log-conf", true, "path to the log configuration file" } ,
         { 'F', "log-file", true, "path to the log file" } 
@@ -109,9 +108,6 @@ void db_agg_parser::parse(int argc, char **argv, Configuration& config) {
     if (hasOption("database-registry-file")) {
         config.setDatabaseRegistryFile(getOptionValue("database-registry-file"));
     }
-    if (hasOption("cache-registry-file")) {
-        config.setCacheRegistryFile(getOptionValue("cache-registry-file"));
-    }
     if (hasOption("extension-dir")) {
         config.setExtensionDir(getOptionValue("extension-dir"));
     }
@@ -155,7 +151,6 @@ void db_agg_parser::dumpConfiguration(Configuration& config) {
         cout << "    cache-dir = " << config.getCacheDir() << endl;
         cout << "    prefix = " << config.getPrefix() << endl;
         cout << "    database-registry-file = " << config.getDatabaseRegistryFile() << endl;
-        cout << "    cache-registry-file = " << config.getCacheRegistryFile() << endl;
         cout << "    extension-dir = " << config.getExtensionDir() << endl;
         cout << "    log-conf = " << config.getLogConf() << endl;
         cout << "    log-file = " << config.getLogFile() << endl;

@@ -165,14 +165,6 @@
             <default>${HOME}/etc/database-registry.xml</default>
         </option>
         <option>
-            <short>f</short>
-            <long>cache-registry-file</long>
-            <args>true</args>
-            <shortDescription>path to the cache registry</shortDescription>
-            <type>string</type>
-            <default>${HOME}/cache/cache-registry.json</default>
-        </option>
-        <option>
             <short>x</short>
             <long>extension-dir</long>
             <args>true</args>

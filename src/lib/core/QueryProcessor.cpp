@@ -481,8 +481,7 @@ void QueryProcessor::cacheItem(string resultId) {
     cacheRegistry.registerItem(resultId,Time(),exec.getDuration(),linkPath.abspath(),"csv", rowCount);
     exec.getData()->save(cacheRegistry.getPath(resultId));
     LOG_TRACE("save data done");
-    // TODO: has to be done on exit
-    cacheRegistry.save();
+    cacheRegistry.save(resultId);
     if (linkPath.exists()) {
         linkPath.remove();
     }
