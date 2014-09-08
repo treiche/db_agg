@@ -6,19 +6,17 @@
  */
 
 #include "core/QueryProcessor.h"
-
 #include "utils/logging.h"
-
 #include "utils/utility.h"
-
 #include "utils/md5.h"
 #include <fstream>
-
 #include "utils/File.h"
-
 #include "injection/DependencyInjector.h"
-
 #include "utils/SignalHandler.h"
+#include "OneToMany.h"
+#include "ManyToOne.h"
+#include "ManyToMany.h"
+
 
 using namespace std;
 using namespace log4cplus;
@@ -76,6 +74,7 @@ void QueryProcessor::process(string query, string environment) {
     vector<Query*> queries = queryParser.parse(query,externalSources,queryParameter,functions);
     for (auto query:queries) {
         executionGraph.addQuery(query);
+        executionGraph2.addQuery(query);
     }
     LOG_DEBUG("parse query done");
     populateUrls(environment);
@@ -86,6 +85,7 @@ void QueryProcessor::process(string query, string environment) {
     fireEvent(event);
     loadFromCache();
     executionGraph.dumpExecutionPlan(outputDir);
+    executionGraph2.dumpExecutionPlan(outputDir);
     executionGraph.dumpGraph(outputDir);
     if (dontExecute) {
         shared_ptr<Event> fe(new Event(EventType::APPLICATION_FINISHED,""));
@@ -298,6 +298,7 @@ void QueryProcessor::populateUrls(string environment) {
             exec->init(linkPath, resultId, url ,query->getNormalizedQuery(),deps,di, query->getArguments());
             exec->addEventListener(this);
             executionGraph.addQueryExecution(query,exec);
+            executionGraph2.addQueryExecution(query,exec);
         }
     }
     for (auto& query:executionGraph.getQueries()) {
@@ -331,6 +332,7 @@ void QueryProcessor::populateTransitions() {
                 QueryExecution& targetExecution = executionGraph.getQueryExecution(&targetQuery,0);
                 executionGraph.createChannel(sourceExecutions[0],t);
                 executionGraph.createChannel(t,&targetExecution);
+                executionGraph2.createChannel(sourceExecutions[0],"",&targetExecution,"");
             } else if (dstSize > 1 && dstSize == srcSize) {
                 // many to many without sharding
                 if (sourceQuery.getDatabaseId() == targetQuery.getDatabaseId()) {
@@ -341,6 +343,7 @@ void QueryProcessor::populateTransitions() {
                         executionGraph.addTransition(t);
                         executionGraph.createChannel(sourceExecution,t);
                         executionGraph.createChannel(t,targetExecution);
+                        executionGraph2.createChannel(sourceExecution,"",targetExecution,"");
                     }
                 } else {
                     LOG_TRACE("build many-to-many sharded");
@@ -360,6 +363,16 @@ void QueryProcessor::populateTransitions() {
                         executionGraph.createChannel(t,&targetExecution);
                     }
                     executionGraph.addTransition(t);
+                    ManyToMany *m2m = new ManyToMany(sharder, shardColSearchExpr,dstSize);
+                    executionGraph2.addQueryExecution(m2m);
+                    for (size_t cnt=0; cnt< srcSize; cnt++) {
+                        QueryExecution& sourceExecution = executionGraph.getQueryExecution(&sourceQuery,cnt);
+                        executionGraph2.createChannel(&sourceExecution, to_string(cnt+1),m2m,to_string(cnt+1));
+                    }
+                    for (size_t cnt=0; cnt< dstSize; cnt++) {
+                        QueryExecution& targetExecution = executionGraph.getQueryExecution(&targetQuery,cnt);
+                        executionGraph2.createChannel(m2m, to_string(cnt+1),&targetExecution,to_string(cnt+1));
+                    }
                 }
             } else if (dstSize == 1 && srcSize > 1) {
                 // many to one
@@ -371,17 +384,28 @@ void QueryProcessor::populateTransitions() {
                 executionGraph.addTransition(t);
                 QueryExecution *targetExecution = &executionGraph.getQueryExecution(&targetQuery,0);
                 executionGraph.createChannel(t,targetExecution);
+
+                ManyToOne *m2o = new ManyToOne();
+                executionGraph2.addQueryExecution(m2o);
+                for (size_t cnt=0;cnt<srcSize; cnt++) {
+                    QueryExecution *sourceExecution = &executionGraph.getQueryExecution(&sourceQuery,cnt);
+                    executionGraph2.createChannel(sourceExecution,to_string(cnt+1),m2o,to_string(cnt+1));
+                }
+                executionGraph2.createChannel(m2o,"",targetExecution,"");
             } else if (dstSize > 1 && srcSize == 1) {
                 LOG_DEBUG("prepare one-to-many transition");
                 Transition *t = new Transition(dep.locator.getQName(),srcSize,dstSize);
                 string shardingStrategyName = databaseRegistry.getShardingStrategyName(targetQuery.getDatabaseId());
+                string shardColSearchExpr = databaseRegistry.getShardColumn(targetQuery.getDatabaseId());
+                shared_ptr<ShardingStrategy> sharder;
                 if (shardingStrategyName.empty()) {
                     LOG_WARN("no sharding strategy for database " << targetQuery.getDatabaseId());
                 } else {
                     LOG_DEBUG("sharder name " << shardingStrategyName);
-                    shared_ptr<ShardingStrategy> sharder = extensionLoader.getShardingStrategy(shardingStrategyName);
+                    sharder = extensionLoader.getShardingStrategy(shardingStrategyName);
                     LOG_TRACE("set sharder to " << sharder);
                     t->setSharder(sharder);
+                    // t->setShardColSearchExpr(shardColSearchExpr);
                 }
                 QueryExecution *sourceExecution = &executionGraph.getQueryExecution(&sourceQuery,0);
                 executionGraph.createChannel(sourceExecution,t);
@@ -390,6 +414,13 @@ void QueryProcessor::populateTransitions() {
                     executionGraph.createChannel(t,targetExecution);
                 }
                 executionGraph.addTransition(t);
+                OneToMany *o2m = new OneToMany(sharder, shardColSearchExpr,(size_t) dstSize);
+                executionGraph2.addQueryExecution(o2m);
+                executionGraph2.createChannel(sourceExecution,"",o2m,"");
+                for (size_t cnt=0;cnt<dstSize; cnt++) {
+                    QueryExecution *targetExecution = &executionGraph.getQueryExecution(&targetQuery,cnt);
+                    executionGraph2.createChannel(o2m, to_string(cnt+1), targetExecution, to_string(cnt+1));
+                }
             }
         }
     }

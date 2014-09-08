@@ -9,17 +9,19 @@
 #define MANYTOMANY_H_
 
 #include "QueryExecution.h"
+#include <memory>
 
 namespace db_agg {
 class ManyToMany: public QueryExecution {
 private:
 	short noShards;
-	ShardingStrategy *sharder;
+	std::shared_ptr<ShardingStrategy> sharder;
 	std::string shardColSearchExpr;
 	int findShardColIndex(std::vector<std::pair<std::string,uint32_t>> columns, std::string searchExpr);
 public:
-	ManyToMany(ShardingStrategy *sharder, std::string shardColSearchExpr, short noShards);
+	ManyToMany(std::shared_ptr<ShardingStrategy> sharder, std::string shardColSearchExpr, short noShards);
     virtual bool process() override;
+    virtual bool isTransition() override;
 };
 }
 

@@ -19,6 +19,7 @@
 #include "core/AsyncQueryExecutor.h"
 #include "table/TableData.h"
 #include "ExecutionGraph.h"
+#include "graph/ExecutionGraph2.h"
 
 namespace db_agg {
 class QueryProcessor : public EventListener, public EventProducer {
@@ -32,6 +33,7 @@ class QueryProcessor : public EventListener, public EventProducer {
     size_t copyThreshold;
     std::map<std::string,std::string> externalSources;
     ExecutionGraph executionGraph;
+    ExecutionGraph2 executionGraph2;
     size_t statementTimeout;
     std::map<std::string,std::string> queryParameter;
     void populateUrls(std::string environment);

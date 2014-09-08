@@ -37,6 +37,7 @@ public:
     ChannelState getState();
     std::string getTargetPort();
     friend class ExecutionGraph;
+    friend class ExecutionGraph2;
 };
 }
 

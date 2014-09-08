@@ -22,6 +22,10 @@ bool ManyToOne::process() {
 	setDone();
 	return true;
 }
+
+bool ManyToOne::isTransition() {
+	return true;
+}
 }
 
 

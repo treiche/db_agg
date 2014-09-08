@@ -167,6 +167,10 @@ namespace db_agg {
         setScheduled();
     }
 
+    bool QueryExecution::isTransition() {
+    	return false;
+    }
+
     void QueryExecution::cleanUp() {}
 
     bool QueryExecution::isResourceAvailable() {

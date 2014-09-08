@@ -18,7 +18,7 @@ namespace db_agg {
 DECLARE_LOGGER("OneToMany");
 
 
-OneToMany::OneToMany(ShardingStrategy *sharder, string shardColSearchExpr, short noShards):
+OneToMany::OneToMany(shared_ptr<ShardingStrategy> sharder, string shardColSearchExpr, short noShards):
 	sharder(sharder),
 	shardColSearchExpr(shardColSearchExpr),
 	noShards(noShards) {
@@ -61,6 +61,9 @@ int OneToMany::findShardColIndex(vector<pair<string,uint32_t>> columns, string s
     throw runtime_error("unable to find shard key column");
 }
 
+bool OneToMany::isTransition() {
+	return true;
+}
 
 }
 

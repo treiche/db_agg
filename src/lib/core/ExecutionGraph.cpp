@@ -96,11 +96,6 @@ void ExecutionGraph::createChannel(QueryExecution *exec, Transition *transition)
     execToTrans[exec].push_back(channel);
 }
 
-void ExecutionGraph::createChannel(DataSender *source, std::string sourcePort, DataReceiver *target, std::string targetPort) {
-    Channel *channel = new Channel(source, sourcePort, target, targetPort);
-    source->addChannel(channel);
-    channels.push_back(channel);
-}
 
 
 vector<Channel*>& ExecutionGraph::getOutputChannels(QueryExecution *exec) {

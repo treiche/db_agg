@@ -80,6 +80,7 @@ class QueryExecution: public DataReceiver, public DataSender, public EventProduc
         bool isComplete();
         std::vector<Channel*> getChannels();
 
+        virtual bool isTransition();
         virtual void stop();
         virtual void schedule();
         virtual bool process() = 0;

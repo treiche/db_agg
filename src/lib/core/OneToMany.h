@@ -9,17 +9,20 @@
 #define ONETOMANY_H_
 
 #include "QueryExecution.h"
+#include <memory>
 
 namespace db_agg {
 class OneToMany: public QueryExecution {
 private:
 	short noShards;
-	ShardingStrategy *sharder;
+	std::shared_ptr<ShardingStrategy> sharder;
 	std::string shardColSearchExpr;
 	int findShardColIndex(std::vector<std::pair<std::string,uint32_t>> columns, std::string searchExpr);
 public:
-	OneToMany(ShardingStrategy *sharder, std::string shardColSearchExpr, short noShards);
+	OneToMany(std::shared_ptr<ShardingStrategy> sharder, std::string shardColSearchExpr, short noShards);
     virtual bool process() override;
+    virtual bool isTransition();
+
 };
 }
 

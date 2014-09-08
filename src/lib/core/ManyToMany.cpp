@@ -18,7 +18,7 @@ namespace db_agg {
 DECLARE_LOGGER("ManyToMany");
 
 
-ManyToMany::ManyToMany(ShardingStrategy *sharder, string shardColSearchExpr, short noShards):
+ManyToMany::ManyToMany(shared_ptr<ShardingStrategy> sharder, string shardColSearchExpr, short noShards):
 	sharder(sharder),
 	shardColSearchExpr(shardColSearchExpr),
 	noShards(noShards) {
@@ -68,6 +68,9 @@ int ManyToMany::findShardColIndex(vector<pair<string,uint32_t>> columns, string 
     throw runtime_error("unable to find shard key column");
 }
 
+bool ManyToMany::isTransition() {
+	return true;
+}
 
 }
 

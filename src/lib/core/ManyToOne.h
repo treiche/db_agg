@@ -14,6 +14,7 @@ namespace db_agg {
 class ManyToOne: public QueryExecution {
 public:
 	virtual bool process() override;
+	virtual bool isTransition() override;
 };
 }
 
