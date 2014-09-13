@@ -10,8 +10,8 @@
 
 #include <vector>
 #include "Channel.h"
-#include "QueryExecution.h"
-#include "Query.h"
+#include "core/QueryExecution.h"
+#include "core/Query.h"
 
 namespace db_agg {
 class ExecutionGraph2 {
