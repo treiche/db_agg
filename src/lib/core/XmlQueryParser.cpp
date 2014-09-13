@@ -68,7 +68,7 @@ vector<Query*> XmlQueryParser::parse(string q, map<string,string>& externalSourc
         for (auto& dep:query->getDependencies()) {
             Query *src = getSourceQuery(dep, queries);
             if (src==nullptr) {
-                THROW_EXC("no source found for dependency " + dep.locator.getName());
+                THROW_EXC("no source found for dependency " << dep.locator.getName() << " of query " << query->getName());
             }
             dep.sourceQuery = src;
             LOG_DEBUG(query->getLocator().getQName() << ": " << dep.locator.getQName() << " -> " << src->getLocator().getQName());
@@ -95,12 +95,18 @@ Query *XmlQueryParser::parseQuery(xmlElementPtr executionNode) {
     }
     string id = string(md5hex(matches[2] + "$" + to_string(shardId) + "$" + environment + ":" + sql));
     */
+    if (properties.find("shardId") != properties.end()) {
+    	shardId = stoi(properties["shardId"]);
+    }
+    string environment;
+    if (properties.find("environment") != properties.end()) {
+    	environment = properties["environment"];
+    }
     string name = properties["name"];
     string query = trim(properties["query"]);
     string formattedSql = cutBlock(properties["query"]);
     string normalizedSql = normalizeQuery(properties["query"]);
     string id = string(md5hex(name + ":" + query));
-    string environment;
     string type = properties["type"];
     if (type.empty()) {
         type = "postgres";
@@ -118,6 +124,7 @@ Query *XmlQueryParser::parseQuery(xmlElementPtr executionNode) {
 
     Query *q = new Query(id,type,loc,query,formattedSql,normalizedSql,usedNamespaces);
 
+    /*
     string depends = properties["depends"];
     vector<string> dependencies;
     split(depends,',',dependencies);
@@ -126,6 +133,7 @@ Query *XmlQueryParser::parseQuery(xmlElementPtr executionNode) {
         LOG_DEBUG("add dependency " << dep);
         q->addDependency(dloc,"");
     }
+    */
 
     return q;
 }
