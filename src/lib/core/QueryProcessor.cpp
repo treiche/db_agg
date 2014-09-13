@@ -330,6 +330,7 @@ void QueryProcessor::populateTransitions() {
                 Transition *t = new Transition(dep.locator.getQName(),1,1);
                 executionGraph.addTransition(t);
                 QueryExecution& targetExecution = executionGraph.getQueryExecution(&targetQuery,0);
+                assert(sourceExecutions.size() == 1);
                 executionGraph.createChannel(sourceExecutions[0],t);
                 executionGraph.createChannel(t,&targetExecution);
                 executionGraph2.createChannel(sourceExecutions[0],"",&targetExecution,"");
@@ -350,6 +351,10 @@ void QueryProcessor::populateTransitions() {
                     Transition *t = new Transition(dep.locator.getQName(), srcSize, dstSize);
                     string shardingStrategyName = databaseRegistry.getShardingStrategyName(targetQuery.getDatabaseId());
                     string shardColSearchExpr = databaseRegistry.getShardColumn(targetQuery.getDatabaseId());
+                    LOG_DEBUG("shardColSearchExpr = " << shardColSearchExpr);
+                    if (shardColSearchExpr.empty()) {
+                    	THROW_EXC("empty shard col expr");
+                    }
                     shared_ptr<ShardingStrategy> sharder = extensionLoader.getShardingStrategy(shardingStrategyName);
                     LOG_TRACE("set sharder to " << sharder);
                     t->setSharder(sharder);
@@ -393,33 +398,50 @@ void QueryProcessor::populateTransitions() {
                 }
                 executionGraph2.createChannel(m2o,"",targetExecution,"");
             } else if (dstSize > 1 && srcSize == 1) {
-                LOG_DEBUG("prepare one-to-many transition");
-                Transition *t = new Transition(dep.locator.getQName(),srcSize,dstSize);
-                string shardingStrategyName = databaseRegistry.getShardingStrategyName(targetQuery.getDatabaseId());
-                string shardColSearchExpr = databaseRegistry.getShardColumn(targetQuery.getDatabaseId());
-                shared_ptr<ShardingStrategy> sharder;
-                if (shardingStrategyName.empty()) {
-                    LOG_WARN("no sharding strategy for database " << targetQuery.getDatabaseId());
+                LOG_DEBUG("dependency shardId = " << dep.locator.getShardId() << " shardId of dependency = " << dep.sourceQuery->getShardId());
+                if (dep.sourceQuery->getShardId() != -1) {
+                	LOG_DEBUG("prepare unsharded transition");
+					QueryExecution *sourceExecution = &executionGraph.getQueryExecution(&sourceQuery,0);
+					for (size_t cnt=0;cnt<dstSize; cnt++) {
+	                    Transition *t = new Transition(dep.locator.getQName(),1,1);
+	                    executionGraph.createChannel(sourceExecution,t);
+						QueryExecution *targetExecution = &executionGraph.getQueryExecution(&targetQuery,cnt);
+						executionGraph.createChannel(t,targetExecution);
+						executionGraph.addTransition(t);
+					}
                 } else {
-                    LOG_DEBUG("sharder name " << shardingStrategyName);
-                    sharder = extensionLoader.getShardingStrategy(shardingStrategyName);
-                    LOG_TRACE("set sharder to " << sharder);
-                    t->setSharder(sharder);
-                    // t->setShardColSearchExpr(shardColSearchExpr);
-                }
-                QueryExecution *sourceExecution = &executionGraph.getQueryExecution(&sourceQuery,0);
-                executionGraph.createChannel(sourceExecution,t);
-                for (size_t cnt=0;cnt<dstSize; cnt++) {
-                    QueryExecution *targetExecution = &executionGraph.getQueryExecution(&targetQuery,cnt);
-                    executionGraph.createChannel(t,targetExecution);
-                }
-                executionGraph.addTransition(t);
-                OneToMany *o2m = new OneToMany(sharder, shardColSearchExpr,(size_t) dstSize);
-                executionGraph2.addQueryExecution(o2m);
-                executionGraph2.createChannel(sourceExecution,"",o2m,"");
-                for (size_t cnt=0;cnt<dstSize; cnt++) {
-                    QueryExecution *targetExecution = &executionGraph.getQueryExecution(&targetQuery,cnt);
-                    executionGraph2.createChannel(o2m, to_string(cnt+1), targetExecution, to_string(cnt+1));
+                    LOG_DEBUG("prepare one-to-many transition");
+                    Transition *t = new Transition(dep.locator.getQName(),srcSize,dstSize);
+                    string shardingStrategyName = databaseRegistry.getShardingStrategyName(targetQuery.getDatabaseId());
+                    string shardColSearchExpr = databaseRegistry.getShardColumn(targetQuery.getDatabaseId());
+					LOG_DEBUG("shardColSearchExpr = " << shardColSearchExpr);
+					if (shardColSearchExpr.empty()) {
+						THROW_EXC("empty shard col expr");
+					}
+					shared_ptr<ShardingStrategy> sharder;
+					if (shardingStrategyName.empty()) {
+						LOG_WARN("no sharding strategy for database " << targetQuery.getDatabaseId());
+					} else {
+						LOG_DEBUG("sharder name " << shardingStrategyName);
+						sharder = extensionLoader.getShardingStrategy(shardingStrategyName);
+						LOG_TRACE("set sharder to " << sharder);
+						t->setSharder(sharder);
+						t->setShardColSearchExpr(shardColSearchExpr);
+					}
+					QueryExecution *sourceExecution = &executionGraph.getQueryExecution(&sourceQuery,0);
+					executionGraph.createChannel(sourceExecution,t);
+					for (size_t cnt=0;cnt<dstSize; cnt++) {
+						QueryExecution *targetExecution = &executionGraph.getQueryExecution(&targetQuery,cnt);
+						executionGraph.createChannel(t,targetExecution);
+					}
+					executionGraph.addTransition(t);
+					OneToMany *o2m = new OneToMany(sharder, shardColSearchExpr,(size_t) dstSize);
+					executionGraph2.addQueryExecution(o2m);
+					executionGraph2.createChannel(sourceExecution,"",o2m,"");
+					for (size_t cnt=0;cnt<dstSize; cnt++) {
+						QueryExecution *targetExecution = &executionGraph.getQueryExecution(&targetQuery,cnt);
+						executionGraph2.createChannel(o2m, to_string(cnt+1), targetExecution, to_string(cnt+1));
+					}
                 }
             }
         }
