@@ -8,6 +8,7 @@
 #include "core/QueryProcessor.h"
 #include "utils/logging.h"
 #include "utils/utility.h"
+#include "utils/string.h"
 #include "utils/md5.h"
 #include <fstream>
 #include "utils/File.h"
@@ -359,13 +360,16 @@ void QueryProcessor::populateTransitions() {
                 ManyToOne *m2o = new ManyToOne();
 				vector<string> args;
 				vector<string> depNames;
+				string md5;
                 for (size_t cnt=0;cnt<srcSize; cnt++) {
                     QueryExecution *sourceExecution = &executionGraph2.getQueryExecution(&sourceQuery,cnt);
     				depNames.push_back(to_string(cnt+1));
                     executionGraph2.createChannel(sourceExecution,"",m2o,to_string(cnt+1));
+                    md5 += sourceExecution->getUrl()->getUrl(false,false,false) + sourceExecution->getSql();
                 }
 				shared_ptr<DependencyInjector> di = extensionLoader.getDependencyInjector("default");
-				m2o->init("manytoone","idm2o",targetExecution->getUrl(),"query",depNames,di,args);
+				string id = md5hex(md5 + ":joined");
+				m2o->init(sourceQuery.getName() + ":joined", id,targetExecution->getUrl(),"query",depNames,di,args);
 				m2o->addEventListener(this);
 				executionGraph2.addQueryExecution(m2o);
                 executionGraph2.createChannel(m2o,"",targetExecution,sourceQuery.getName());
@@ -400,14 +404,19 @@ void QueryProcessor::populateTransitions() {
 					depNames.push_back(sourceExecution->getName());
 					vector<string> args;
 					shared_ptr<DependencyInjector> di = extensionLoader.getDependencyInjector("default");
-					o2m->init("onetomany","id",sourceExecution->getUrl(),"query",depNames,di,args);
+					string id = md5hex(sourceExecution->getUrl()->getUrl(false,false,false) + sourceExecution->getSql() + ":splitted");
+					o2m->init(sourceExecution->getName() + ":splitted",id,sourceExecution->getUrl(),"query",depNames,di,args);
 					o2m->addEventListener(this);
 					executionGraph2.addQueryExecution(o2m);
 					executionGraph2.createChannel(sourceExecution,"",o2m,sourceExecution->getName());
+					vector<string> portNames;
 					for (size_t cnt=0;cnt<dstSize; cnt++) {
 						QueryExecution *targetExecution = &executionGraph2.getQueryExecution(&targetQuery,cnt);
 						executionGraph2.createChannel(o2m, to_string(cnt+1), targetExecution, sourceExecution->getName());
+						portNames.push_back(to_string(cnt+1));
 					}
+					LOG_DEBUG("set one-to-many portNames = " << join(portNames,","))
+					o2m->setPortNames(portNames);
                 }
             }
         }
@@ -435,7 +444,8 @@ void QueryProcessor::calculateExecutionIds() {
                 string resultId = exec->getResult("")->calculateMD5Sum();
                 LOG_DEBUG("md5 of external " << query->getName() << " -> " << resultId);
                 exec->setId(resultId);
-                //executionGraph2.addQueryExecution(exec);
+                executionGraph2.addQueryExecution(exec);
+                exec->setPortId("",resultId);
             } else {
                 string md5data;
                 calculateExecutionId(*exec,md5data);
@@ -444,9 +454,29 @@ void QueryProcessor::calculateExecutionIds() {
                 LOG_DEBUG("md5 of query " << query->getName() << " -> " << exec->getId());
                 dump_md5_sources(query->getName(), exec->getId(), md5data);
                 executionGraph2.addQueryExecution(exec);
+                for (auto portName:exec->getPortNames()) {
+                	string resultId(md5hex(md5data+":"+portName));
+                	exec->setPortId(portName,resultId);
+                }
             }
         }
     }
+
+    for (auto exec:executionGraph2.getQueryExecutions()) {
+    	if (exec->isTransition()) {
+    		string md5data;
+    		calculateExecutionId(*exec,md5data);
+            string execId(md5hex(md5data));
+            exec->setId(execId);
+            dump_md5_sources(exec->getName(), exec->getId(), md5data);
+            executionGraph2.addQueryExecution(exec);
+            for (auto portName:exec->getPortNames()) {
+            	string resultId(md5hex(md5data+":"+portName));
+            	exec->setPortId(portName,resultId);
+            }
+    	}
+    }
+
     LOG_TRACE("calculate execution ids done");
 }
 
@@ -495,10 +525,15 @@ vector<QueryExecution*> QueryProcessor::findExecutables() {
 void QueryProcessor::cacheItem(string resultId) {
     LOG_DEBUG("save cache item "+resultId);
     QueryExecution& exec = executionGraph2.getQueryExecution(resultId);
+    LOG_DEBUG("execution: " << exec.getName());
     File linkPath{outputDir + "/" + exec.getName() + ".csv"};
-    uint64_t rowCount = exec.getResult("")->getRowCount();
-    cacheRegistry.registerItem(resultId,Time(),exec.getDuration(),linkPath.abspath(),"csv", rowCount);
-    exec.getResult("")->save(cacheRegistry.getPath(resultId));
+    for (auto portName:exec.getPortNames()) {
+    	LOG_DEBUG("save port '" << portName << "' with id " << exec.getPortId(portName));
+    	string portId = exec.getPortId(portName);
+		uint64_t rowCount = exec.getResult(portName)->getRowCount();
+		cacheRegistry.registerItem(portId,Time(),exec.getDuration(),linkPath.abspath(),"csv", rowCount);
+		exec.getResult(portName)->save(cacheRegistry.getPath(portId));
+    }
     LOG_TRACE("save data done");
     cacheRegistry.save(resultId);
     if (linkPath.exists()) {
@@ -531,9 +566,9 @@ void QueryProcessor::handleEvent(shared_ptr<Event> event) {
             channel->close();
         }
         LOG_DEBUG("cacheItem " << event->resultId);
-        if (!result.isTransition()) {
+        //if (!result.isTransition()) {
         	cacheItem(event->resultId);
-        }
+        //}
         LOG_DEBUG("cacheItem done");
         result.release();
     }

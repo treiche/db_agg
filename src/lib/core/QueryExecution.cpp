@@ -182,5 +182,34 @@ namespace db_agg {
 
     void QueryExecution::stop() {}
 
+    void QueryExecution::setPortNames(vector<std::string> portNames) {
+    	portIds.clear();
+    	for (auto& portName:portNames) {
+    		portIds[portName] = "";
+    	}
+    }
+
+    vector<string> QueryExecution::getPortNames() {
+    	vector<string> portNames;
+    	for (auto port:portIds) {
+    		portNames.push_back(port.first);
+    	}
+    	return portNames;
+    }
+
+    void QueryExecution::setPortId(string portName, string portId) {
+    	if (portIds.find(portName) == portIds.end()) {
+    		THROW_EXC("unknown port '" << portName << "'");
+    	}
+    	portIds[portName] = portId;
+    }
+
+    string QueryExecution::getPortId(string portName) {
+    	if (portIds.find(portName) == portIds.end()) {
+    		THROW_EXC("unknown port '" << portName << "'");
+    	}
+    	return portIds[portName];
+    }
+
 }
 

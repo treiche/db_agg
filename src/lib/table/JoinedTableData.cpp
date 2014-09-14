@@ -46,7 +46,8 @@ void JoinedTableData::getRows(uint64_t startRow, uint64_t rows, std::vector<Data
 }
 
 void JoinedTableData::save(string filePath) {
-    throw runtime_error("not supported");
+    //throw runtime_error("not supported");
+	TableData::save(filePath);
 }
 
 string JoinedTableData::calculateMD5Sum() {

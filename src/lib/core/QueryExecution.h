@@ -44,6 +44,7 @@ class QueryExecution: public DataReceiver, public DataSender, public EventProduc
         bool scheduled = false;
         bool done = false;
         std::map<std::string,std::shared_ptr<TableData>> dependencies;
+        std::map<std::string,std::string> portIds{{"",""}};
         std::shared_ptr<DependencyInjector> dependencyInjector;
         std::chrono::system_clock::time_point startTime;
         std::chrono::system_clock::time_point endTime;
@@ -79,6 +80,11 @@ class QueryExecution: public DataReceiver, public DataSender, public EventProduc
         std::string inject(std::string query, size_t copyThreshold);
         bool isComplete();
         std::vector<Channel*> getChannels();
+
+        void setPortNames(std::vector<std::string> portNames);
+        std::vector<std::string> getPortNames();
+        void setPortId(std::string portName, std::string portId);
+        std::string getPortId(std::string portName);
 
         virtual bool isTransition();
         virtual void stop();
