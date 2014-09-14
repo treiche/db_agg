@@ -15,6 +15,8 @@
 
 namespace db_agg {
 
+class QueryExecution;
+
 enum class ChannelState {
     READY,
     OPEN,
@@ -35,7 +37,9 @@ public:
     void send(std::shared_ptr<TableData> data);
     void close();
     ChannelState getState();
+    QueryExecution* getTarget();
     std::string getTargetPort();
+    std::string getSourcePort();
     friend class ExecutionGraph;
     friend class ExecutionGraph2;
 };

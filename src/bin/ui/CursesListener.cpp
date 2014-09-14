@@ -226,7 +226,7 @@ bool CursesListener::calculateRequiredSpace() {
     size_t lines = 0;
     size_t cols = 0;
     size_t availableLines = LINES - 4;
-    ExecutionGraph& executionGraph = application.getExecutionGraph();
+    ExecutionGraph2& executionGraph = application.getExecutionGraph();
     vector<Query*> queries = executionGraph.getQueries();
     for (auto query:queries) {
         if (!compactView) {
@@ -279,7 +279,7 @@ void CursesListener::calculateLayout() {
         }
     }
 
-    ExecutionGraph& executionGraph = application.getExecutionGraph();
+    ExecutionGraph2& executionGraph = application.getExecutionGraph();
     vector<Query*> queries = executionGraph.getQueries();
 
     size_t line = 0;

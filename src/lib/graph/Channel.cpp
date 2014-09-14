@@ -57,4 +57,13 @@ string Channel::getTargetPort() {
     return targetPort;
 }
 
+string Channel::getSourcePort() {
+    return sourcePort;
+}
+
+QueryExecution* Channel::getTarget() {
+	return (QueryExecution*)(target);
+}
+
+
 }

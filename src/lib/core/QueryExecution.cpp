@@ -88,9 +88,12 @@ namespace db_agg {
     }
 
     void QueryExecution::receive(string name, shared_ptr<TableData> data) {
-        LOG_DEBUG("receive data " << data);
+        LOG_DEBUG("receive data " << name);
         if (dependencies.find(name)==dependencies.end()) {
-            throw runtime_error("no dependency '" + name + "' declared");
+        	for (auto dep:dependencies) {
+        		LOG_INFO("declared " << dep.first);
+        	}
+            THROW_EXC("no dependency '" + name + "' declared");
         }
         dependencies[name] = data;
     }

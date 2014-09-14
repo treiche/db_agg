@@ -18,7 +18,7 @@
 #include "cache/CacheRegistry.h"
 #include "core/AsyncQueryExecutor.h"
 #include "table/TableData.h"
-#include "ExecutionGraph.h"
+//#include "ExecutionGraph.h"
 #include "graph/ExecutionGraph2.h"
 
 namespace db_agg {
@@ -32,7 +32,7 @@ class QueryProcessor : public EventListener, public EventProducer {
     bool disableCache;
     size_t copyThreshold;
     std::map<std::string,std::string> externalSources;
-    ExecutionGraph executionGraph;
+    //ExecutionGraph executionGraph;
     ExecutionGraph2 executionGraph2;
     size_t statementTimeout;
     std::map<std::string,std::string> queryParameter;
@@ -44,7 +44,6 @@ class QueryProcessor : public EventListener, public EventProducer {
     void checkConnections();
     std::vector<QueryExecution*> findExecutables();
     void cacheItem(std::string resultId);
-    void loadExternalSources();
     void cleanUp();
     bool dontExecute;
     bool stopped = false;
@@ -69,7 +68,7 @@ public:
     void process(std::string query, std::string environment);
     void handleEvent(std::shared_ptr<Event> event) override;
     void stop();
-    ExecutionGraph& getExecutionGraph();
+    ExecutionGraph2& getExecutionGraph();
 };
 }
 

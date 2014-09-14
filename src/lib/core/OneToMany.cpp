@@ -37,13 +37,18 @@ bool OneToMany::process() {
 	map<size_t,shared_ptr<TableData>> results;
 	for (uint64_t row = 0; row < rows; row++) {
 		int shardId = sharder->getShardId(sourceTable->getValue(row,shardKeyIdx));
-		offsets[shardId].push_back(row);
+		LOG_TRACE("shardId of '" << sourceTable->getValue(row,shardKeyIdx) << " = " << shardId);
+		offsets[shardId-1].push_back(row);
 	}
 
 	for (size_t idx=0;idx<noShards;idx++) {
         shared_ptr<TableData> shardedData = TableDataFactory::getInstance().split(sourceTable,offsets[idx]);
-        setResult(to_string(idx),shardedData);
+        setResult(to_string(idx+1),shardedData);
     }
+
+	shared_ptr<Event> event(new Event(EventType::PROCESSED,getId()));
+	LOG_DEBUG("send PROCESSED event");
+    fireEvent(event);
 
 	setDone();
 	return true;

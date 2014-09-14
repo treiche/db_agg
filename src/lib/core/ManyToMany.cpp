@@ -22,7 +22,6 @@ ManyToMany::ManyToMany(shared_ptr<ShardingStrategy> sharder, string shardColSear
 	sharder(sharder),
 	shardColSearchExpr(shardColSearchExpr),
 	noShards(noShards) {
-
 }
 
 bool ManyToMany::process() {

@@ -22,16 +22,41 @@ void ExecutionGraph2::addQuery(Query *query) {
 
 void ExecutionGraph2::addQueryExecution(Query *query,QueryExecution *queryExecution) {
     executionsByQuery[query].push_back(queryExecution);
-    executions.push_back(queryExecution);
+    executions.insert(queryExecution);
+	executionById[queryExecution->getId()] = queryExecution;
 }
 
 void ExecutionGraph2::addQueryExecution(QueryExecution *exec) {
-	executions.push_back(exec);
+	executions.insert(exec);
+	executionById[exec->getId()] = exec;
 }
 
 vector<Query*>& ExecutionGraph2::getQueries() {
     return queries;
 }
+
+set<QueryExecution*>& ExecutionGraph2::getQueryExecutions() {
+    return executions;
+}
+
+/*
+vector<QueryExecution*> ExecutionGraph2::getTargets(Channel* sourceChannel) {
+    vector<QueryExecution*> targets;
+    for (auto channel:channels) {
+    	if (channel->)
+    }
+    return targets;
+}
+*/
+
+QueryExecution& ExecutionGraph2::getQueryExecution(Query *query,int shardId) {
+    return *executionsByQuery[query][shardId];
+}
+
+vector<QueryExecution*>& ExecutionGraph2::getQueryExecutions(Query *query) {
+    return executionsByQuery[query];
+}
+
 
 void ExecutionGraph2::createChannel(QueryExecution *source, std::string sourcePort, QueryExecution *target, std::string targetPort) {
 	DataSender *sender = dynamic_cast<DataSender*>(source);
@@ -40,6 +65,44 @@ void ExecutionGraph2::createChannel(QueryExecution *source, std::string sourcePo
     source->addChannel(channel);
     channels.push_back(channel);
 }
+
+QueryExecution& ExecutionGraph2::getQueryExecution(std::string id) {
+    if (executionById.find(id)==executionById.end()) {
+        THROW_EXC("query execution with id " + id + " does not exist.");
+    }
+    return *executionById[id];
+}
+
+/*
+vector<Channel*>& ExecutionGraph2::getOutputChannels(QueryExecution *exec) {
+    return execToTrans[exec];
+}
+*/
+
+
+vector<QueryExecution*> ExecutionGraph2::getDependencies(QueryExecution *exec) {
+    vector<QueryExecution*> dependencies;
+    for (auto channel:channels) {
+    	if (channel->target == exec) {
+    		dependencies.push_back((QueryExecution*)channel->source);
+    	}
+    }
+    /*
+    vector<Transition*> transitions = getIncomingTransitions(exec);
+    for (auto transition:transitions) {
+        vector<QueryExecution*> sources = getSources(transition);
+        for (QueryExecution *source:sources) {
+            dependencies.push_back(source);
+            vector<QueryExecution*> transientDependencies = getDependencies(source);
+            for (auto transientDependency:transientDependencies) {
+                dependencies.push_back(transientDependency);
+            }
+        }
+    }
+    */
+    return dependencies;
+}
+
 
 void ExecutionGraph2::dumpExecutionPlan(string outputDir) {
     LOG_INFO("dump execution plan");
@@ -97,7 +160,7 @@ void ExecutionGraph2::dumpExecutionPlan(string outputDir) {
     for (auto& channel:channels) {
     	QueryExecution *source = dynamic_cast<QueryExecution*>(channel->source);
     	QueryExecution *target = dynamic_cast<QueryExecution*>(channel->target);
-    	out << "  \"" << source << "\" -> \"" << target << "\" [headlabel=\"" << channel->sourcePort << "\", taillabel=\"" << channel->targetPort << "\"]" << endl;
+    	out << "  \"" << source << "\" -> \"" << target << "\" [taillabel=\"" << channel->sourcePort << "\", headlabel=\"" << channel->targetPort << "\"]" << endl;
     }
 
     out << "\n}";
