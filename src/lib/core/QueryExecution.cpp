@@ -65,6 +65,9 @@ namespace db_agg {
 
 
     shared_ptr<TableData> QueryExecution::getResult(string shardId) {
+    	if (results.find(shardId) == results.end()) {
+    		THROW_EXC("execution does not have a result port '" << shardId << "'");
+    	}
         return results[shardId];
     }
 
@@ -89,7 +92,7 @@ namespace db_agg {
 
     void QueryExecution::receive(string name, shared_ptr<TableData> data) {
         LOG_DEBUG("receive data " << name);
-        if (dependencies.find(name)==dependencies.end()) {
+        if (dependencies.find(name) == dependencies.end()) {
         	for (auto dep:dependencies) {
         		LOG_INFO("declared " << dep.first);
         	}

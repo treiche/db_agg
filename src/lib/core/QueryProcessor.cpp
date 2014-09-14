@@ -142,12 +142,11 @@ void QueryProcessor::loadFromCache() {
     LOG_INFO("load items from cache");
     for (auto& qr:executionGraph2.getQueryExecutions()) {
     	for (auto portName:qr->getPortNames()) {
-    		string portId = qr->getPortId(portName);
-			if (cacheRegistry.exists(portId)) {
-				string resultId = portId;
+    		string resultId = qr->getPortId(portName);
+			if (cacheRegistry.exists(resultId)) {
 				File path(cacheRegistry.getPath(resultId));
 				if (path.exists()) {
-					LOG_INFO("cache item for " << qr->getName() << "[" << portId << "] exists");
+					LOG_INFO("cache item for " << qr->getName() << "[" << resultId << "] exists");
 					if (!disableCache) {
 						shared_ptr<TableData> data = cacheRegistry.getData(resultId);
 						qr->setResult(portName, data);
@@ -179,9 +178,10 @@ void QueryProcessor::loadFromCache() {
             for (auto channel:qr->getChannels()) {
             	QueryExecution *target = channel->getTarget();
             	if (!target->isDone()) {
-                    if (channel->getState() != ChannelState::READY) {
+                    if (channel->getState() == ChannelState::READY) {
                     	channel->open();
-                    	channel->send(qr->getResult(""));
+                		LOG_DEBUG("send data to target " << target->getName() << " port=" << channel->getTargetPort());
+                    	channel->send(qr->getResult(channel->getSourcePort()));
                     	channel->close();
                     }
             	}
