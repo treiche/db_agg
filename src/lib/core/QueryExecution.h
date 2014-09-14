@@ -54,6 +54,7 @@ class QueryExecution: public DataReceiver, public DataSender, public EventProduc
         std::vector<std::string>& getArguments();
         std::map<std::string,std::shared_ptr<TableData>>& getDependencies();
         std::shared_ptr<DependencyInjector> getInjector();
+        void setPortNames(std::vector<std::string> portNames);
     public:
         QueryExecution();
         void init(std::string name,
@@ -81,7 +82,6 @@ class QueryExecution: public DataReceiver, public DataSender, public EventProduc
         bool isComplete();
         std::vector<Channel*> getChannels();
 
-        void setPortNames(std::vector<std::string> portNames);
         std::vector<std::string> getPortNames();
         void setPortId(std::string portName, std::string portId);
         std::string getPortId(std::string portName);

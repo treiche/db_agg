@@ -23,6 +23,11 @@ OneToMany::OneToMany(shared_ptr<ShardingStrategy> sharder, string shardColSearch
 	shardColSearchExpr(shardColSearchExpr),
 	noShards(noShards) {
 
+	vector<string> portNames;
+	for (size_t idx = 0; idx < noShards; idx++) {
+		portNames.push_back(to_string(idx+1));
+	}
+	setPortNames(portNames);
 }
 
 bool OneToMany::process() {

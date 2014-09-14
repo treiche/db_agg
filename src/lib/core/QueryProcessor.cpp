@@ -141,34 +141,37 @@ void QueryProcessor::cleanUp() {
 void QueryProcessor::loadFromCache() {
     LOG_INFO("load items from cache");
     for (auto& qr:executionGraph2.getQueryExecutions()) {
-        if (cacheRegistry.exists(qr->getId())) {
-            string resultId = qr->getId();
-            File path(cacheRegistry.getPath(resultId));
-            if (path.exists()) {
-                LOG_INFO("cache item for " << qr->getName() << "[" << resultId << "] exists");
-                if (!disableCache) {
-                    shared_ptr<TableData> data = cacheRegistry.getData(resultId);
-                    qr->setResult("", data);
-                    qr->setDone();
-                    // close all incoming channels here
-                    // executionGraph.getSources(qr);
-                    //qr.second->doTransitions();
-                    File linkPath(outputDir + "/" + qr->getName() + ".csv");
-                    if (!linkPath.exists()) {
-                        linkPath.linkTo(path);
-                    }
-                    shared_ptr<Event> event(new ExecutionStateChangeEvent(qr->getId(),"CACHED"));
-                    fireEvent(event);
-                    shared_ptr<Event> re(new ReceiveDataEvent(resultId,cacheRegistry.getRowCount(resultId)));
-                    fireEvent(re);
-                }
-                CacheItem& ci = cacheRegistry.get(resultId);
-                shared_ptr<Event> ce(new CacheLoadEvent(resultId,ci.lastExecuted,ci.lastDuration,ci.rowCount));
-                fireEvent(ce);
-            }
-        } else {
-            LOG_INFO("cache item for " << qr->getName() << "[" << qr->getId() << "] does not exist");
-        }
+    	for (auto portName:qr->getPortNames()) {
+    		string portId = qr->getPortId(portName);
+			if (cacheRegistry.exists(portId)) {
+				string resultId = portId;
+				File path(cacheRegistry.getPath(resultId));
+				if (path.exists()) {
+					LOG_INFO("cache item for " << qr->getName() << "[" << portId << "] exists");
+					if (!disableCache) {
+						shared_ptr<TableData> data = cacheRegistry.getData(resultId);
+						qr->setResult(portName, data);
+						qr->setDone();
+						// close all incoming channels here
+						// executionGraph.getSources(qr);
+						//qr.second->doTransitions();
+						File linkPath(outputDir + "/" + qr->getName() + portName + ".csv");
+						if (!linkPath.exists()) {
+							linkPath.linkTo(path);
+						}
+						shared_ptr<Event> event(new ExecutionStateChangeEvent(qr->getId(),"CACHED"));
+						fireEvent(event);
+						shared_ptr<Event> re(new ReceiveDataEvent(resultId,cacheRegistry.getRowCount(resultId)));
+						fireEvent(re);
+					}
+					CacheItem& ci = cacheRegistry.get(resultId);
+					shared_ptr<Event> ce(new CacheLoadEvent(resultId,ci.lastExecuted,ci.lastDuration,ci.rowCount));
+					fireEvent(ce);
+				}
+			} else {
+				LOG_INFO("cache item for " << qr->getName() << "[" << qr->getId() << "] does not exist");
+			}
+    	}
     }
     LOG_DEBUG("load items from cache done");
     for (auto& qr:executionGraph2.getQueryExecutions()) {
@@ -409,14 +412,14 @@ void QueryProcessor::populateTransitions() {
 					o2m->addEventListener(this);
 					executionGraph2.addQueryExecution(o2m);
 					executionGraph2.createChannel(sourceExecution,"",o2m,sourceExecution->getName());
-					vector<string> portNames;
+					//vector<string> portNames;
 					for (size_t cnt=0;cnt<dstSize; cnt++) {
 						QueryExecution *targetExecution = &executionGraph2.getQueryExecution(&targetQuery,cnt);
 						executionGraph2.createChannel(o2m, to_string(cnt+1), targetExecution, sourceExecution->getName());
-						portNames.push_back(to_string(cnt+1));
+						//portNames.push_back(to_string(cnt+1));
 					}
-					LOG_DEBUG("set one-to-many portNames = " << join(portNames,","))
-					o2m->setPortNames(portNames);
+					//LOG_DEBUG("set one-to-many portNames = " << join(portNames,","))
+					//o2m->setPortNames(portNames);
                 }
             }
         }
@@ -455,7 +458,7 @@ void QueryProcessor::calculateExecutionIds() {
                 dump_md5_sources(query->getName(), exec->getId(), md5data);
                 executionGraph2.addQueryExecution(exec);
                 for (auto portName:exec->getPortNames()) {
-                	string resultId(md5hex(md5data+":"+portName));
+                	string resultId(md5hex(md5data + portName));
                 	exec->setPortId(portName,resultId);
                 }
             }
@@ -471,7 +474,7 @@ void QueryProcessor::calculateExecutionIds() {
             dump_md5_sources(exec->getName(), exec->getId(), md5data);
             executionGraph2.addQueryExecution(exec);
             for (auto portName:exec->getPortNames()) {
-            	string resultId(md5hex(md5data+":"+portName));
+            	string resultId(md5hex(md5data+portName));
             	exec->setPortId(portName,resultId);
             }
     	}
@@ -522,24 +525,24 @@ vector<QueryExecution*> QueryProcessor::findExecutables() {
     return executables;
 }
 
-void QueryProcessor::cacheItem(string resultId) {
-    LOG_DEBUG("save cache item "+resultId);
-    QueryExecution& exec = executionGraph2.getQueryExecution(resultId);
+void QueryProcessor::cacheItem(string execId) {
+    LOG_DEBUG("save cache item "+execId);
+    QueryExecution& exec = executionGraph2.getQueryExecution(execId);
     LOG_DEBUG("execution: " << exec.getName());
-    File linkPath{outputDir + "/" + exec.getName() + ".csv"};
     for (auto portName:exec.getPortNames()) {
     	LOG_DEBUG("save port '" << portName << "' with id " << exec.getPortId(portName));
+        File linkPath{outputDir + "/" + exec.getName() + portName + ".csv"};
     	string portId = exec.getPortId(portName);
 		uint64_t rowCount = exec.getResult(portName)->getRowCount();
-		cacheRegistry.registerItem(portId,Time(),exec.getDuration(),linkPath.abspath(),"csv", rowCount);
+		cacheRegistry.registerItem(portId, execId, Time(),exec.getDuration(),linkPath.abspath(),"csv", rowCount);
 		exec.getResult(portName)->save(cacheRegistry.getPath(portId));
+	    cacheRegistry.save(portId);
+	    if (linkPath.exists()) {
+	        linkPath.remove();
+	    }
+	    linkPath.linkTo(cacheRegistry.getPath(portId));
     }
     LOG_TRACE("save data done");
-    cacheRegistry.save(resultId);
-    if (linkPath.exists()) {
-        linkPath.remove();
-    }
-    linkPath.linkTo(cacheRegistry.getPath(resultId));
 }
 
 void QueryProcessor::handleEvent(shared_ptr<Event> event) {
