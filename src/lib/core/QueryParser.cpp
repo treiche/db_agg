@@ -25,25 +25,27 @@ string QueryParser::normalizeQuery(std::string query) {
     bool isWhitespace = false;
     bool insideSingleLineComment = false;
     bool insideMultiLineComment = false;
+    bool insideString = false;
     char lastChar;
     for (size_t idx = 0; idx < query.size(); idx++) {
         char c = query[idx];
-        if (c == '/' && query[idx+1] == '*') {
+        if (c == '\'' && !insideString && !insideSingleLineComment && !insideMultiLineComment) {
+        	insideString = true;
+        } else if (c == '\'' && insideString && !insideSingleLineComment && !insideMultiLineComment) {
+        	insideString = false;
+        } else if (c == '/' && query[idx+1] == '*' && !insideString) {
             insideMultiLineComment = true;
             idx++;
             continue;
-        }
-        if (c == '*' && query[idx+1] == '/') {
+        } else if (c == '*' && query[idx+1] == '/' && !insideString) {
             insideMultiLineComment = false;
             idx++;
             continue;
-        }
-        if (c == '-' && query[idx+1] == '-') {
+        } else if (c == '-' && query[idx+1] == '-' && !insideString) {
             insideSingleLineComment = true;
             idx++;
             continue;
-        }
-        if (c == '\n') {
+        } else if (c == '\n' && insideSingleLineComment) {
             insideSingleLineComment = false;
             idx++;
             continue;
