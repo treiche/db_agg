@@ -8,7 +8,7 @@
 #include "Channel.h"
 
 #include "utils/logging.h"
-
+#include "QueryExecution.h"
 
 using namespace std;
 using namespace log4cplus;
@@ -17,8 +17,6 @@ namespace db_agg {
 
 static Logger LOG = Logger::getInstance(LOG4CPLUS_TEXT("Channel"));
 
-
-// Channel::Channel(string targetPort, DataReceiver *target): targetPort(targetPort), target(target) {}
 
 Channel::Channel(DataSender *source, std::string sourcePort, DataReceiver *target, std::string targetPort):
 	source(source),
@@ -62,7 +60,7 @@ string Channel::getSourcePort() {
 }
 
 QueryExecution* Channel::getTarget() {
-	return (QueryExecution*)(target);
+	return dynamic_cast<QueryExecution*>(target);
 }
 
 

@@ -31,7 +31,6 @@ private:
     DataSender *source{nullptr};
     ChannelState state{ChannelState::READY};
 public:
-    //Channel(std::string targetPort, DataReceiver *target);
     Channel(DataSender *source, std::string sourcePort, DataReceiver *target, std::string targetPort);
     void open();
     void send(std::shared_ptr<TableData> data);

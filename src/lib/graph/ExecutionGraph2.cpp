@@ -50,7 +50,15 @@ vector<QueryExecution*> ExecutionGraph2::getTargets(Channel* sourceChannel) {
 */
 
 QueryExecution& ExecutionGraph2::getQueryExecution(Query *query,int shardId) {
-    return *executionsByQuery[query][shardId];
+	if (executionsByQuery.find(query) == executionsByQuery.end()) {
+		THROW_EXC("query " << query << " not found.");
+	}
+	vector<QueryExecution*>& executions = executionsByQuery[query];
+    //return *executionsByQuery[query][shardId];
+	if (shardId >= executions.size()) {
+		THROW_EXC("invalid array index " << shardId);
+	}
+	return *executions.at(shardId);
 }
 
 vector<QueryExecution*>& ExecutionGraph2::getQueryExecutions(Query *query) {
@@ -83,8 +91,9 @@ vector<Channel*>& ExecutionGraph2::getOutputChannels(QueryExecution *exec) {
 vector<QueryExecution*> ExecutionGraph2::getDependencies(QueryExecution *exec) {
     vector<QueryExecution*> dependencies;
     for (auto channel:channels) {
-    	if (channel->target == exec) {
-    		dependencies.push_back((QueryExecution*)channel->source);
+    	QueryExecution *tgt = dynamic_cast<QueryExecution*>(channel->target);
+    	if (tgt == exec) {
+    		dependencies.push_back(dynamic_cast<QueryExecution*>(channel->source));
     	}
     }
     /*
