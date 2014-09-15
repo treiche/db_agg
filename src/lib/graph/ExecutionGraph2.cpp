@@ -179,7 +179,7 @@ void ExecutionGraph2::dumpExecutionPlan(string outputDir) {
     if (exitCode != 0) {
         LOG_WARN("failed to create image from executionPlan.dot");
     }
-    LOG_DEBUG("dump execution plan done");
+    LOG_INFO("dump execution plan done");
 }
 
 

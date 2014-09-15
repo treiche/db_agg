@@ -16,14 +16,17 @@ DECLARE_LOGGER("ManyToOne");
 
 namespace db_agg {
 bool ManyToOne::process() {
-	LOG_DEBUG("process many to one");
+	LOG_ERROR("process many to one");
 	vector<shared_ptr<TableData>> sources;
 	for (auto& dep:getDependencies()) {
 		sources.push_back(dep.second);
 	}
 	auto result = TableDataFactory::getInstance().join(sources);
+	LOG_INFO("set result to default port " << getName() << " address=" << this);
 	setResult("",result);
-	setDone();
+	LOG_INFO("get result for default port ");
+	getResult("");
+	LOG_INFO("get result for default port done");
 	shared_ptr<Event> event(new Event(EventType::PROCESSED,getId()));
     fireEvent(event);
 	return true;

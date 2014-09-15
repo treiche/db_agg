@@ -327,7 +327,7 @@ void QueryProcessor::populateTransitions() {
                 string name = dep.locator.getQName();
                 QueryExecution& targetExecution = executionGraph2.getQueryExecution(&targetQuery,0);
                 assert(sourceExecutions.size() == 1);
-                executionGraph2.createChannel(sourceExecutions[0], "", &targetExecution, "");
+                executionGraph2.createChannel(sourceExecutions[0], "", &targetExecution, sourceExecutions[0]->getName());
             } else if (dstSize > 1 && dstSize == srcSize) {
                 // many to many without sharding
                 if (sourceQuery.getDatabaseId() == targetQuery.getDatabaseId()) {
@@ -360,6 +360,7 @@ void QueryProcessor::populateTransitions() {
             } else if (dstSize == 1 && srcSize > 1) {
                 // many to one
                 QueryExecution *targetExecution = &executionGraph2.getQueryExecution(&targetQuery,0);
+                cout << "CREATE MANY_TO_ONE" << endl;
                 ManyToOne *m2o = new ManyToOne();
 				vector<string> args;
 				vector<string> depNames;
@@ -383,7 +384,7 @@ void QueryProcessor::populateTransitions() {
 					QueryExecution *sourceExecution = &executionGraph2.getQueryExecution(&sourceQuery,0);
 					for (size_t cnt=0;cnt<dstSize; cnt++) {
 						QueryExecution *targetExecution = &executionGraph2.getQueryExecution(&targetQuery,cnt);
-						executionGraph2.createChannel(sourceExecution, "", targetExecution, to_string(cnt+1));
+						executionGraph2.createChannel(sourceExecution, "", targetExecution, sourceQuery.getName());
 					}
                 } else {
                     LOG_DEBUG("prepare one-to-many transition");
@@ -548,7 +549,7 @@ void QueryProcessor::cacheItem(string execId) {
 void QueryProcessor::handleEvent(shared_ptr<Event> event) {
     if (event->type==EventType::PROCESSED) {
         QueryExecution& result = executionGraph2.getQueryExecution(event->resultId);
-        LOG_DEBUG("PROCESSED: " << result.getSql() << " name =" << result.getName());
+        LOG_DEBUG("PROCESSED: " << result.getSql() << " name =" << result.getName() << " address=" << &result);
         result.setDone();
         LOG_DEBUG("set execution " << result.getName() << " done.");
         bool allReady = true;

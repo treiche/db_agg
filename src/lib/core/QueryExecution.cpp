@@ -12,6 +12,7 @@
 #include "type/oids.h"
 #include "type/TypeRegistry.h"
 #include "utils/RegExp.h"
+#include "utils/string.h"
 
 using namespace std;
 using namespace log4cplus;
@@ -66,7 +67,10 @@ namespace db_agg {
 
     shared_ptr<TableData> QueryExecution::getResult(string shardId) {
     	if (results.find(shardId) == results.end()) {
-    		THROW_EXC("execution does not have a result port '" << shardId << "'");
+    		for (auto result:results) {
+    			LOG_INFO("result = " << result.first);
+    		}
+    		THROW_EXC("execution '" << getName() << "' does not have a result port '" << shardId << "' has " << results.size() << "candidates");
     	}
         return results[shardId];
     }
