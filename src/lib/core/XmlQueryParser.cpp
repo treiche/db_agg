@@ -95,6 +95,9 @@ Query *XmlQueryParser::parseQuery(xmlElementPtr executionNode) {
     }
     string id = string(md5hex(matches[2] + "$" + to_string(shardId) + "$" + environment + ":" + sql));
     */
+    if (properties.find("shardId") != properties.end()) {
+    	shardId = stoi(properties["shardId"]);
+    }
     string name = properties["name"];
     string query = trim(properties["query"]);
     string formattedSql = cutBlock(properties["query"]);
