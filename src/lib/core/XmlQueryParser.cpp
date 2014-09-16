@@ -9,6 +9,7 @@
 #include "utils/logging.h"
 #include "utils/md5.h"
 #include "utils/string.h"
+#include "utils/Template.h"
 
 using namespace std;
 
@@ -22,8 +23,16 @@ XmlQueryParser::~XmlQueryParser() {
 }
 
 
-vector<Query*> XmlQueryParser::parse(string q, map<string,string>& externalSources, map<string,string>& queryParameter, vector<string> functions) {
-    xmlDocPtr doc = xmlReadMemory(q.c_str(), q.size(), "queries.xml", NULL, 0);
+vector<Query*> XmlQueryParser::parse(string qu, map<string,string>& externalSources, map<string,string>& queryParameter, vector<string> functions) {
+    string q = qu;
+    // replace query parameters
+    if (!queryParameter.empty()) {
+        Template t;
+        t.set(queryParameter);
+        q = t.render(q);
+    }
+
+	xmlDocPtr doc = xmlReadMemory(q.c_str(), q.size(), "queries.xml", NULL, 0);
     if (doc == nullptr) {
         THROW_EXC("failed to parse xml queries");
     }
