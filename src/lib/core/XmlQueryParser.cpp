@@ -77,7 +77,7 @@ vector<Query*> XmlQueryParser::parse(string qu, map<string,string>& externalSour
         for (auto& dep:query->getDependencies()) {
             Query *src = getSourceQuery(dep, queries);
             if (src==nullptr) {
-                THROW_EXC("no source found for dependency " + dep.locator.getName());
+                THROW_EXC("no source found for dependency " << dep.locator.getName() + " used in query " << query->getName());
             }
             dep.sourceQuery = src;
             LOG_DEBUG(query->getLocator().getQName() << ": " << dep.locator.getQName() << " -> " << src->getLocator().getQName());
