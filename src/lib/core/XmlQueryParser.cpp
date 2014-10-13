@@ -9,6 +9,7 @@
 #include "utils/logging.h"
 #include "utils/md5.h"
 #include "utils/string.h"
+#include "utils/Template.h"
 
 using namespace std;
 
@@ -22,8 +23,16 @@ XmlQueryParser::~XmlQueryParser() {
 }
 
 
-vector<Query*> XmlQueryParser::parse(string q, map<string,string>& externalSources, map<string,string>& queryParameter, vector<string> functions) {
-    xmlDocPtr doc = xmlReadMemory(q.c_str(), q.size(), "queries.xml", NULL, 0);
+vector<Query*> XmlQueryParser::parse(string qu, map<string,string>& externalSources, map<string,string>& queryParameter, vector<string> functions) {
+    string q = qu;
+    // replace query parameters
+    if (!queryParameter.empty()) {
+        Template t;
+        t.set(queryParameter);
+        q = t.render(q);
+    }
+
+	xmlDocPtr doc = xmlReadMemory(q.c_str(), q.size(), "queries.xml", NULL, 0);
     if (doc == nullptr) {
         THROW_EXC("failed to parse xml queries");
     }
@@ -68,7 +77,7 @@ vector<Query*> XmlQueryParser::parse(string q, map<string,string>& externalSourc
         for (auto& dep:query->getDependencies()) {
             Query *src = getSourceQuery(dep, queries);
             if (src==nullptr) {
-                THROW_EXC("no source found for dependency " << dep.locator.getName() << " of query " << query->getName());
+                THROW_EXC("no source found for dependency " << dep.locator.getName() + " used in query " << query->getName());
             }
             dep.sourceQuery = src;
             LOG_DEBUG(query->getLocator().getQName() << ": " << dep.locator.getQName() << " -> " << src->getLocator().getQName());
@@ -98,10 +107,12 @@ Query *XmlQueryParser::parseQuery(xmlElementPtr executionNode) {
     if (properties.find("shardId") != properties.end()) {
     	shardId = stoi(properties["shardId"]);
     }
+
     string environment;
     if (properties.find("environment") != properties.end()) {
     	environment = properties["environment"];
     }
+
     string name = properties["name"];
     string query = trim(properties["query"]);
     string formattedSql = cutBlock(properties["query"]);

@@ -378,22 +378,18 @@ void QueryProcessor::populateTransitions() {
 				executionGraph2.addQueryExecution(m2o);
                 executionGraph2.createChannel(m2o,"",targetExecution,sourceQuery.getName());
             } else if (dstSize > 1 && srcSize == 1) {
-                LOG_DEBUG("dependency shardId = " << dep.locator.getShardId() << " shardId of dependency = " << dep.sourceQuery->getShardId());
                 if (dep.sourceQuery->getShardId() != -1) {
-                	LOG_DEBUG("prepare unsharded transition");
+                	LOG_DEBUG("prepare one to many unsharded transition");
 					QueryExecution *sourceExecution = &executionGraph2.getQueryExecution(&sourceQuery,0);
 					for (size_t cnt=0;cnt<dstSize; cnt++) {
 						QueryExecution *targetExecution = &executionGraph2.getQueryExecution(&targetQuery,cnt);
-						executionGraph2.createChannel(sourceExecution, "", targetExecution, sourceQuery.getName());
+						executionGraph2.createChannel(sourceExecution,"",targetExecution,sourceExecution->getName());
 					}
                 } else {
-                    LOG_DEBUG("prepare one-to-many transition");
-                    string shardingStrategyName = databaseRegistry.getShardingStrategyName(targetQuery.getDatabaseId());
-                    string shardColSearchExpr = databaseRegistry.getShardColumn(targetQuery.getDatabaseId());
-					LOG_DEBUG("shardColSearchExpr = " << shardColSearchExpr);
-					if (shardColSearchExpr.empty()) {
-						THROW_EXC("empty shard col expr");
-					}
+					LOG_DEBUG("prepare one-to-many transition");
+					Transition *t = new Transition(dep.locator.getQName(),srcSize,dstSize);
+					string shardColSearchExpr = databaseRegistry.getShardColumn(targetQuery.getDatabaseId());
+					string shardingStrategyName = databaseRegistry.getShardingStrategyName(targetQuery.getDatabaseId());
 					shared_ptr<ShardingStrategy> sharder;
 					if (shardingStrategyName.empty()) {
 						LOG_WARN("no sharding strategy for database " << targetQuery.getDatabaseId());
