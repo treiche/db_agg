@@ -222,7 +222,7 @@ bool Application::run() {
     return false;
 }
 
-ExecutionGraph2& Application::getExecutionGraph() {
+ExecutionGraph& Application::getExecutionGraph() {
     return queryProcessor->getExecutionGraph();
 }
 

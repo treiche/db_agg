@@ -1,11 +1,11 @@
 /*
- * ExecutionGraph2.cpp
+ * ExecutionGraph.cpp
  *
  *  Created on: Sep 7, 2014
  *      Author: arnd
  */
 
-#include "ExecutionGraph2.h"
+#include "ExecutionGraph.h"
 #include "utils/logging.h"
 #include <fstream>
 
@@ -14,13 +14,13 @@ using namespace std;
 
 namespace db_agg {
 
-DECLARE_LOGGER("ExecutionGraph2")
+DECLARE_LOGGER("ExecutionGraph")
 
-void ExecutionGraph2::addQuery(Query *query) {
+void ExecutionGraph::addQuery(Query *query) {
 	queries.push_back(query);
 }
 
-void ExecutionGraph2::addQueryExecution(Query *query,QueryExecution *queryExecution) {
+void ExecutionGraph::addQueryExecution(Query *query,QueryExecution *queryExecution) {
     executionsByQuery[query].push_back(queryExecution);
     executions.insert(queryExecution);
     if (executionById.find(queryExecution->getId()) != executionById.end()) {
@@ -29,7 +29,7 @@ void ExecutionGraph2::addQueryExecution(Query *query,QueryExecution *queryExecut
 	executionById[queryExecution->getId()] = queryExecution;
 }
 
-void ExecutionGraph2::addQueryExecution(QueryExecution *exec) {
+void ExecutionGraph::addQueryExecution(QueryExecution *exec) {
     if (executionById.find(exec->getId()) != executionById.end()) {
     	THROW_EXC("execution with id " << exec->getId() << " already added");
     }
@@ -37,16 +37,16 @@ void ExecutionGraph2::addQueryExecution(QueryExecution *exec) {
 	executionById[exec->getId()] = exec;
 }
 
-vector<Query*>& ExecutionGraph2::getQueries() {
+vector<Query*>& ExecutionGraph::getQueries() {
     return queries;
 }
 
-set<QueryExecution*>& ExecutionGraph2::getQueryExecutions() {
+set<QueryExecution*>& ExecutionGraph::getQueryExecutions() {
     return executions;
 }
 
 /*
-vector<QueryExecution*> ExecutionGraph2::getTargets(Channel* sourceChannel) {
+vector<QueryExecution*> ExecutionGraph::getTargets(Channel* sourceChannel) {
     vector<QueryExecution*> targets;
     for (auto channel:channels) {
     	if (channel->)
@@ -55,7 +55,7 @@ vector<QueryExecution*> ExecutionGraph2::getTargets(Channel* sourceChannel) {
 }
 */
 
-QueryExecution& ExecutionGraph2::getQueryExecution(Query *query,int shardId) {
+QueryExecution& ExecutionGraph::getQueryExecution(Query *query,int shardId) {
 	if (executionsByQuery.find(query) == executionsByQuery.end()) {
 		THROW_EXC("query " << query << " not found.");
 	}
@@ -67,12 +67,12 @@ QueryExecution& ExecutionGraph2::getQueryExecution(Query *query,int shardId) {
 	return *executions.at(shardId);
 }
 
-vector<QueryExecution*>& ExecutionGraph2::getQueryExecutions(Query *query) {
+vector<QueryExecution*>& ExecutionGraph::getQueryExecutions(Query *query) {
     return executionsByQuery[query];
 }
 
 
-void ExecutionGraph2::createChannel(QueryExecution *source, std::string sourcePort, QueryExecution *target, std::string targetPort) {
+void ExecutionGraph::createChannel(QueryExecution *source, std::string sourcePort, QueryExecution *target, std::string targetPort) {
 	DataSender *sender = dynamic_cast<DataSender*>(source);
 	DataReceiver *receiver = dynamic_cast<DataReceiver*>(target);
 	Channel *channel = new Channel(sender, sourcePort, receiver, targetPort);
@@ -80,11 +80,11 @@ void ExecutionGraph2::createChannel(QueryExecution *source, std::string sourcePo
     channels.push_back(channel);
 }
 
-bool ExecutionGraph2::exists(std::string id) {
+bool ExecutionGraph::exists(std::string id) {
 	return executionById.find(id) != executionById.end();
 }
 
-QueryExecution& ExecutionGraph2::getQueryExecution(std::string id) {
+QueryExecution& ExecutionGraph::getQueryExecution(std::string id) {
     if (executionById.find(id)==executionById.end()) {
         THROW_EXC("query execution with id " + id + " does not exist.");
     }
@@ -92,13 +92,13 @@ QueryExecution& ExecutionGraph2::getQueryExecution(std::string id) {
 }
 
 /*
-vector<Channel*>& ExecutionGraph2::getOutputChannels(QueryExecution *exec) {
+vector<Channel*>& ExecutionGraph::getOutputChannels(QueryExecution *exec) {
     return execToTrans[exec];
 }
 */
 
 
-vector<QueryExecution*> ExecutionGraph2::getDependencies(QueryExecution *exec) {
+vector<QueryExecution*> ExecutionGraph::getDependencies(QueryExecution *exec) {
     vector<QueryExecution*> dependencies;
     for (auto channel:channels) {
     	QueryExecution *tgt = dynamic_cast<QueryExecution*>(channel->target);
@@ -123,7 +123,7 @@ vector<QueryExecution*> ExecutionGraph2::getDependencies(QueryExecution *exec) {
 }
 
 
-void ExecutionGraph2::dumpExecutionPlan(string outputDir) {
+void ExecutionGraph::dumpExecutionPlan(string outputDir) {
     LOG_INFO("dump execution plan");
     ofstream out{outputDir + "/executionPlan2.dot"};
     out << "digraph plan {" << endl;

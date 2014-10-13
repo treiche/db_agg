@@ -17,7 +17,6 @@
 
 #include "core/ExecutionHandler.h"
 #include "table/TableData.h"
-#include "core/Transition.h"
 #include "event/Event.h"
 #include "core/Url.h"
 #include "injection/DependencyInjector.h"

@@ -9,6 +9,7 @@
 #define MANYTOMANY_H_
 
 #include "QueryExecution.h"
+#include "sharding/ShardingStrategy.h"
 #include <memory>
 
 namespace db_agg {

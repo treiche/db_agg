@@ -1,12 +1,12 @@
 /*
- * ExecutionGraph2.h
+ * ExecutionGraph.h
  *
  *  Created on: Sep 7, 2014
  *      Author: arnd
  */
 
-#ifndef EXECUTIONGRAPH2_H_
-#define EXECUTIONGRAPH2_H_
+#ifndef EXECUTIONGRAPH_H_
+#define EXECUTIONGRAPH_H_
 
 #include <vector>
 #include <set>
@@ -15,7 +15,7 @@
 #include "core/Query.h"
 
 namespace db_agg {
-class ExecutionGraph2 {
+class ExecutionGraph {
 private:
 	std::vector<Query*> queries;
 	std::set<QueryExecution*> executions;
@@ -42,4 +42,4 @@ public:
 
 
 
-#endif /* EXECUTIONGRAPH2_H_ */
+#endif /* EXECUTIONGRAPH_H_ */

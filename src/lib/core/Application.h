@@ -43,7 +43,7 @@ namespace db_agg {
                 return *queryParser;
             }
             virtual void handleSignal(int signal) override;
-            ExecutionGraph2& getExecutionGraph();
+            ExecutionGraph& getExecutionGraph();
     };
 }
 
