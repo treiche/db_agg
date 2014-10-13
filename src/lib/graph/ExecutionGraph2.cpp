@@ -23,10 +23,16 @@ void ExecutionGraph2::addQuery(Query *query) {
 void ExecutionGraph2::addQueryExecution(Query *query,QueryExecution *queryExecution) {
     executionsByQuery[query].push_back(queryExecution);
     executions.insert(queryExecution);
+    if (executionById.find(queryExecution->getId()) != executionById.end()) {
+    	THROW_EXC("execution with id " << queryExecution->getId() << " already added");
+    }
 	executionById[queryExecution->getId()] = queryExecution;
 }
 
 void ExecutionGraph2::addQueryExecution(QueryExecution *exec) {
+    if (executionById.find(exec->getId()) != executionById.end()) {
+    	THROW_EXC("execution with id " << exec->getId() << " already added");
+    }
 	executions.insert(exec);
 	executionById[exec->getId()] = exec;
 }
@@ -72,6 +78,10 @@ void ExecutionGraph2::createChannel(QueryExecution *source, std::string sourcePo
 	Channel *channel = new Channel(sender, sourcePort, receiver, targetPort);
     source->addChannel(channel);
     channels.push_back(channel);
+}
+
+bool ExecutionGraph2::exists(std::string id) {
+	return executionById.find(id) != executionById.end();
 }
 
 QueryExecution& ExecutionGraph2::getQueryExecution(std::string id) {

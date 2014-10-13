@@ -36,6 +36,7 @@ public:
     // std::vector<Channel*>& getOutputChannels(QueryExecution *exec);
     std::vector<QueryExecution*> getDependencies(QueryExecution *exec);
     void dumpExecutionPlan(std::string outputDir);
+    bool exists(std::string id);
 };
 }
 

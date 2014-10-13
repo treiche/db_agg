@@ -361,21 +361,32 @@ void QueryProcessor::populateTransitions() {
                 // many to one
                 QueryExecution *targetExecution = &executionGraph2.getQueryExecution(&targetQuery,0);
                 cout << "CREATE MANY_TO_ONE" << endl;
-                ManyToOne *m2o = new ManyToOne();
-				vector<string> args;
-				vector<string> depNames;
 				string md5;
                 for (size_t cnt=0;cnt<srcSize; cnt++) {
                     QueryExecution *sourceExecution = &executionGraph2.getQueryExecution(&sourceQuery,cnt);
-    				depNames.push_back(to_string(cnt+1));
-                    executionGraph2.createChannel(sourceExecution,"",m2o,to_string(cnt+1));
                     md5 += sourceExecution->getUrl()->getUrl(false,false,false) + sourceExecution->getSql();
                 }
-				shared_ptr<DependencyInjector> di = extensionLoader.getDependencyInjector("default");
 				string id = md5hex(md5 + ":joined");
-				m2o->init(sourceQuery.getName() + ":joined", id,targetExecution->getUrl(),"query",depNames,di,args);
-				m2o->addEventListener(this);
-				executionGraph2.addQueryExecution(m2o);
+				bool execExists = executionGraph2.exists(id);
+                ManyToOne *m2o = nullptr;
+                if (execExists) {
+                	m2o = dynamic_cast<ManyToOne*>(&executionGraph2.getQueryExecution(id));
+                } else {
+                	m2o = new ManyToOne();
+                }
+				vector<string> args;
+				vector<string> depNames;
+				if (!execExists) {
+					for (size_t cnt=0;cnt<srcSize; cnt++) {
+						QueryExecution *sourceExecution = &executionGraph2.getQueryExecution(&sourceQuery,cnt);
+						depNames.push_back(to_string(cnt+1));
+						executionGraph2.createChannel(sourceExecution,"",m2o,to_string(cnt+1));
+					}
+					shared_ptr<DependencyInjector> di = extensionLoader.getDependencyInjector("default");
+					m2o->init(sourceQuery.getName() + ":joined", id,targetExecution->getUrl(),"query",depNames,di,args);
+					m2o->addEventListener(this);
+					executionGraph2.addQueryExecution(m2o);
+                }
                 executionGraph2.createChannel(m2o,"",targetExecution,sourceQuery.getName());
             } else if (dstSize > 1 && srcSize == 1) {
                 if (dep.sourceQuery->getShardId() != -1) {
@@ -399,16 +410,24 @@ void QueryProcessor::populateTransitions() {
 						LOG_TRACE("set sharder to " << sharder);
 					}
 					QueryExecution *sourceExecution = &executionGraph2.getQueryExecution(&sourceQuery,0);
-					OneToMany *o2m = new OneToMany(sharder, shardColSearchExpr,(size_t) dstSize);
+					string id = md5hex(sourceExecution->getUrl()->getUrl(false,false,false) + sourceExecution->getSql() + ":splitted");
+					OneToMany *o2m = nullptr;
+					bool execExists = executionGraph2.exists(id);
+					if (execExists) {
+						o2m = dynamic_cast<OneToMany*>(&executionGraph2.getQueryExecution(id));
+					} else {
+						o2m = new OneToMany(sharder, shardColSearchExpr,(size_t) dstSize);
+					}
 					vector<string> depNames;
 					depNames.push_back(sourceExecution->getName());
 					vector<string> args;
 					shared_ptr<DependencyInjector> di = extensionLoader.getDependencyInjector("default");
-					string id = md5hex(sourceExecution->getUrl()->getUrl(false,false,false) + sourceExecution->getSql() + ":splitted");
 					o2m->init(sourceExecution->getName() + ":splitted",id,sourceExecution->getUrl(),"query",depNames,di,args);
-					o2m->addEventListener(this);
-					executionGraph2.addQueryExecution(o2m);
-					executionGraph2.createChannel(sourceExecution,"",o2m,sourceExecution->getName());
+					if (!execExists) {
+						o2m->addEventListener(this);
+						executionGraph2.addQueryExecution(o2m);
+						executionGraph2.createChannel(sourceExecution,"",o2m,sourceExecution->getName());
+					}
 					//vector<string> portNames;
 					for (size_t cnt=0;cnt<dstSize; cnt++) {
 						QueryExecution *targetExecution = &executionGraph2.getQueryExecution(&targetQuery,cnt);
@@ -552,6 +571,7 @@ void QueryProcessor::handleEvent(shared_ptr<Event> event) {
         for (auto channel:result.getChannels()) {
         	bool ready = result.getResult(channel->getSourcePort()) != nullptr;
         	LOG_DEBUG("channel source port = " << channel->getSourcePort() << " ready = " << ready);
+        	allReady &= ready;
         }
         LOG_DEBUG("allReady = " << allReady);
         //if (result.getResult("")==nullptr) {
