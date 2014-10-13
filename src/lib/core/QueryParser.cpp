@@ -104,17 +104,18 @@ Query* QueryParser::getSourceQuery(Dependency dep, vector<Query*>& queries) {
 }
 
 void QueryParser::detectDependencies(vector<Query*>& queries) {
-    string re = "(from|join)\\s+(";
-    int cnt=0;
-    int len = queries.size();
-    for (size_t idx = 0; idx < queries.size(); idx++) {
-        re += queries[idx]->getName();
-        if (cnt<len-1) {
-            re += "|";
-        }
-        cnt++;
+    vector<string> sortedDependencies;
+    for (auto query:queries) {
+        sortedDependencies.push_back(query->getName());
     }
-    re+=")\\$?([0-9]*)\\$?([a-zA-Z0-9_]*)(\\s+([a-z0-9_$]+))?";
+    sort(sortedDependencies.begin(),sortedDependencies.end(), [] (string s1, string s2) {
+        return s1.size() > s2.size();
+    });
+
+    string re = "(from|join)\\s+(";
+    re += join(sortedDependencies,"|");
+    //re+=")\\$?([0-9]*)\\$?(integration|prod|local|release|patch)?(\\s+([a-z0-9_$]+))?";
+    re+=")\\$?([0-9]*)\\$?([a-zA-Z0-9_]*)(\\s+([a-z0-9_]+))?";
     LOG_DEBUG("REGEXP = " << re);
     RegExp regexp(re);
     for (auto q:queries) {
@@ -139,8 +140,11 @@ void QueryParser::detectDependencies(vector<Query*>& queries) {
             }
             if (matches.size()>5) {
                 // TODO: find better solution
-                if (matches[5].compare("join")!=0) {
-                    alias = matches[5];
+                if (matches[6] == "join" || matches[6] == "on" || matches[6] == "where") {
+                	LOG_INFO("alias is keyword '" << matches[6] << "', move offset back");
+                    offset -= matches[6].size();
+                } else {
+                    alias = matches[6];
                 }
             }
             LOG_DEBUG("with name = " << name);
@@ -151,7 +155,7 @@ void QueryParser::detectDependencies(vector<Query*>& queries) {
             q->addDependency(loc, alias);
         }
         for (auto& dep:q->getDependencies()) {
-            LOG_DEBUG("detected dependency " + dep.locator.getQName());
+            LOG_DEBUG("detected dependency " + dep.locator.getQName() << " in query " << q->getName());
         }
     }
 }
