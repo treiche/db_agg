@@ -51,6 +51,7 @@ vector<shared_ptr<TableData>> split(shared_ptr<TableData> src, int dstSize, shar
             int shardId = sharder->getShardId(shardKey);
             offsets[shardId-1].push_back(row);
         } catch(InvalidShardKeyException& ise) {
+        	LOG_ERROR("no shard id found for value '" << shardKey << "'");
             continue;
         }
     }
