@@ -87,6 +87,7 @@ namespace db_agg {
     }
 
     bool RegExp::find(string str, vector<string>& matches, int& offset) {
+    	LOG_TRACE("find " << str)
         const char *qs = str.c_str();
         int len = str.length();
         int subStrVec[30];
@@ -94,9 +95,19 @@ namespace db_agg {
         if (ret < 0) {
             return false;
         }
+        LOG_TRACE("found " << ret << " matches");
         matches.clear();
         for (int cnt = 0; cnt < ret; cnt++) {
+        	LOG_TRACE("got match[" << cnt << "]" << subStrVec[cnt * 2] << " to " << subStrVec[(cnt * 2) + 1] << " len=" << len << " offset " << offset);
+        	if (subStrVec[cnt * 2] == subStrVec[(cnt * 2) + 1]) {
+        		matches.push_back("");
+                if (cnt==ret-1) {
+                    offset += subStrVec[cnt * 2 + 1];
+                }
+        		continue;
+        	}
             string substr = string(qs + offset, subStrVec[cnt * 2], subStrVec[(cnt * 2) + 1] - subStrVec[cnt * 2]);
+            LOG_TRACE("substr=" << substr);
             matches.push_back(substr);
             if (cnt==ret-1) {
                 offset += subStrVec[cnt * 2 + 1];
