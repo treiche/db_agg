@@ -125,7 +125,7 @@ vector<QueryExecution*> ExecutionGraph::getDependencies(QueryExecution *exec) {
 
 void ExecutionGraph::dumpExecutionPlan(string outputDir) {
     LOG_INFO("dump execution plan");
-    ofstream out{outputDir + "/executionPlan2.dot"};
+    ofstream out{outputDir + "/executionPlan.dot"};
     out << "digraph plan {" << endl;
     out << "    graph [rankdir=LR, splines=true]" << endl;
     out << "    node  [shape=box, style=filled, labelloc=t]" << endl;
@@ -184,7 +184,7 @@ void ExecutionGraph::dumpExecutionPlan(string outputDir) {
 
     out << "\n}";
     out.close();
-    string cmd = "dot -q1 -Tsvg -o " + outputDir+"/executionPlan2.svg "+ outputDir+"/executionPlan2.dot";
+    string cmd = "dot -q1 -Tsvg -o " + outputDir+"/executionPlan.svg "+ outputDir+"/executionPlan.dot";
     int exitCode = system(cmd.c_str());
     if (exitCode != 0) {
         LOG_WARN("failed to create image from executionPlan.dot");
