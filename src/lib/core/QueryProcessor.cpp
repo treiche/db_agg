@@ -247,7 +247,7 @@ void QueryProcessor::populateUrls(string environment) {
             if (LOG.isEnabledFor(DEBUG_LOG_LEVEL)) {
                 LOG_DEBUG(
                   "query " << query->getLocator().getQName() << " resolves to urls:" << endl <<
-                  "[environment = " << query->getEnvironment() << "]"
+                  "[environment = " << query->getEnvironment() << ", dbId=" << dbId << "]"
                 );
                 for (auto& url:urls) {
                     LOG_DEBUG("    " << url->getUrl());
@@ -334,7 +334,7 @@ void QueryProcessor::populateTransitions() {
                     for (size_t cnt=0; cnt< dstSize; cnt++) {
                         QueryExecution *sourceExecution = &executionGraph.getQueryExecution(&sourceQuery,cnt);
                         QueryExecution *targetExecution = &executionGraph.getQueryExecution(&targetQuery,cnt);
-                        executionGraph.createChannel(sourceExecution,"",targetExecution,"");
+                        executionGraph.createChannel(sourceExecution,"",targetExecution,sourceQuery.getName());
                     }
                 } else {
                     LOG_TRACE("build many-to-many sharded");
@@ -360,7 +360,6 @@ void QueryProcessor::populateTransitions() {
             } else if (dstSize == 1 && srcSize > 1) {
                 // many to one
                 QueryExecution *targetExecution = &executionGraph.getQueryExecution(&targetQuery,0);
-                cout << "CREATE MANY_TO_ONE" << endl;
 				string md5;
                 for (size_t cnt=0;cnt<srcSize; cnt++) {
                     QueryExecution *sourceExecution = &executionGraph.getQueryExecution(&sourceQuery,cnt);
