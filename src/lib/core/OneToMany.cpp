@@ -37,19 +37,30 @@ bool OneToMany::process() {
 
 	int shardKeyIdx = findShardColIndex(sourceTable->getColumns(), shardColSearchExpr);
 
-	vector<vector<uint64_t>> offsets(noShards);
+	if (shardKeyIdx == -1) {
+		LOG_WARN("no shard key column found. falling back to unsharded one-to-many transition.")
+		for (size_t idx=0;idx<noShards;idx++) {
+	        setResult(to_string(idx+1),sourceTable);
+	    }
+	} else {
 
-	map<size_t,shared_ptr<TableData>> results;
-	for (uint64_t row = 0; row < rows; row++) {
-		int shardId = sharder->getShardId(sourceTable->getValue(row,shardKeyIdx));
-		LOG_TRACE("shardId of '" << sourceTable->getValue(row,shardKeyIdx) << " = " << shardId);
-		offsets[shardId-1].push_back(row);
+		vector<vector<uint64_t>> offsets(noShards);
+		map<size_t,shared_ptr<TableData>> results;
+		for (uint64_t row = 0; row < rows; row++) {
+			try {
+				int shardId = sharder->getShardId(sourceTable->getValue(row,shardKeyIdx));
+				LOG_TRACE("shardId of '" << sourceTable->getValue(row,shardKeyIdx) << "' = " << shardId);
+				offsets[shardId-1].push_back(row);
+			} catch(InvalidShardKeyException& iske) {
+				LOG_WARN("invalid shard key '" << sourceTable->getValue(row,shardKeyIdx) << "'");
+			}
+		}
+
+		for (size_t idx=0;idx<noShards;idx++) {
+			shared_ptr<TableData> shardedData = TableDataFactory::getInstance().split(sourceTable,offsets[idx]);
+			setResult(to_string(idx+1),shardedData);
+		}
 	}
-
-	for (size_t idx=0;idx<noShards;idx++) {
-        shared_ptr<TableData> shardedData = TableDataFactory::getInstance().split(sourceTable,offsets[idx]);
-        setResult(to_string(idx+1),shardedData);
-    }
 
 	shared_ptr<Event> event(new Event(EventType::PROCESSED,getId()));
 	LOG_DEBUG("send PROCESSED event");
@@ -68,7 +79,8 @@ int OneToMany::findShardColIndex(vector<pair<string,uint32_t>> columns, string s
             return idx;
         }
     }
-    throw runtime_error("unable to find shard key column");
+    LOG_WARN("unable to find shard key column. falling back to unsharded one-to-many");
+    return -1;
 }
 
 bool OneToMany::isTransition() {
