@@ -386,6 +386,7 @@ void QueryProcessor::populateTransitions() {
 					LOG_DEBUG("prepare one-to-many transition");
 					Transition *t = new Transition(dep.locator.getQName(),srcSize,dstSize);
 					string shardingStrategyName = databaseRegistry.getShardingStrategyName(targetQuery.getDatabaseId());
+                    string shardColSearchExpr = databaseRegistry.getShardColumn(targetQuery.getDatabaseId());
 					if (shardingStrategyName.empty()) {
 						LOG_WARN("no sharding strategy for database " << targetQuery.getDatabaseId());
 					} else {
@@ -393,6 +394,7 @@ void QueryProcessor::populateTransitions() {
 						shared_ptr<ShardingStrategy> sharder = extensionLoader.getShardingStrategy(shardingStrategyName);
 						LOG_TRACE("set sharder to " << sharder);
 						t->setSharder(sharder);
+						t->setShardColSearchExpr(shardColSearchExpr);
 					}
 					QueryExecution *sourceExecution = &executionGraph.getQueryExecution(&sourceQuery,0);
 					executionGraph.createChannel(sourceExecution,t);
