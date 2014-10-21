@@ -19,10 +19,11 @@ int findShardColIndex(vector<pair<string,uint32_t>> columns, string searchExpr) 
         string colName = columns[idx].first;
         vector<RegExp::match> matches = re.exec(colName);
         if (matches.size()>0) {
+            LOG_ERROR("found shard col index: " << colName << " matches '" << searchExpr << "'");
             return idx;
         }
     }
-    throw runtime_error("unable to find shard key column");
+    return -1;
 }
 
 vector<shared_ptr<TableData>> split(shared_ptr<TableData> src, int dstSize, shared_ptr<ShardingStrategy> sharder, string shardColSearchExpr) {
@@ -36,28 +37,32 @@ vector<shared_ptr<TableData>> split(shared_ptr<TableData> src, int dstSize, shar
     uint32_t cols = src->getColCount();
     LOG_DEBUG("get shard key index");
     size_t shardKeyIndex = findShardColIndex(src->getColumns(),shardColSearchExpr); // sharder->getShardKeyIndex(src->getColumns());
-    if (shardKeyIndex >= cols) {
-        LOG_ERROR("no shard key index found:\n  available columns");
+    if (shardKeyIndex == -1) {
+        LOG_WARN("no shard key index found:\n  available columns");
         for (auto& col:src->getColumns()) {
-            LOG_ERROR("    " << col.first);
+            LOG_WARN("    " << col.first);
         }
-        THROW_EXC("no shard key index found");
-    }
-    LOG_DEBUG("shardKeyIndex is " << shardKeyIndex);
-    for (uint64_t row = 0; row < rows; row++) {
-        LOG_TRACE("split row " << row);
-        string shardKey = src->getValue(row,shardKeyIndex);
-        try {
-            int shardId = sharder->getShardId(shardKey);
-            offsets[shardId-1].push_back(row);
-        } catch(InvalidShardKeyException& ise) {
-        	LOG_ERROR("no shard id found for value '" << shardKey << "'");
-            continue;
+        LOG_WARN("falling back to unsharded one-to-many transition");
+        for (size_t idx=0;idx<dstSize;idx++) {
+            splitted[idx] = src;
         }
-    }
+    } else {
+        LOG_DEBUG("shardKeyIndex is " << shardKeyIndex);
+        for (uint64_t row = 0; row < rows; row++) {
+            LOG_TRACE("split row " << row);
+            string shardKey = src->getValue(row,shardKeyIndex);
+            try {
+                int shardId = sharder->getShardId(shardKey);
+                offsets[shardId-1].push_back(row);
+            } catch(InvalidShardKeyException& ise) {
+                LOG_ERROR("no shard id found for value '" << shardKey << "'");
+                continue;
+            }
+        }
 
-    for (size_t idx=0;idx<dstSize;idx++) {
-        splitted[idx] = TableDataFactory::getInstance().split(src,offsets[idx]);
+        for (size_t idx=0;idx<dstSize;idx++) {
+            splitted[idx] = TableDataFactory::getInstance().split(src,offsets[idx]);
+        }
     }
 
     LOG_DEBUG("return splitted result");
