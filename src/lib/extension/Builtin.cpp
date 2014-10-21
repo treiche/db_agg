@@ -8,6 +8,7 @@
 #include "Builtin.h"
 #include "sharding/MD5ShardingStrategy.h"
 #include "sharding/ModuloShardingStrategy.h"
+#include "sharding/ExplicitShardingStrategy.h"
 #include "core/PGQueryExecution.h"
 #include "core/ResourceQueryExecution.h"
 #include "injection/DefaultDependencyInjector.h"
@@ -23,7 +24,7 @@ namespace db_agg {
 static Logger LOG = Logger::getInstance(LOG4CPLUS_TEXT("Builtin"));
 
 map<ComponentType,vector<string>> Builtin::components = {
-        {ComponentType::SHARDING_STRATEGY,{"md5","modulo"}},
+        {ComponentType::SHARDING_STRATEGY,{"md5","explicit","modulo"}},
         {ComponentType::QUERY_EXECUTION, {"resource","postgres"}},
         {ComponentType::DEPENDENCY_INJECTOR, {"default","noresult","worker"}}
 };
@@ -33,6 +34,8 @@ shared_ptr<ShardingStrategy> Builtin::getShardingStrategy(std::string name) {
         return shared_ptr<ShardingStrategy>(new MD5ShardingStrategy());
     } else if (name == "modulo") {
         return shared_ptr<ShardingStrategy>(new ModuloShardingStrategy());
+    } else if (name == "explicit") {
+        return shared_ptr<ShardingStrategy>(new ExplicitShardingStrategy());
     }
     return nullptr;
 }
