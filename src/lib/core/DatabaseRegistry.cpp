@@ -191,6 +191,26 @@ namespace db_agg {
         return evaluateXPath("/registry/database-definition[@name='" + databaseId + "']/@shardCol");
     }
 
+    std::vector<ShardingStrategyConfiguration> DatabaseRegistry::getShardingStrategies(std::string databaseId) {
+        vector<ShardingStrategyConfiguration> strategies;
+        string xpathExpr = "/registry/database-definition[@name='" + databaseId + "']/sharding-strategy";
+        xmlXPathObjectPtr xpathObj = xmlXPathEvalExpression((const xmlChar*)xpathExpr.c_str(), this->xpathCtx);
+        xmlNodeSetPtr nodes = xpathObj->nodesetval;
+        if (!nodes) {
+            return strategies;
+        }
+        int found = nodes->nodeNr;
+        for (int cnt=0;cnt<found;cnt++) {
+            xmlNodePtr node = nodes->nodeTab[cnt];
+            if(node->type == XML_ELEMENT_NODE) {
+                string name = getAttribute((xmlElementPtr)node,"name");
+                string shardCol = getAttribute((xmlElementPtr)node,"shardCol");
+                strategies.push_back(ShardingStrategyConfiguration(name,shardCol));
+            }
+        }
+        return strategies;
+    }
+
     string DatabaseRegistry::getDatabaseByNamespace(set<string> namespaces) {
         string ss = "/registry/database-definition[namespace/@name='" + *namespaces.begin() + "']/@name";
         xmlXPathObjectPtr xpathObj = xmlXPathEvalExpression((const xmlChar*)ss.c_str(), this->xpathCtx);

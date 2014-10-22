@@ -19,11 +19,16 @@
           shard   CDATA   #IMPLIED
           worker  CDATA   #IMPLIED>
 
-<!ELEMENT database-definition (namespace*)>
+<!ELEMENT database-definition (sharding-strategy*,namespace*)>
 <!ATTLIST database-definition
           name      ID     #REQUIRED
           sharder   CDATA  #IMPLIED
           shardCol  CDATA  #IMPLIED>
+
+<!ELEMENT sharding-strategy EMPTY>
+<!ATTLIST sharding-strategy
+          name      CDATA  #REQUIRED
+          shardCol  CDATA  #REQUIRED>
 
 <!ELEMENT namespace EMPTY>
 <!ATTLIST namespace

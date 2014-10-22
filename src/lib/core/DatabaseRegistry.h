@@ -14,6 +14,7 @@ extern "C" {
 }
 
 #include "core/Url.h"
+#include "sharding/ShardingStrategyConfiguration.h"
 
 namespace db_agg {
 
@@ -33,6 +34,7 @@ public:
     std::string getDatabaseByNamespace(std::set<std::string> namespaces);
     std::string getShardingStrategyName(std::string databaseId);
     std::string getShardColumn(std::string databaseId);
+    std::vector<ShardingStrategyConfiguration> getShardingStrategies(std::string databaseId);
     std::shared_ptr<Url> getWorker();
     std::vector<std::string> getSystems();
     std::string getDatabaseNamingStrategy();
