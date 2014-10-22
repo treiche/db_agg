@@ -14,6 +14,7 @@ extern "C" {
 }
 
 #include "core/Url.h"
+#include "sharding/ShardingStrategyConfiguration.h"
 
 namespace db_agg {
 
