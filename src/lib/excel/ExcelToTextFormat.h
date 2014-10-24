@@ -27,7 +27,8 @@ private:
 	struct ParseState;
 	struct zip *archive;
 	std::vector<std::string> sharedStrings;
-	std::map<std::string,std::string> sheetNamesById;
+	std::map<std::string,std::string> sheetNamesByResourceId;
+	std::map<std::string,std::string> sheetNamesByTarget;
 	void parseEntry(std::string entry,std::function<void (xmlTextReaderPtr)> handler);
 	void parseData(xmlTextReaderPtr reader, ParseState *state);
 	std::pair<uint32_t,uint32_t> regionToPoint(std::string region);
