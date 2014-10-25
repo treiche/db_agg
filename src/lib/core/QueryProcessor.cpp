@@ -345,12 +345,9 @@ void QueryProcessor::populateTransitions() {
                 } else {
                     LOG_TRACE("build many-to-many sharded");
                     Transition *t = new Transition(dep.locator.getQName(), srcSize, dstSize);
-                    string shardingStrategyName = databaseRegistry.getShardingStrategyName(targetQuery.getDatabaseId());
-                    string shardColSearchExpr = databaseRegistry.getShardColumn(targetQuery.getDatabaseId());
-                    shared_ptr<ShardingStrategy> sharder = extensionLoader.getShardingStrategy(shardingStrategyName);
-                    LOG_TRACE("set sharder to " << sharder);
-                    t->setSharder(sharder);
-                    t->setShardColSearchExpr(shardColSearchExpr);
+                    auto sharderConfigs = databaseRegistry.getShardingStrategies(targetQuery.getDatabaseId());
+                    auto sharders = resolveShardingStrategies(sharderConfigs,dstSize);
+                    t->setShardingStrategies(sharders);
                     for (size_t cnt=0; cnt< srcSize; cnt++) {
                         QueryExecution& sourceExecution = executionGraph.getQueryExecution(&sourceQuery,cnt);
                         executionGraph.createChannel(&sourceExecution,t);
@@ -373,36 +370,32 @@ void QueryProcessor::populateTransitions() {
                 executionGraph.createChannel(t,targetExecution);
             } else if (dstSize > 1 && srcSize == 1) {
                 if (dep.sourceQuery->getShardId() != -1) {
-                	LOG_DEBUG("prepare one to many unsharded transition");
-					QueryExecution *sourceExecution = &executionGraph.getQueryExecution(&sourceQuery,0);
-					for (size_t cnt=0;cnt<dstSize; cnt++) {
-	                    Transition *t = new Transition(dep.locator.getQName(),1,1);
-	                    executionGraph.createChannel(sourceExecution,t);
-						QueryExecution *targetExecution = &executionGraph.getQueryExecution(&targetQuery,cnt);
-						executionGraph.createChannel(t,targetExecution);
-						executionGraph.addTransition(t);
-					}
+                    LOG_DEBUG("prepare one to many unsharded transition");
+                    QueryExecution *sourceExecution = &executionGraph.getQueryExecution(&sourceQuery,0);
+                    for (size_t cnt=0;cnt<dstSize; cnt++) {
+                        Transition *t = new Transition(dep.locator.getQName(),1,1);
+                        executionGraph.createChannel(sourceExecution,t);
+                        QueryExecution *targetExecution = &executionGraph.getQueryExecution(&targetQuery,cnt);
+                        executionGraph.createChannel(t,targetExecution);
+                        executionGraph.addTransition(t);
+                    }
                 } else {
-					LOG_DEBUG("prepare one-to-many transition");
-					Transition *t = new Transition(dep.locator.getQName(),srcSize,dstSize);
-					string shardingStrategyName = databaseRegistry.getShardingStrategyName(targetQuery.getDatabaseId());
-                    string shardColSearchExpr = databaseRegistry.getShardColumn(targetQuery.getDatabaseId());
-					if (shardingStrategyName.empty()) {
-						LOG_WARN("no sharding strategy for database " << targetQuery.getDatabaseId());
-					} else {
-						LOG_DEBUG("sharder name " << shardingStrategyName);
-						shared_ptr<ShardingStrategy> sharder = extensionLoader.getShardingStrategy(shardingStrategyName);
-						LOG_TRACE("set sharder to " << sharder);
-						t->setSharder(sharder);
-						t->setShardColSearchExpr(shardColSearchExpr);
-					}
-					QueryExecution *sourceExecution = &executionGraph.getQueryExecution(&sourceQuery,0);
-					executionGraph.createChannel(sourceExecution,t);
-					for (size_t cnt=0;cnt<dstSize; cnt++) {
-						QueryExecution *targetExecution = &executionGraph.getQueryExecution(&targetQuery,cnt);
-						executionGraph.createChannel(t,targetExecution);
-					}
-					executionGraph.addTransition(t);
+                    LOG_DEBUG("prepare one-to-many transition");
+                    Transition *t = new Transition(dep.locator.getQName(),srcSize,dstSize);
+                    auto sharderConfigs = databaseRegistry.getShardingStrategies(targetQuery.getDatabaseId());
+                    auto sharders = resolveShardingStrategies(sharderConfigs,dstSize);
+                    if (sharders.empty()) {
+                        LOG_WARN("no sharding strategy for database " << targetQuery.getDatabaseId());
+                    } else {
+                        t->setShardingStrategies(sharders);
+                    }
+                    QueryExecution *sourceExecution = &executionGraph.getQueryExecution(&sourceQuery,0);
+                    executionGraph.createChannel(sourceExecution,t);
+                    for (size_t cnt=0;cnt<dstSize; cnt++) {
+                        QueryExecution *targetExecution = &executionGraph.getQueryExecution(&targetQuery,cnt);
+                        executionGraph.createChannel(t,targetExecution);
+                    }
+                    executionGraph.addTransition(t);
                 }
             }
         }
@@ -537,6 +530,18 @@ void QueryProcessor::handleEvent(shared_ptr<Event> event) {
 ExecutionGraph& QueryProcessor::getExecutionGraph() {
     return executionGraph;
 }
+
+vector<shared_ptr<ShardingStrategy>> QueryProcessor::resolveShardingStrategies(vector<ShardingStrategyConfiguration> configs, int shardCount) {
+    vector<shared_ptr<ShardingStrategy>> strategies;
+    for (auto& config:configs) {
+        auto sharder = extensionLoader.getShardingStrategy(config.getName());
+        sharder->setShardColExpr(config.getShardCol());
+        sharder->setShardCount(shardCount);
+        strategies.push_back(sharder);
+    }
+    return strategies;
+}
+
 
 }
 

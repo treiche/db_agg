@@ -21,9 +21,7 @@
 
 <!ELEMENT database-definition (sharding-strategy*,namespace*)>
 <!ATTLIST database-definition
-          name      ID     #REQUIRED
-          sharder   CDATA  #IMPLIED
-          shardCol  CDATA  #IMPLIED>
+          name      ID     #REQUIRED>
 
 <!ELEMENT sharding-strategy EMPTY>
 <!ATTLIST sharding-strategy
