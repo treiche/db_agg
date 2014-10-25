@@ -13,30 +13,50 @@ using namespace log4cplus;
 namespace db_agg {
 static Logger LOG = Logger::getInstance(LOG4CPLUS_TEXT("Transition"));
 
-int findShardColIndex(vector<pair<string,uint32_t>> columns, string searchExpr) {
-    RegExp re(searchExpr);
-    for (size_t idx=0;idx<columns.size();idx++) {
-        string colName = columns[idx].first;
-        vector<RegExp::match> matches = re.exec(colName);
-        if (matches.size()>0) {
-            LOG_ERROR("found shard col index: " << colName << " matches '" << searchExpr << "'");
-            return idx;
-        }
-    }
-    return -1;
+Transition::Transition() {}
+
+Transition::Transition(string name, int srcSize, int dstSize):
+    name(name),
+    srcSize(srcSize),
+    dstSize(dstSize) {}
+
+string Transition::getId() {
+    return name;
 }
 
-vector<shared_ptr<TableData>> split(shared_ptr<TableData> src, int dstSize, shared_ptr<ShardingStrategy> sharder, string shardColSearchExpr) {
-    assert(sharder != nullptr);
+void Transition::setName(std::string name) {
+    this->name = name;
+}
+
+string Transition::getName() {
+    return name;
+}
+
+bool Transition::isDone() {
+    return done;
+}
+
+pair<shared_ptr<ShardingStrategy>,int> Transition::findShardColIndex(vector<pair<std::string,uint32_t>> columns) {
+	for (auto sharder:sharders) {
+		int shardColIdx = sharder->findShardColIndex(columns);
+		if (shardColIdx != -1) {
+			return make_pair(sharder,shardColIdx);
+		}
+	}
+	return make_pair(nullptr,-1);
+}
+
+vector<shared_ptr<TableData>> Transition::split(shared_ptr<TableData> src) {
     assert(src.get() != nullptr);
-    LOG_DEBUG("split(" << src << "," << dstSize << "," << sharder << ")");
-    sharder->setShardCount(dstSize);
+    LOG_DEBUG("split(" << src << "," << dstSize << ")");
     vector<shared_ptr<TableData>> splitted(dstSize);
     vector<vector<uint64_t>> offsets(dstSize);
     uint64_t rows = src->getRowCount();
     uint32_t cols = src->getColCount();
     LOG_DEBUG("get shard key index");
-    size_t shardKeyIndex = findShardColIndex(src->getColumns(),shardColSearchExpr); // sharder->getShardKeyIndex(src->getColumns());
+    auto s = findShardColIndex(src->getColumns());
+    size_t shardKeyIndex = s.second;
+    auto sharder = s.first;
     if (shardKeyIndex == -1) {
         LOG_WARN("no shard key index found:\n  available columns");
         for (auto& col:src->getColumns()) {
@@ -79,12 +99,10 @@ Transition::~Transition() {
     LOG_TRACE("delete transition done");
 }
 
-/*
-void Transition::doTransition(string resultId, shared_ptr<TableData> data) {
-    sourceData[resultId] = data;
-    doTransition();
+
+void Transition::setShardingStrategies(vector<shared_ptr<ShardingStrategy>> sharders) {
+	this->sharders = sharders;
 }
-*/
 
 void Transition::receive(string name, shared_ptr<TableData> data) {
     assert(data.get() != nullptr);
@@ -141,8 +159,8 @@ void Transition::doTransition() {
     } else if (dstSize > 1 && srcSize==1) {
         // split result
         shared_ptr<TableData> src = receivedData[0];
-        LOG_DEBUG("start split action sharder=" << sharder << " src=" << src);
-        if (sharder == nullptr) {
+        LOG_DEBUG("start split action");
+        if (sharders.empty()) {
             // no splitting
             LOG_DEBUG("inject targets");
             for (auto channel:channels) {
@@ -157,7 +175,7 @@ void Transition::doTransition() {
         } else {
             // split
             LOG_DEBUG("start splitting " << src);
-            vector<shared_ptr<TableData>> splitted = split(src,dstSize, sharder,shardColSearchExpr);
+            vector<shared_ptr<TableData>> splitted = split(src);
             /*
             for (auto data:splitted) {
                 createdData.push_back(data);
@@ -177,7 +195,7 @@ void Transition::doTransition() {
     } else if (srcSize>1 && dstSize>1) {
         LOG_DEBUG("start many to many");
         shared_ptr<TableData> joined = TableDataFactory::getInstance().join(receivedData);
-        vector<shared_ptr<TableData>> splitted = split(joined,dstSize,sharder,shardColSearchExpr);
+        vector<shared_ptr<TableData>> splitted = split(joined);
         for (int cnt=0;cnt<dstSize;cnt++) {
             channels[cnt]->open();
             channels[cnt]->send(splitted[cnt]);

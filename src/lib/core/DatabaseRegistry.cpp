@@ -178,19 +178,6 @@ namespace db_agg {
         return result;
     }
 
-
-    string DatabaseRegistry::getShardingStrategyName(std::string databaseId) {
-        try {
-            return evaluateXPath("/registry/database-definition[@name='" + databaseId + "']/@sharder");
-        } catch(runtime_error& re) {
-            return "";
-        }
-    }
-
-    string DatabaseRegistry::getShardColumn(std::string databaseId) {
-        return evaluateXPath("/registry/database-definition[@name='" + databaseId + "']/@shardCol");
-    }
-
     std::vector<ShardingStrategyConfiguration> DatabaseRegistry::getShardingStrategies(std::string databaseId) {
         vector<ShardingStrategyConfiguration> strategies;
         string xpathExpr = "/registry/database-definition[@name='" + databaseId + "']/sharding-strategy";

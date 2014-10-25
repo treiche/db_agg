@@ -17,45 +17,28 @@ class QueryExecution;
 std::vector<TableData*> split(TableData *src, int dstSize, ShardingStrategy *sharder);
 
 class Transition : public DataReceiver, public DataSender {
+private:
     std::string name;
     int srcSize = 0;
     int dstSize = 0;
     std::vector<std::shared_ptr<TableData>> receivedData;
-    // std::map<std::string,std::shared_ptr<TableData>> sourceData;
     bool done = false;
-    std::shared_ptr<ShardingStrategy> sharder;
-    std::string shardColSearchExpr;
+    std::vector<std::shared_ptr<ShardingStrategy>> sharders;
     std::vector<Channel*> channels;
+    std::vector<std::shared_ptr<TableData>> split(std::shared_ptr<TableData> src);
+    std::pair<std::shared_ptr<ShardingStrategy>,int> findShardColIndex(std::vector<std::pair<std::string,uint32_t>> columns);
 public:
-    Transition() {}
-    Transition(std::string name, int srcSize, int dstSize): name(name), srcSize(srcSize), dstSize(dstSize) {
-        sharder = nullptr;
-    }
-
+    Transition();
+    Transition(std::string name, int srcSize, int dstSize);
+    void setShardingStrategies(std::vector<std::shared_ptr<ShardingStrategy>> sharders);
     void receive(std::string name, std::shared_ptr<TableData> data) override;
     virtual void addChannel(Channel* channel) override;
     virtual void doTransition();
-    virtual std::string getId() {
-        return name;
-    }
+    virtual std::string getId();
     virtual ~Transition();
-    void setSharder(std::shared_ptr<ShardingStrategy> sharder) {
-        this->sharder = sharder;
-    }
-    void setShardColSearchExpr(std::string shardColSearchExpr) {
-        this->shardColSearchExpr = shardColSearchExpr;
-    }
-    void setName(std::string name) {
-        this->name = name;
-    }
-    std::string getName() {
-        return name;
-    }
-
-    bool isDone() {
-        return done;
-    }
-
+    void setName(std::string name);
+    std::string getName();
+    bool isDone();
     void release();
     friend std::ostream& operator<<(std::ostream& cout,const Transition& t);
 };
