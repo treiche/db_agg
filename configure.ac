@@ -13,7 +13,7 @@ function fail {
     exit 1
 }
 
-AC_CHECK_HEADERS([jansson.h pcre.h zip.h curses.h log4cplus/logger.h dlfcn.h],[],[fail header $ac_header])
+AC_CHECK_HEADERS([pthread.h gtest/gtest.h jansson.h pcre.h zip.h curses.h log4cplus/logger.h dlfcn.h],[],[fail header $ac_header])
 
 AC_CHECK_LIB(zip,zip_open,[],[fail library zip])
 AC_CHECK_LIB(ncursesw,initscr,[],[fail library ncurses])
@@ -23,6 +23,7 @@ AC_CHECK_LIB(xml2,xmlCtxtReadFile,[],[fail library libxml2])
 AC_CHECK_LIB(pcre,pcre_compile,[],[fail library pcre])
 AC_CHECK_LIB(log4cplus,_ZN9log4cplus20PropertyConfigurator11doConfigureERKSsRNS_9HierarchyEj,[],[fail library liblog4cplus])
 AC_CHECK_LIB(pq,PQconnectdb,[],[fail library libpq])
+AC_CHECK_LIB(pthread,pthread_create,[],[fail library pthread])
 
 AC_PROG_INSTALL
 
