@@ -18,57 +18,56 @@ namespace db_agg {
 DECLARE_LOGGER("ManyToMany");
 
 
-ManyToMany::ManyToMany(shared_ptr<ShardingStrategy> sharder, string shardColSearchExpr, short noShards):
-	sharder(sharder),
-	shardColSearchExpr(shardColSearchExpr),
-	noShards(noShards) {
+ManyToMany::ManyToMany(vector<shared_ptr<ShardingStrategy>> sharders, short noShards):
+    sharders(sharders),
+    noShards(noShards) {
 }
 
 bool ManyToMany::process() {
-	assert(getDependencies().size() == noShards);
+    assert(getDependencies().size() == noShards);
 
-	vector<shared_ptr<TableData>> sources;
-	for (auto& dep:getDependencies()) {
-		sources.push_back(dep.second);
-	}
-	auto sourceTable = TableDataFactory::getInstance().join(sources);
+    vector<shared_ptr<TableData>> sources;
+    for (auto& dep:getDependencies()) {
+        sources.push_back(dep.second);
+    }
+    auto sourceTable = TableDataFactory::getInstance().join(sources);
 
 
-	uint64_t rows = sourceTable->getRowCount();
+    uint64_t rows = sourceTable->getRowCount();
 
-	int shardKeyIdx = findShardColIndex(sourceTable->getColumns(), shardColSearchExpr);
+    auto s = findShardColIndex(sourceTable->getColumns());
+    auto sharder = s.first;
+    auto shardKeyIdx = s.second;
 
-	vector<vector<uint64_t>> offsets(noShards);
+    vector<vector<uint64_t>> offsets(noShards);
 
-	map<size_t,shared_ptr<TableData>> results;
-	for (uint64_t row = 0; row < rows; row++) {
-		int shardId = sharder->getShardId(sourceTable->getValue(row,shardKeyIdx));
-		offsets[shardId].push_back(row);
-	}
+    map<size_t,shared_ptr<TableData>> results;
+    for (uint64_t row = 0; row < rows; row++) {
+        int shardId = sharder->getShardId(sourceTable->getValue(row,shardKeyIdx));
+        offsets[shardId].push_back(row);
+    }
 
-	for (size_t idx=0;idx<noShards;idx++) {
+    for (size_t idx=0;idx<noShards;idx++) {
         shared_ptr<TableData> shardedData = TableDataFactory::getInstance().split(sourceTable,offsets[idx]);
         setResult(to_string(idx),shardedData);
     }
 
-	setDone();
-	return true;
-}
-
-int ManyToMany::findShardColIndex(vector<pair<string,uint32_t>> columns, string searchExpr) {
-    RegExp re(searchExpr);
-    for (size_t idx=0;idx<columns.size();idx++) {
-        string colName = columns[idx].first;
-        vector<RegExp::match> matches = re.exec(colName);
-        if (matches.size()>0) {
-            return idx;
-        }
-    }
-    throw runtime_error("unable to find shard key column");
+    setDone();
+    return true;
 }
 
 bool ManyToMany::isTransition() {
-	return true;
+    return true;
+}
+
+pair<shared_ptr<ShardingStrategy>,int> ManyToMany::findShardColIndex(vector<pair<std::string,uint32_t>> columns) {
+    for (auto sharder:sharders) {
+        int shardColIdx = sharder->findShardColIndex(columns);
+        if (shardColIdx != -1) {
+            return make_pair(sharder,shardColIdx);
+        }
+    }
+    return make_pair(nullptr,-1);
 }
 
 }

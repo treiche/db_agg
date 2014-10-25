@@ -18,9 +18,8 @@ namespace db_agg {
 DECLARE_LOGGER("OneToMany");
 
 
-OneToMany::OneToMany(shared_ptr<ShardingStrategy> sharder, string shardColSearchExpr, short noShards):
-	sharder(sharder),
-	shardColSearchExpr(shardColSearchExpr),
+OneToMany::OneToMany(vector<shared_ptr<ShardingStrategy>> sharders, short noShards):
+	sharders(sharders),
 	noShards(noShards) {
 
 	vector<string> portNames;
@@ -35,7 +34,9 @@ bool OneToMany::process() {
 	shared_ptr<TableData> sourceTable = (*getDependencies().begin()).second;
 	uint64_t rows = sourceTable->getRowCount();
 
-	int shardKeyIdx = findShardColIndex(sourceTable->getColumns(), shardColSearchExpr);
+	auto s = findShardColIndex(sourceTable->getColumns());
+	auto sharder = s.first;
+	auto shardKeyIdx = s.second;
 
 	if (shardKeyIdx == -1) {
 		LOG_WARN("no shard key column found. falling back to unsharded one-to-many transition.")
@@ -70,17 +71,14 @@ bool OneToMany::process() {
 	return true;
 }
 
-int OneToMany::findShardColIndex(vector<pair<string,uint32_t>> columns, string searchExpr) {
-    RegExp re(searchExpr);
-    for (size_t idx=0;idx<columns.size();idx++) {
-        string colName = columns[idx].first;
-        vector<RegExp::match> matches = re.exec(colName);
-        if (matches.size()>0) {
-            return idx;
+pair<shared_ptr<ShardingStrategy>,int> OneToMany::findShardColIndex(vector<pair<std::string,uint32_t>> columns) {
+    for (auto sharder:sharders) {
+        int shardColIdx = sharder->findShardColIndex(columns);
+        if (shardColIdx != -1) {
+            return make_pair(sharder,shardColIdx);
         }
     }
-    LOG_WARN("unable to find shard key column. falling back to unsharded one-to-many");
-    return -1;
+    return make_pair(nullptr,-1);
 }
 
 bool OneToMany::isTransition() {

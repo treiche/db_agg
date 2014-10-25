@@ -44,6 +44,7 @@ class QueryProcessor : public EventListener, public EventProducer {
     std::vector<QueryExecution*> findExecutables();
     void cacheItem(std::string resultId);
     void cleanUp();
+    std::vector<std::shared_ptr<ShardingStrategy>> resolveShardingStrategies(std::vector<ShardingStrategyConfiguration> configs, int shardCount);
     bool dontExecute;
     bool stopped = false;
     size_t maxParallelExecutions = 1000;

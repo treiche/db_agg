@@ -11,16 +11,17 @@
 #include "QueryExecution.h"
 #include "sharding/ShardingStrategy.h"
 #include <memory>
+#include <vector>
 
 namespace db_agg {
 class ManyToMany: public QueryExecution {
 private:
 	short noShards;
-	std::shared_ptr<ShardingStrategy> sharder;
+	std::vector<std::shared_ptr<ShardingStrategy>> sharders;
 	std::string shardColSearchExpr;
-	int findShardColIndex(std::vector<std::pair<std::string,uint32_t>> columns, std::string searchExpr);
+	std::pair<std::shared_ptr<ShardingStrategy>,int> findShardColIndex(std::vector<std::pair<std::string,uint32_t>> columns);
 public:
-	ManyToMany(std::shared_ptr<ShardingStrategy> sharder, std::string shardColSearchExpr, short noShards);
+    ManyToMany(std::vector<std::shared_ptr<ShardingStrategy>> sharders, short noShards);
     virtual bool process() override;
     virtual bool isTransition() override;
 };
