@@ -31,8 +31,7 @@ public:
     std::vector<std::shared_ptr<Url>> getUrls(std::string database, std::string environment, short shardId);
     std::vector<std::shared_ptr<Url>> getUrls(std::string environment, std::string type);
     std::string getDatabaseByNamespace(std::set<std::string> namespaces);
-    std::string getShardingStrategyName(std::string databaseId);
-    std::string getShardColumn(std::string databaseId);
+    std::vector<ShardingStrategyConfiguration> getShardingStrategies(std::string databaseId);
     std::shared_ptr<Url> getWorker();
     std::vector<std::string> getSystems();
     std::string getDatabaseNamingStrategy();

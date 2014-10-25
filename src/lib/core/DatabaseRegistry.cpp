@@ -178,17 +178,24 @@ namespace db_agg {
         return result;
     }
 
-
-    string DatabaseRegistry::getShardingStrategyName(std::string databaseId) {
-        try {
-            return evaluateXPath("/registry/database-definition[@name='" + databaseId + "']/@sharder");
-        } catch(runtime_error& re) {
-            return "";
+    std::vector<ShardingStrategyConfiguration> DatabaseRegistry::getShardingStrategies(std::string databaseId) {
+        vector<ShardingStrategyConfiguration> strategies;
+        string xpathExpr = "/registry/database-definition[@name='" + databaseId + "']/sharding-strategy";
+        xmlXPathObjectPtr xpathObj = xmlXPathEvalExpression((const xmlChar*)xpathExpr.c_str(), this->xpathCtx);
+        xmlNodeSetPtr nodes = xpathObj->nodesetval;
+        if (!nodes) {
+            return strategies;
         }
-    }
-
-    string DatabaseRegistry::getShardColumn(std::string databaseId) {
-        return evaluateXPath("/registry/database-definition[@name='" + databaseId + "']/@shardCol");
+        int found = nodes->nodeNr;
+        for (int cnt=0;cnt<found;cnt++) {
+            xmlNodePtr node = nodes->nodeTab[cnt];
+            if(node->type == XML_ELEMENT_NODE) {
+                string name = getAttribute((xmlElementPtr)node,"name");
+                string shardCol = getAttribute((xmlElementPtr)node,"shardCol");
+                strategies.push_back(ShardingStrategyConfiguration(name,shardCol));
+            }
+        }
+        return strategies;
     }
 
     string DatabaseRegistry::getDatabaseByNamespace(set<string> namespaces) {

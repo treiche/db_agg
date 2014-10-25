@@ -21,9 +21,7 @@
 
 <!ELEMENT database-definition (namespace*)>
 <!ATTLIST database-definition
-          name      ID     #REQUIRED
-          sharder   CDATA  #IMPLIED
-          shardCol  CDATA  #IMPLIED>
+          name      ID     #REQUIRED>
 
 <!ELEMENT namespace EMPTY>
 <!ATTLIST namespace
