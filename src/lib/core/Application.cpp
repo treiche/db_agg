@@ -73,6 +73,7 @@ void Application::bootstrap(Configuration& config) {
         }
     }
     LOG_DEBUG("load query file '"+config.getQueryFile()+"'");
+    queryUrl = "file://" + queryFile.abspath();
     query = readFile(queryFile.abspath());
     environment = config.getEnvironment();
     LOG_DEBUG("load database registry");
@@ -202,7 +203,7 @@ void Application::handleEvent(shared_ptr<Event> event) {
 bool Application::run() {
     LOG_DEBUG("run application");
     try {
-        queryProcessor->process(query, environment);
+        queryProcessor->process(query, queryUrl, environment);
         shared_ptr<Event> event(new Event({EventType::APPLICATION_FINISHED,""}));
         fireEvent(event);
         return true;

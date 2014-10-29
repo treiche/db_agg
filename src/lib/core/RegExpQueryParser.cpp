@@ -29,7 +29,7 @@ RegExpQueryParser::~RegExpQueryParser() {
 }
 
 
-vector<Query*> RegExpQueryParser::parse(string q, map<string,string>& externalSources, map<string,string>& queryParameter, vector<string> functions) {
+vector<Query*> RegExpQueryParser::parse(string q, string url, map<string,string>& externalSources, map<string,string>& queryParameter, vector<string> functions) {
     assert(!q.empty());
     vector<Query*> queries;
     LOG_DEBUG("start query parsing");

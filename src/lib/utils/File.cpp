@@ -106,7 +106,7 @@ string File::abspath() {
 string File::realpath() {
     char *ap = ::realpath(path.c_str(),nullptr);
     if (ap == nullptr) {
-        THROW_EXC("unable to get abspath for '" << path << "'");
+        THROW_EXC("unable to get realpath for '" << path << "'");
     }
     string res(ap);
     free(ap);

@@ -25,6 +25,7 @@ namespace db_agg {
             CacheRegistry *cacheRegistry = nullptr;
             ExtensionLoader extensionLoader;
             std::string query;
+            std::string queryUrl;
             std::string environment;
             std::map<std::string,std::string> externalSources;
             std::map<std::string,std::string> queryParameter;
