@@ -66,7 +66,7 @@ public:
             size_t maxParallelExecutions
     );
     ~QueryProcessor();
-    void process(std::string query, std::string environment);
+    void process(std::string query, std::string url, std::string environment);
     void handleEvent(std::shared_ptr<Event> event) override;
     void stop();
     ExecutionGraph& getExecutionGraph();

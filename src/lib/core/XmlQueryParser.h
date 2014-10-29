@@ -26,6 +26,7 @@ public:
     ~XmlQueryParser();
     virtual std::vector<Query*> parse(
             std::string query,
+            std::string url,
             std::map<std::string,std::string>& externalSources,
             std::map<std::string,std::string>& queryParameter,
             std::vector<std::string> functions) override;

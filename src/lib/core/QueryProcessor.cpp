@@ -67,13 +67,13 @@ void QueryProcessor::stop() {
     }
 }
 
-void QueryProcessor::process(string query, string environment) {
+void QueryProcessor::process(string query, string url, string environment) {
     LOG_DEBUG("process query = " << query << " environment = " << environment);
     Locator::setDefaultEnvironment(environment);
 
     vector<string> functions = extensionLoader.getAvailableExecutorNames();
     LOG_DEBUG("parse query with " << queryParameter.size() << " parameters");
-    vector<Query*> queries = queryParser.parse(query,externalSources,queryParameter,functions);
+    vector<Query*> queries = queryParser.parse(query,url,externalSources,queryParameter,functions);
     for (auto query:queries) {
         executionGraph.addQuery(query);
     }

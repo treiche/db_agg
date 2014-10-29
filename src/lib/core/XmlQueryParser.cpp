@@ -10,20 +10,45 @@
 #include "utils/md5.h"
 #include "utils/string.h"
 #include "utils/Template.h"
+#include "utils/File.h"
+#include "utils/xml.h"
+
+extern "C" {
+    #include <libxml/xmlschemas.h>
+    #include <libxml/uri.h>
+}
+
 
 using namespace std;
-
-
 
 namespace db_agg {
 
 DECLARE_LOGGER("XmlQueryParser")
 
+static void errorHandler(void * ctx, const char * msg, ...) {
+    va_list ap;
+    va_start(ap, msg);
+    char buf[1024];
+    vsprintf(buf,msg,ap);
+    cout << "ERROR: " << buf << endl;
+    LOG_ERROR(buf);
+}
+
+static void warningHandler(void * ctx, const char * msg, ...) {
+    va_list ap;
+    va_start(ap, msg);
+    char buf[1024];
+    vsprintf(buf,msg,ap);
+    cout << "WARNING: " << buf << endl;
+    LOG_WARN(buf);
+}
+
+
 XmlQueryParser::~XmlQueryParser() {
 }
 
 
-vector<Query*> XmlQueryParser::parse(string qu, map<string,string>& externalSources, map<string,string>& queryParameter, vector<string> functions) {
+vector<Query*> XmlQueryParser::parse(string qu, string url, map<string,string>& externalSources, map<string,string>& queryParameter, vector<string> functions) {
     string q = qu;
     // replace query parameters
     if (!queryParameter.empty()) {
@@ -32,10 +57,56 @@ vector<Query*> XmlQueryParser::parse(string qu, map<string,string>& externalSour
         q = t.render(q);
     }
 
-	xmlDocPtr doc = xmlReadMemory(q.c_str(), q.size(), "queries.xml", NULL, 0);
+    xmlDocPtr doc = parseDoc(qu,url);
+    /*
+    xmlDocPtr doc = xmlReadMemory(q.c_str(), q.size(), url.c_str(), NULL, 0);
     if (doc == nullptr) {
         THROW_EXC("failed to parse xml queries");
     }
+
+    // search for noNamespaceSchemaLocation attribute
+    string schemaUrl;
+    xmlNodePtr tmp = doc->children;
+    while (tmp) {
+    	if (tmp->type == XML_ELEMENT_NODE) {
+    		cout << "found element " << tmp->name << endl;
+    		xmlAttributePtr attr = ((xmlElementPtr)tmp)->attributes;
+    		while (attr) {
+    			if (string((char*)attr->name) == "noNamespaceSchemaLocation" &&
+    				string("http://www.w3.org/2001/XMLSchema-instance") == (char*)((xmlNodePtr)attr)->ns->href
+    				) {
+
+    				cout << "namespace = " << (char*)((xmlNodePtr)attr)->ns->href << endl;
+    				schemaUrl = (char*)attr->children->content;
+    				((xmlNodePtr)attr)->ns->href;
+    			}
+    			attr = (xmlAttribute*)attr->next;
+    		}
+    	}
+    	tmp = tmp->next;
+    }
+    cout << "schemaFile = " << schemaUrl << endl;
+    if (!schemaUrl.empty()) {
+		// load schema file
+		xmlSchemaParserCtxtPtr ctx = xmlSchemaNewParserCtxt(schemaUrl.c_str());
+		// xmlSchemaParserCtxtPtr ctx = xmlSchemaNewDocParserCtxt(doc);
+		if (ctx) {
+			xmlSchemaSetParserErrors(ctx,(xmlSchemaValidityErrorFunc)errorHandler,(xmlSchemaValidityWarningFunc)warningHandler,nullptr);
+			xmlSchemaPtr schema = xmlSchemaParse(ctx);
+			xmlSchemaFreeParserCtxt(ctx);
+			// validate
+			xmlSchemaValidCtxtPtr vctx = xmlSchemaNewValidCtxt(schema);
+			xmlSchemaSetValidErrors(vctx, (xmlSchemaValidityErrorFunc)errorHandler, (xmlSchemaValidityErrorFunc)warningHandler,nullptr);
+			int ret = xmlSchemaValidateDoc(vctx, doc);
+			xmlSchemaFreeValidCtxt(vctx);
+			xmlSchemaFree(schema);
+			if (ret != 0) {
+				THROW_EXC("xml query file is not valid");
+			}
+		}
+    }
+    */
+
     int ret = xmlXIncludeProcess(doc);
     if (ret < 0) {
         THROW_EXC("xinclude failed");
@@ -97,15 +168,13 @@ Query *XmlQueryParser::parseQuery(xmlElementPtr executionNode) {
         LOG_DEBUG("property: " << prop.first << " = " << prop.second);
     }
 
+    xmlChar *base =  xmlNodeGetBase(executionNode->doc, (xmlNodePtr)executionNode);
+    string baseUrl((char*)base);
+    xmlFree(base);
+
     short shardId = -1;
-    /*
-    if (trim(matches[3]).compare("")!=0) {
-        shardId = atoi(trim(matches[3]).c_str());
-    }
-    string id = string(md5hex(matches[2] + "$" + to_string(shardId) + "$" + environment + ":" + sql));
-    */
     if (properties.find("shardId") != properties.end()) {
-    	shardId = stoi(properties["shardId"]);
+        shardId = stoi(properties["shardId"]);
     }
     string name = properties["name"];
     string query = trim(properties["query"]);
@@ -114,6 +183,11 @@ Query *XmlQueryParser::parseQuery(xmlElementPtr executionNode) {
     string id = string(md5hex(name + ":" + query));
     string environment;
     string type = properties["type"];
+    if (type == "resource") {
+        char *absUri = (char*)xmlBuildURI((xmlChar*)query.c_str(),(xmlChar*)baseUrl.c_str());
+        query = string(absUri);
+        free(absUri);
+    }
     if (type.empty()) {
         type = "postgres";
     }

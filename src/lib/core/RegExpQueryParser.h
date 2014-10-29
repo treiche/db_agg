@@ -14,6 +14,7 @@ public:
     virtual ~RegExpQueryParser();
     virtual std::vector<Query*> parse(
             std::string query,
+            std::string url,
             std::map<std::string,std::string>& externalSources,
             std::map<std::string,
             std::string>& queryParameter,
