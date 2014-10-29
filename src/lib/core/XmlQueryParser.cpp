@@ -58,54 +58,6 @@ vector<Query*> XmlQueryParser::parse(string qu, string url, map<string,string>& 
     }
 
     xmlDocPtr doc = parseDoc(qu,url);
-    /*
-    xmlDocPtr doc = xmlReadMemory(q.c_str(), q.size(), url.c_str(), NULL, 0);
-    if (doc == nullptr) {
-        THROW_EXC("failed to parse xml queries");
-    }
-
-    // search for noNamespaceSchemaLocation attribute
-    string schemaUrl;
-    xmlNodePtr tmp = doc->children;
-    while (tmp) {
-    	if (tmp->type == XML_ELEMENT_NODE) {
-    		cout << "found element " << tmp->name << endl;
-    		xmlAttributePtr attr = ((xmlElementPtr)tmp)->attributes;
-    		while (attr) {
-    			if (string((char*)attr->name) == "noNamespaceSchemaLocation" &&
-    				string("http://www.w3.org/2001/XMLSchema-instance") == (char*)((xmlNodePtr)attr)->ns->href
-    				) {
-
-    				cout << "namespace = " << (char*)((xmlNodePtr)attr)->ns->href << endl;
-    				schemaUrl = (char*)attr->children->content;
-    				((xmlNodePtr)attr)->ns->href;
-    			}
-    			attr = (xmlAttribute*)attr->next;
-    		}
-    	}
-    	tmp = tmp->next;
-    }
-    cout << "schemaFile = " << schemaUrl << endl;
-    if (!schemaUrl.empty()) {
-		// load schema file
-		xmlSchemaParserCtxtPtr ctx = xmlSchemaNewParserCtxt(schemaUrl.c_str());
-		// xmlSchemaParserCtxtPtr ctx = xmlSchemaNewDocParserCtxt(doc);
-		if (ctx) {
-			xmlSchemaSetParserErrors(ctx,(xmlSchemaValidityErrorFunc)errorHandler,(xmlSchemaValidityWarningFunc)warningHandler,nullptr);
-			xmlSchemaPtr schema = xmlSchemaParse(ctx);
-			xmlSchemaFreeParserCtxt(ctx);
-			// validate
-			xmlSchemaValidCtxtPtr vctx = xmlSchemaNewValidCtxt(schema);
-			xmlSchemaSetValidErrors(vctx, (xmlSchemaValidityErrorFunc)errorHandler, (xmlSchemaValidityErrorFunc)warningHandler,nullptr);
-			int ret = xmlSchemaValidateDoc(vctx, doc);
-			xmlSchemaFreeValidCtxt(vctx);
-			xmlSchemaFree(schema);
-			if (ret != 0) {
-				THROW_EXC("xml query file is not valid");
-			}
-		}
-    }
-    */
 
     int ret = xmlXIncludeProcess(doc);
     if (ret < 0) {
