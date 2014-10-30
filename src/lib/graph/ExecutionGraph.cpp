@@ -103,7 +103,11 @@ vector<QueryExecution*> ExecutionGraph::getDependencies(QueryExecution *exec) {
     for (auto channel:channels) {
     	QueryExecution *tgt = dynamic_cast<QueryExecution*>(channel->target);
     	if (tgt == exec) {
-    		dependencies.push_back(dynamic_cast<QueryExecution*>(channel->source));
+    		QueryExecution *src = dynamic_cast<QueryExecution*>(channel->source);
+    		dependencies.push_back(src);
+    		for (auto transitive:getDependencies(src)) {
+    			dependencies.push_back(transitive);
+    		}
     	}
     }
     /*
