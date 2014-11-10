@@ -33,7 +33,6 @@ Template2::Template2() {
 
 void Template2::set(string name, string value) {
 	var.set(var.getName() + "." + name, value);
-	//var.set("root.xx",12);
 }
 
 string Template2::render(std::string tmpl) {
