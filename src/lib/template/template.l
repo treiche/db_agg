@@ -15,7 +15,7 @@
 %}
 
 
-%x stmt
+%x stmt expr
 
 %%
 
@@ -23,6 +23,19 @@
 
 
 "{%" { cout << "[BLOCK_START]"; BEGIN(stmt); return BLOCK_START; }
+
+
+"{{" { cout << "[VAR_START]"; BEGIN(expr); return VAR_START; }
+
+
+<expr>{
+
+    "}}" { BEGIN(INITIAL); cout << "[VAR_END]"; return VAR_END; }
+    
+    [a-z]+ { 
+       cout << "[VAR]" << yytext; yylval.s = strdup(yytext); return VAR; 
+    }
+}
 
 
 <stmt>{

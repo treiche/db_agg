@@ -29,6 +29,8 @@
 
 %token BLOCK_START
 %token BLOCK_END
+%token VAR_START
+%token VAR_END
 %token FOR
 %token <s> VAR
 %token IN
@@ -44,19 +46,23 @@
     struct ASTNode *node;
 }
 
-%type <node> for_block template_list template block
+%type <node> for_block template_list template block subst_expr
 
 %%
 
 unit:
-    | template unit { rootNode->addChild($1); }
+    | template unit { rootNode->prependChild($1); }
 
 template: block { $$=$1; }
     | RAW_TEXT  { $$ = new ASTNode("text",$1); }
+    | subst_expr { $$ = new ASTNode("subst"); $$->prependChild($1); }
+
+
+subst_expr: VAR_START VAR VAR_END { $$=new ASTNode("var",$2); }
 
 template_list: template {
         $$ = new ASTNode("template");
-        $$->addChild($1);
+        $$->prependChild($1);
     }
     | template_list template { 
         $$ = $1;
@@ -67,9 +73,9 @@ block: for_block { $$=$1; }
 
 for_block:  BLOCK_START FOR VAR IN VAR BLOCK_END template_list BLOCK_START ENDFOR BLOCK_END {
     $$ = new ASTNode("for");
-    $$->addChild($7);
-    $$->addChild(new ASTNode("var",$3));
-    $$->addChild(new ASTNode("var",$5));
+    $$->prependChild($7);
+    $$->prependChild(new ASTNode("var",$3));
+    $$->prependChild(new ASTNode("var",$5));
 }
 
 

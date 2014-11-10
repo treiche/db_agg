@@ -22,7 +22,7 @@ public:
 	ASTNode(std::string type, std::string value);
 	std::string getType();
 	std::string getValue();
-	void addChild(ASTNode *child);
+	void prependChild(ASTNode *child);
 	void appendChild(ASTNode *child);
 	std::list<ASTNode*>& getChilds();
 };

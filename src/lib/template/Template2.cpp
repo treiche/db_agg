@@ -6,7 +6,6 @@
  */
 
 #include "Template2.h"
-#include "ASTNode.h"
 
 #include <iostream>
 
@@ -16,8 +15,12 @@ db_agg::ASTNode *parse(string tmpl);
 
 namespace db_agg {
 
-void printASTNode(ASTNode *node, int level) {
-	cout << string(level*2,' ') << node->getType() << ":" << node->getValue() << endl;
+void Template2::printASTNode(ASTNode *node, int level) {
+	cout << string(level*2,' ') << node->getType();
+	if (node->getType() == "text" || node->getType() == "var") {
+		 cout << ": '" << node->getValue() << "'";
+	}
+	cout  << endl;
 	for (auto& child:node->getChilds()) {
 		printASTNode(child,level+1);
 	}
@@ -25,11 +28,21 @@ void printASTNode(ASTNode *node, int level) {
 
 
 Template2::Template2() {
-	string tmpl = "text at start {% for k in nn %}before{% for x in ss %} content1 {% endfor %}afterbefore2{% for x in ss %} content2 {% endfor %}after2{% endfor %} text at end";
+}
+
+
+void Template2::set(string name, string value) {
+	var.set(var.getName() + "." + name, value);
+	//var.set("root.xx",12);
+}
+
+string Template2::render(std::string tmpl) {
 	ASTNode *root = parse(tmpl);
 	cout << endl << "AST:" << endl;
 	printASTNode(root,0);
+	return "";
 }
+
 }
 
 

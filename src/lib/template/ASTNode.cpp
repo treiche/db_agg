@@ -18,7 +18,7 @@ ASTNode::ASTNode(string type, string value):
 	type(type),
 	value(value) {}
 
-void ASTNode::addChild(ASTNode *child) {
+void ASTNode::prependChild(ASTNode *child) {
 	childs.push_front(child);
 }
 
