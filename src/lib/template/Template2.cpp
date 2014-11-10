@@ -25,8 +25,7 @@ void printASTNode(ASTNode *node, int level) {
 
 
 Template2::Template2() {
-	string tmpl = "raw text at start {% for k in nn %} middle {% endfor %} text at end";
-	//string tmpl = "blabla ablblba";
+	string tmpl = "text at start {% for k in nn %}before{% for x in ss %} content1 {% endfor %}afterbefore2{% for x in ss %} content2 {% endfor %}after2{% endfor %} text at end";
 	ASTNode *root = parse(tmpl);
 	cout << endl << "AST:" << endl;
 	printASTNode(root,0);

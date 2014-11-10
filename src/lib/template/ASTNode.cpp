@@ -22,6 +22,11 @@ void ASTNode::addChild(ASTNode *child) {
 	childs.push_front(child);
 }
 
+void ASTNode::appendChild(ASTNode *child) {
+	childs.push_back(child);
+}
+
+
 std::list<ASTNode*>& ASTNode::getChilds() {
 	return childs;
 }

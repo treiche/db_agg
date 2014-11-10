@@ -37,15 +37,14 @@
        cout << "[IN]"; return IN; 
     }
     
+    "endfor" { 
+       cout << "[ENDFOR]"; return ENDFOR; 
+    }
+
     "for" { 
        cout << "[FOR]"; return FOR; 
     }
 
-    "endfor" { 
-       cout << "[ENDFOR]"; return ENDFOR; 
-    }
-    
-    
     [a-z]+ { 
        cout << "[VAR]" << yytext; yylval.s = strdup(yytext); return VAR; 
     }

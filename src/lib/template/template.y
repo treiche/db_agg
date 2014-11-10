@@ -13,7 +13,7 @@
     extern "C" {
           int yylex();
           int yyparse();
-          void yyerror(char *s);
+          void yyerror(const char *s);
     }
           struct yy_buffer_state;
           typedef size_t yy_size_t;
@@ -35,32 +35,44 @@
 %token ENDFOR
 %token <s> RAW_TEXT
 
-%type <node> expr block
+
+%start unit
+
 
 %union {
     char *s;
     struct ASTNode *node;
 }
 
+%type <node> for_block template_list template block
+
 %%
 
-unit: /* no action */
-    | RAW_TEXT unit { rootNode->addChild(new ASTNode("text",$1)); }
-    | block unit { rootNode->addChild($1); }
+unit:
+    | template unit { rootNode->addChild($1); }
 
-block: BLOCK_START expr BLOCK_END { 
-           $$=new ASTNode("block"); 
-           $$->addChild($2);
-       }
+template: block { $$=$1; }
+    | RAW_TEXT  { $$ = new ASTNode("text",$1); }
 
-expr: FOR VAR IN VAR { 
-          $$=new ASTNode("for"); 
-          $$->addChild(new ASTNode("var",$2)); 
-          $$->addChild(new ASTNode("var",$4)); 
-      }
-    | ENDFOR { 
-          $$=new ASTNode("endfor");
-      }
+template_list: template {
+        $$ = new ASTNode("template");
+        $$->addChild($1);
+    }
+    | template_list template { 
+        $$ = $1;
+        $$->appendChild($2);
+    }
+
+block: for_block { $$=$1; }
+
+for_block:  BLOCK_START FOR VAR IN VAR BLOCK_END template_list BLOCK_START ENDFOR BLOCK_END {
+    $$ = new ASTNode("for");
+    $$->addChild($7);
+    $$->addChild(new ASTNode("var",$3));
+    $$->addChild(new ASTNode("var",$5));
+}
+
+
 
 %%
 
@@ -78,6 +90,6 @@ int main(int argc, char **argv) {
   return 0;
 }
 
-void yyerror(char *s) {
-    cerr << s << endl;
+void yyerror(const char *s) {
+    cerr << endl << s << endl;
 }
