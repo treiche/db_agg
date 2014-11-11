@@ -25,6 +25,7 @@ public:
 	void prependChild(ASTNode *child);
 	void appendChild(ASTNode *child);
 	std::list<ASTNode*>& getChilds();
+	ASTNode *getChild(std::string name);
 };
 
 

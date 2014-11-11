@@ -17,7 +17,7 @@ namespace db_agg {
 
 void Template2::printASTNode(ASTNode *node, int level) {
 	cout << string(level*2,' ') << node->getType();
-	if (node->getType() == "text" || node->getType() == "var") {
+	if (node->getType() == "text" || node->getType() == "var" || node->getType() == "loop_expr") {
 		 cout << ": '" << node->getValue() << "'";
 	}
 	cout  << endl;
@@ -35,11 +35,41 @@ void Template2::set(string name, string value) {
 	var.set(var.getName() + "." + name, value);
 }
 
+
+void Template2::render(ASTNode *node, stringstream& output, map<string,string>& context) {
+	if (node->getType() == "root" || node->getType() == "template") {
+		for (auto& child:node->getChilds()) {
+			render(child,output,context);
+		}
+	} else if (node->getType() == "text") {
+		output << node->getValue();
+	} else if (node->getType() == "subst") {
+		string varName = node->getChilds().front()->getValue();
+		if (context.find(varName) != context.end()) {
+			varName = context[varName];
+		}
+		output << var.get("root." + varName);
+	} else if (node->getType() == "for") {
+		string placeholder = node->getChild("var")->getValue();
+		string loopExpr = node->getChild("loop_expr")->getValue();
+		ASTNode *subTemplate = node->getChild("template");
+		size_t len = var.size("root." + loopExpr);
+		cout << "len = " << len << endl;
+		for (size_t idx = 0; idx < len; idx++) {
+			context[placeholder] = loopExpr + "." + to_string(idx);
+			render(subTemplate,output,context);
+		}
+	}
+}
+
 string Template2::render(std::string tmpl) {
 	ASTNode *root = parse(tmpl);
 	cout << endl << "AST:" << endl;
 	printASTNode(root,0);
-	return "";
+	stringstream ss;
+	map<string,string> context;
+	render(root,ss,context);
+	return ss.str();
 }
 
 }

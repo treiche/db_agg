@@ -75,7 +75,7 @@ for_block:  BLOCK_START FOR VAR IN VAR BLOCK_END template_list BLOCK_START ENDFO
     $$ = new ASTNode("for");
     $$->prependChild($7);
     $$->prependChild(new ASTNode("var",$3));
-    $$->prependChild(new ASTNode("var",$5));
+    $$->prependChild(new ASTNode("loop_expr",$5));
 }
 
 

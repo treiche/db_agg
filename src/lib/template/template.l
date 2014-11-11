@@ -58,7 +58,7 @@
        cout << "[FOR]"; return FOR; 
     }
 
-    [a-z]+ { 
+    [a-z\.]+ { 
        cout << "[VAR]" << yytext; yylval.s = strdup(yytext); return VAR; 
     }
 

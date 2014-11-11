@@ -10,16 +10,21 @@
 
 #include "Var.h"
 #include "ASTNode.h"
+#include <sstream>
 
 namespace db_agg {
 class Template2 {
 private:
     Var var{"root",std::map<std::string,any>()};
     void printASTNode(ASTNode *node, int level);
+    void render(ASTNode *node, std::stringstream& output, std::map<std::string,std::string>& context);
 public:
     Template2();
     void set(std::string name, std::string value);
     std::string render(std::string tmpl);
+    Var& getVar() {
+    	return var;
+    }
 };
 }
 

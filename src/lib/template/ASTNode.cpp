@@ -39,6 +39,14 @@ string ASTNode::getValue() {
 	return value;
 }
 
+ASTNode *ASTNode::getChild(string type) {
+	for (auto child:childs) {
+		if (child->getType() == type) {
+			return child;
+		}
+	}
+	return nullptr;
+}
 
 }
 
