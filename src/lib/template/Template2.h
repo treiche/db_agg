@@ -18,6 +18,7 @@ private:
     Var var{"root",std::map<std::string,any>()};
     void printASTNode(ASTNode *node, int level);
     void render(ASTNode *node, std::stringstream& output, std::map<std::string,std::string>& context);
+    std::string translateVar(std::string varName, std::map<std::string,std::string>& context);
 public:
     Template2();
     void set(std::string name, std::string value);

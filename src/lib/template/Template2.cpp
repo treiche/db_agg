@@ -35,6 +35,21 @@ void Template2::set(string name, string value) {
 	var.set(var.getName() + "." + name, value);
 }
 
+string Template2::translateVar(string varName, map<string,string>& context) {
+	string translated = varName;
+	auto idx = varName.find(".");
+	if (idx != string::npos) {
+		string firstItem = varName.substr(0,idx);
+		if (context.find(firstItem) != context.end()) {
+			translated = context[firstItem] + "." + varName.substr(idx+1);
+		}
+	} else {
+		if (context.find(varName) != context.end()) {
+			translated = context[varName];
+		}
+	}
+	return translated;
+}
 
 void Template2::render(ASTNode *node, stringstream& output, map<string,string>& context) {
 	if (node->getType() == "root" || node->getType() == "template") {
@@ -44,19 +59,18 @@ void Template2::render(ASTNode *node, stringstream& output, map<string,string>& 
 	} else if (node->getType() == "text") {
 		output << node->getValue();
 	} else if (node->getType() == "subst") {
-		string varName = node->getChilds().front()->getValue();
-		if (context.find(varName) != context.end()) {
-			varName = context[varName];
-		}
-		output << var.get("root." + varName);
+		string varName = node->getChild("var")->getValue();
+		auto idx = varName.find(".");
+		output << var.get("root." + translateVar(varName,context));
 	} else if (node->getType() == "for") {
 		string placeholder = node->getChild("var")->getValue();
 		string loopExpr = node->getChild("loop_expr")->getValue();
+		string translated = translateVar(loopExpr,context);
 		ASTNode *subTemplate = node->getChild("template");
-		size_t len = var.size("root." + loopExpr);
+		size_t len = var.size("root." + translated);
 		cout << "len = " << len << endl;
 		for (size_t idx = 0; idx < len; idx++) {
-			context[placeholder] = loopExpr + "." + to_string(idx);
+			context[placeholder] = translated + "." + to_string(idx);
 			render(subTemplate,output,context);
 		}
 	}

@@ -70,7 +70,7 @@ any& Var::get(string path) {
 		Var& vv = any_cast<Var&>(parent);
 		return vv.get(vv.getName()+"."+childName);
 	} else {
-		THROW_EXC("unknown type " << string(parent.type().name()));
+		// THROW_EXC("unknown type " << string(parent.type().name()) << " [path=" << path << "]");
 	}
 	return emptyAny;
 }
@@ -103,7 +103,7 @@ void Var::set(std::string path, any value) {
 			parentValue.at(idx) = value;
 		}
 	} else {
-		THROW_EXC("unknown type:" << string(value.type().name()));
+		THROW_EXC("unknown type " << string(parent.type().name()) << " [path=" << path << "]");
 	}
 }
 
@@ -168,6 +168,9 @@ void Var::fromJson(std::string path, json_t *json) {
 void Var::fromJson(string json) {
 	json_error_t error;
 	json_t *js = json_loads(json.c_str(),0,&error);
+	if (!js) {
+		THROW_EXC("invalid json");
+	}
 	fromJson(name,js);
 	json_decref(js);
 }
@@ -298,6 +301,8 @@ ostream& operator<<(ostream& os, any value) {
 	} else if (value.type() == typeid(Var)) {
 		Var& subVar = any_cast<Var&>(value);
 		os << subVar.get(subVar.getName());
+	} else if (value.type() == typeid(void)) {
+		os << "null";
 	} else {
 		THROW_EXC("unknown type " << string(value.type().name()));
 	}

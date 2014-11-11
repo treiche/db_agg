@@ -32,7 +32,7 @@
 
     "}}" { BEGIN(INITIAL); cout << "[VAR_END]"; return VAR_END; }
     
-    [a-z]+ { 
+    [a-z\.]+ { 
        cout << "[VAR]" << yytext; yylval.s = strdup(yytext); return VAR; 
     }
 }
