@@ -24,9 +24,11 @@ private:
 	void fromJson(std::string path, json_t *json);
 	json_t *toJson(any& value);
 public:
+	Var();
+	virtual ~Var();
 	Var(std::string name);
 	Var(std::string name, any value);
-	any& get(std::string path);
+	virtual any& get(std::string path);
 	any& get();
 	void set(std::string path, any value);
 	void createList(std::string path);

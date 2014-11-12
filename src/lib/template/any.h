@@ -10,6 +10,8 @@
 
 #include <cstring>
 
+using namespace std;
+
 namespace db_agg {
 class any {
 public:

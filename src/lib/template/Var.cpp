@@ -18,6 +18,8 @@ DECLARE_LOGGER("Var")
 
 static any emptyAny = string("");
 
+Var::Var() {}
+
 Var::Var(string name, any value):
 	name(name),
 	value(value) {
@@ -25,6 +27,10 @@ Var::Var(string name, any value):
 
 Var::Var(string name):
 	name(name) {
+}
+
+Var::~Var() {
+	value = 0;
 }
 
 any& Var::get(string path) {
