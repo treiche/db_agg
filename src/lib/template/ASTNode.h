@@ -20,6 +20,7 @@ private:
 public:
 	ASTNode(std::string type);
 	ASTNode(std::string type, std::string value);
+	ASTNode(std::string type, ASTNode *child);
 	std::string getType();
 	std::string getValue();
 	void prependChild(ASTNode *child);

@@ -6,12 +6,11 @@
  */
 
 #include "Template2.h"
+#include "Parser.h"
 
 #include <iostream>
 
 using namespace std;
-
-db_agg::ASTNode *parse(string tmpl);
 
 namespace db_agg {
 
@@ -77,7 +76,9 @@ void Template2::render(ASTNode *node, stringstream& output, map<string,string>& 
 }
 
 string Template2::render(std::string tmpl) {
-	ASTNode *root = parse(tmpl);
+	Parser p;
+	p.parse(tmpl);
+	ASTNode *root = p.getAST();
 	cout << endl << "AST:" << endl;
 	printASTNode(root,0);
 	stringstream ss;

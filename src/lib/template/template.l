@@ -1,18 +1,5 @@
-%{
-    #include <iostream>
-    
-    extern "C" {
-        #include "template.tab.h"
-    }
-    
-    using namespace std;
 
-    extern "C" {
-          int yylex();
-          void yyerror(char *s);
-          int yyparse();
-    }
-%}
+%namespace db_agg
 
 
 %x stmt expr
@@ -20,20 +7,21 @@
 %%
 
     // int stmt_level = 0;
+    // using namespace std;
 
 
-"{%" { cout << "[BLOCK_START]"; BEGIN(stmt); return BLOCK_START; }
+"{%" { cout << "[BLOCK_START]"; begin(StartCondition__::stmt); return ParserBase::BLOCK_START; }
 
 
-"{{" { cout << "[VAR_START]"; BEGIN(expr); return VAR_START; }
+"{{" { cout << "[VAR_START]"; begin(StartCondition__::expr); return ParserBase::VAR_START; }
 
 
 <expr>{
 
-    "}}" { BEGIN(INITIAL); cout << "[VAR_END]"; return VAR_END; }
+    "}}" { begin(StartCondition__::INITIAL); cout << "[VAR_END]"; return ParserBase::VAR_END; }
     
     [a-z\.]+ { 
-       cout << "[VAR]" << yytext; yylval.s = strdup(yytext); return VAR; 
+       cout << "[VAR]" << matched(); return ParserBase::VAR; 
     }
 }
 
@@ -41,36 +29,33 @@
 <stmt>{
 
     "%}" {
-        BEGIN(INITIAL);
+        begin(StartCondition__::INITIAL);
         cout << "[BLOCK_END]";
-        return BLOCK_END;
+        return ParserBase::BLOCK_END;
     }
 
     "in" { 
-       cout << "[IN]"; return IN; 
+       cout << "[IN]"; return ParserBase::IN; 
     }
     
     "endfor" { 
-       cout << "[ENDFOR]"; return ENDFOR; 
+       cout << "[ENDFOR]"; return ParserBase::ENDFOR; 
     }
 
     "for" { 
-       cout << "[FOR]"; return FOR; 
+       cout << "[FOR]"; return ParserBase::FOR; 
     }
 
     [a-z\.]+ { 
-       cout << "[VAR]" << yytext; yylval.s = strdup(yytext); return VAR; 
+       cout << "[VAR]" << matched(); return ParserBase::VAR; 
     }
 
 }
 
 [^{%]+  {
-    yylval.s = strdup(yytext);
-    cout << "[RAW_TEXT=" << yylval.s << "]";
-    return RAW_TEXT;
+    // yylval.s = strdup(yytext);
+    cout << "[RAW_TEXT=" << matched() << "]";
+    return ParserBase::RAW_TEXT;
 }
 
-
-
-%%
 

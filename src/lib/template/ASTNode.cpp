@@ -18,6 +18,12 @@ ASTNode::ASTNode(string type, string value):
 	type(type),
 	value(value) {}
 
+ASTNode::ASTNode(std::string type, ASTNode *child):
+	type(type) {
+	childs.push_back(child);
+}
+
+
 void ASTNode::prependChild(ASTNode *child) {
 	childs.push_front(child);
 }
