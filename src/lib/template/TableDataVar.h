@@ -20,6 +20,7 @@ public:
     TableDataVar(std::shared_ptr<TableData> tableData);
     virtual ~TableDataVar();
     virtual any& get(std::string path) override;
+    virtual size_t size(std::string path) override;
 };
 }
 

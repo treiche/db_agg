@@ -35,7 +35,7 @@ public:
 	void fromJson(std::string json);
 	std::string toJson(std::string path);
 	std::string getName();
-	size_t size(std::string path);
+	virtual size_t size(std::string path);
 	std::vector<std::string> keys(std::string path);
 	bool isList(std::string path);
 	bool isMap(std::string path);

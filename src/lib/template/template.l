@@ -19,7 +19,7 @@
 
 %%
 
-    int stmt_level = 0;
+    // int stmt_level = 0;
 
 
 "{%" { cout << "[BLOCK_START]"; BEGIN(stmt); return BLOCK_START; }
