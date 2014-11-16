@@ -19,8 +19,14 @@ private:
 public:
     TableDataVar(std::shared_ptr<TableData> tableData);
     virtual ~TableDataVar();
-    virtual any& get(std::string path) override;
-    virtual size_t size(std::string path) override;
+    // Var API
+	virtual size_t size(std::string path) override;
+	virtual std::vector<std::string> keys(std::string path) override;
+	virtual VarType type(std::string path) override;
+	virtual std::string get_string(std::string path) override;
+    virtual bool get_bool(std::string path) override;
+    virtual int get_integer(std::string path) override;
+    virtual double get_double(std::string path) override;
 };
 }
 

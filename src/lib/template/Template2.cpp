@@ -60,7 +60,7 @@ void Template2::render(ASTNode *node, stringstream& output, map<string,string>& 
 	} else if (node->getType() == "subst") {
 		string varName = node->getChild("var")->getValue();
 		auto idx = varName.find(".");
-		output << var.get("root." + translateVar(varName,context));
+		output << var.get_string("root." + translateVar(varName,context));
 	} else if (node->getType() == "for") {
 		string placeholder = node->getChild("var")->getValue();
 		string loopExpr = node->getChild("loop_expr")->getValue();
