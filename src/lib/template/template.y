@@ -41,11 +41,10 @@ template: block { $$ = $1; }
 ;
 
 
-subst_expr: VAR_START var VAR_END { cout << endl << "$2 = " << $2 << endl;  $$ = new ASTNode("var",$2); };
+subst_expr: VAR_START var VAR_END { $$ = new ASTNode("var",$2); };
 
 template_list: template {
         $$ = new ASTNode("template", $1);
-        // $$->prependChild($1);
     }
     | template_list template { 
         $$ = $1;
@@ -65,8 +64,6 @@ for_block:  BLOCK_START FOR var IN var BLOCK_END template_list BLOCK_START ENDFO
 
 var:
     VAR {
-        cout << endl << "match var " << d_scanner.matched().c_str() << endl;
-        // $$ = strdup(d_scanner.matched().c_str());
         $$ = d_scanner.matched();
     };
 
