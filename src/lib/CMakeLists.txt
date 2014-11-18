@@ -13,7 +13,7 @@ foreach (subdir ${SUBDIRS})
     file(GLOB sources ${subdir}/*.cpp)
     add_library(${subdir} OBJECT ${sources})
     file(GLOB headers ${subdir}/*.h)
-    install(FILES ${headers} DESTINATION include/${subdir})
+    install(FILES ${headers} DESTINATION include/${CMAKE_PROJECT_NAME}/${subdir})
 endforeach(subdir)
 
 set(OUTPUT_NAME db_agg)
