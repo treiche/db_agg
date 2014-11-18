@@ -1,21 +1,12 @@
 cmake_minimum_required(VERSION 2.8)
 
-list(APPEND CMAKE_CXX_FLAGS "-Wall -std=c++11 -fPIC")
+include_directories("${CMAKE_CURRENT_LIST_DIR}")
 
-find_package(LibXml2 REQUIRED)
-include_directories(${LIBXML2_INCLUDE_DIR})
+if(NOT DEFINED DB_AGG_CONFIG_HEADER_DIR)
+    set(DB_AGG_CONFIG_HEADER_DIR ${CMAKE_CURRENT_LIST_DIR}/../)
+endif()
 
-set(PostgreSQL_ADDITIONAL_SEARCH_PATHS "/usr/include/postgresql/9.3/server")
-find_package(PostgreSQL REQUIRED)
-include_directories(${PostgreSQL_INCLUDE_DIR})
-
-
-configure_file (
-    "${PROJECT_SOURCE_DIR}/../installation_cmake.h.in"
-    "${PROJECT_BINARY_DIR}/installation.h"
-)
-include_directories("${PROJECT_BINARY_DIR}")
-include_directories("${PROJECT_SOURCE_DIR}")
+include_directories("${DB_AGG_CONFIG_HEADER_DIR}")
 
 set(SUBDIRS cache core event excel extension graph injection postgres sharding table type utils)
 foreach (subdir ${SUBDIRS})
