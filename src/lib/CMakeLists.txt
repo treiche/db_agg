@@ -12,6 +12,8 @@ set(SUBDIRS cache core event excel extension graph injection postgres sharding t
 foreach (subdir ${SUBDIRS})
     file(GLOB sources ${subdir}/*.cpp)
     add_library(${subdir} OBJECT ${sources})
+    file(GLOB headers ${subdir}/*.h)
+    install(FILES ${headers} DESTINATION include/${subdir})
 endforeach(subdir)
 
 set(OUTPUT_NAME db_agg)
@@ -30,3 +32,6 @@ add_library(libdbagg SHARED
     $<TARGET_OBJECTS:utils>)
 
 SET_TARGET_PROPERTIES(libdbagg PROPERTIES OUTPUT_NAME db_agg)
+SET_TARGET_PROPERTIES(libdbagg PROPERTIES VERSION ${PACKAGE_VERSION})
+
+install(TARGETS libdbagg DESTINATION lib)

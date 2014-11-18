@@ -2,9 +2,10 @@ cmake_minimum_required(VERSION 2.8.4)
 
 project(db_agg)
 
-set(db_agg_VERSION_MAJOR 0)
-set(db_agg_VERSION_MINOR 9)
-set(db_agg_VERSION_PATCH 2)
+set(VERSION_MAJOR 0)
+set(VERSION_MINOR 9)
+set(VERSION_PATCH 2)
+set(PACKAGE_VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
@@ -73,3 +74,6 @@ target_link_libraries(db_agg_config libdbagg
     ${CURSES_LIBRARIES}
     ${LIBZIP_LIBRARY}
 )
+
+install(TARGETS db_agg DESTINATION bin)
+install(FILES src/lib/db_agg.h src/installation.h DESTINATION include/${CMAKE_PROJECT_NAME})
