@@ -7,6 +7,7 @@ if(NOT DEFINED DB_AGG_CONFIG_HEADER_DIR)
 endif()
 
 include_directories("${DB_AGG_CONFIG_HEADER_DIR}")
+include_directories("${PROJECT_BINARY_DIR}")
 
 set(SUBDIRS cache core event excel extension graph injection postgres sharding table type utils)
 foreach (subdir ${SUBDIRS})
