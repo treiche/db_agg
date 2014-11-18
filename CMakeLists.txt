@@ -45,9 +45,26 @@ endforeach(subdir)
 add_executable(db_agg
     src/bin/db_agg.cpp
     $<TARGET_OBJECTS:bin-cli>
-    $<TARGET_OBJECTS:bin-ui>)
+    $<TARGET_OBJECTS:bin-ui>
+)
 
 target_link_libraries(db_agg libdbagg
+    ${POSTGRESQL_LIBRARIES}
+    ${LIBXML2_LIBRARIES}
+    ${PCRE_LIBRARIES}
+    ${LOG4CPLUS_LIBRARIES}
+    ${JANSSON_LIBRARIES}
+    ${CURSES_LIBRARIES}
+    ${LIBZIP_LIBRARY}
+)
+
+add_executable(db_agg_config
+    src/bin/db_agg_config.cpp
+    $<TARGET_OBJECTS:bin-cli>
+    $<TARGET_OBJECTS:bin-ui>
+)
+
+target_link_libraries(db_agg_config libdbagg
     ${POSTGRESQL_LIBRARIES}
     ${LIBXML2_LIBRARIES}
     ${PCRE_LIBRARIES}
