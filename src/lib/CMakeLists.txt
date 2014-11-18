@@ -14,7 +14,8 @@ foreach (subdir ${SUBDIRS})
     add_library(${subdir} OBJECT ${sources})
 endforeach(subdir)
 
-add_library(dbagg SHARED
+set(OUTPUT_NAME db_agg)
+add_library(libdbagg SHARED
     $<TARGET_OBJECTS:cache>
     $<TARGET_OBJECTS:core>
     $<TARGET_OBJECTS:event>
@@ -27,3 +28,5 @@ add_library(dbagg SHARED
     $<TARGET_OBJECTS:table>
     $<TARGET_OBJECTS:type>
     $<TARGET_OBJECTS:utils>)
+
+SET_TARGET_PROPERTIES(libdbagg PROPERTIES OUTPUT_NAME db_agg)

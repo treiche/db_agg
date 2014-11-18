@@ -47,7 +47,7 @@ add_executable(db_agg
     $<TARGET_OBJECTS:bin-cli>
     $<TARGET_OBJECTS:bin-ui>)
 
-target_link_libraries(db_agg dbagg
+target_link_libraries(db_agg libdbagg
     ${POSTGRESQL_LIBRARIES}
     ${LIBXML2_LIBRARIES}
     ${PCRE_LIBRARIES}
