@@ -35,8 +35,6 @@ endif()
 
 set(LOG4CPLUS_LIB_NAMES_RELEASE "log4cplus${log4cplus_postfix}")
 
-message("${LOG4CPLUS_LIB_NAMES_RELEASE}")
-
 find_library(LOG4CPLUS_LIBRARY_RELEASE
   NAMES
     ${LOG4CPLUS_LIB_NAMES_RELEASE}

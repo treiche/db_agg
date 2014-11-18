@@ -18,9 +18,8 @@ find_package(Curses REQUIRED)
 find_package(LibXml2 REQUIRED)
 include_directories(${LIBXML2_INCLUDE_DIR})
 
-set(PostgreSQL_ADDITIONAL_SEARCH_PATHS "/usr/include/postgresql/9.3/server")
 find_package(PostgreSQL REQUIRED)
-include_directories(${PostgreSQL_INCLUDE_DIR})
+include_directories(${POSTGRESQL_INCLUDE_DIR})
 
 list(APPEND CMAKE_CXX_FLAGS " -Wall -std=c++11 -fPIC")
 
@@ -43,17 +42,13 @@ foreach (subdir ${BIN_SUBDIRS})
     add_library(bin-${subdir} OBJECT ${sources})
 endforeach(subdir)
 
-message("${exec_sources}")
-
 add_executable(db_agg
     src/bin/db_agg.cpp
     $<TARGET_OBJECTS:bin-cli>
     $<TARGET_OBJECTS:bin-ui>)
 
-message("${Jansson_LIBRARIES}")
-
 target_link_libraries(db_agg dbagg
-    ${PostgreSQL_LIBRARIES}
+    ${POSTGRESQL_LIBRARIES}
     ${LIBXML2_LIBRARIES}
     ${PCRE_LIBRARIES}
     ${LOG4CPLUS_LIBRARIES}
