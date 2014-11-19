@@ -1,0 +1,133 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>db_agg by zalando</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <script src="javascripts/scale.fix.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header class="without-description">
+        <h1>db_agg</h1>
+        <p></p>
+        <p class="view"><a href="https://github.com/zalando/db_agg">View the Project on GitHub <small>zalando/db_agg</small></a></p>
+        <ul>
+          <li><a href="https://github.com/zalando/db_agg/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/zalando/db_agg/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/zalando/db_agg">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <h1>
+<a id="db_agg" class="anchor" href="#db_agg" aria-hidden="true"><span class="octicon octicon-link"></span></a>db_agg</h1>
+
+<p>join multiple datasources with a single query</p>
+
+<p>db_agg is a commandline tool which processes a single postgres sql query consisting of multiple
+common table expressions (WITH statements) that are referring to <em>different</em> databases.</p>
+
+<h2>
+<a id="requirements" class="anchor" href="#requirements" aria-hidden="true"><span class="octicon octicon-link"></span></a>Requirements</h2>
+
+<ul>
+<li>c++11 compatible compiler</li>
+<li>libpq</li>
+<li>pcre</li>
+<li>libxml2</li>
+<li>jansson</li>
+<li>libzip</li>
+</ul>
+
+<h2>
+<a id="motivation" class="anchor" href="#motivation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Motivation</h2>
+
+<p>comparing data across multiple databases can be cumbersome especially when sharding and multiple test of production environments
+comes in play. 
+most of the time this work consists of well defined steps that can be easily automatized.</p>
+
+<p>db_agg only requires a single query and determines the concrete databases it needs to talk to, resolves the
+dependencies that are needed to join the query results, and caches the results for a short development roundtrip.</p>
+
+<h2>
+<a id="installation" class="anchor" href="#installation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Installation</h2>
+
+<p>db_agg useds standard gnu autotools build system, so the single steps for installation are:</p>
+
+<ul>
+<li>./configure</li>
+<li>make</li>
+<li>make install</li>
+</ul>
+
+<h2>
+<a id="configuration" class="anchor" href="#configuration" aria-hidden="true"><span class="octicon octicon-link"></span></a>Configuration</h2>
+
+<p>before db_agg can be used it needs to know where it can find databases to connect to.
+this is configured in a file called database-registry.xml located in ~/.db_agg/etc.
+a very simple example could look like this:</p>
+
+<div class="highlight highlight-xml"><pre>&lt;?<span class="pl-ent">xml</span><span class="pl-e"> version</span>=<span class="pl-s1"><span class="pl-pds">"</span>1.0<span class="pl-pds">"</span></span><span class="pl-e"> encoding</span>=<span class="pl-s1"><span class="pl-pds">"</span>utf-8<span class="pl-pds">"</span></span>?&gt;
+&lt;!<span class="pl-k">DOCTYPE</span> <span class="pl-v">registry</span> PUBLIC "database-registry.dtd" "/usr/local/db_agg/etc/database-registry.dtd"&gt;
+&lt;<span class="pl-ent">registry</span>&gt;
+    &lt;<span class="pl-ent">system</span> <span class="pl-e">name</span>=<span class="pl-s1"><span class="pl-pds">"</span>local<span class="pl-pds">"</span></span>&gt;
+        &lt;<span class="pl-ent">host</span> <span class="pl-e">name</span>=<span class="pl-s1"><span class="pl-pds">"</span>host1<span class="pl-pds">"</span></span>&gt;
+            &lt;<span class="pl-ent">server</span> <span class="pl-e">port</span>=<span class="pl-s1"><span class="pl-pds">"</span>5432<span class="pl-pds">"</span></span>&gt;
+                &lt;<span class="pl-ent">database-instance</span> <span class="pl-e">id</span>=<span class="pl-s1"><span class="pl-pds">"</span>db1<span class="pl-pds">"</span></span>/&gt;
+            &lt;/<span class="pl-ent">server</span>&gt;
+        &lt;/<span class="pl-ent">host</span>&gt;
+        &lt;<span class="pl-ent">host</span> <span class="pl-e">name</span>=<span class="pl-s1"><span class="pl-pds">"</span>host2<span class="pl-pds">"</span></span>&gt;
+            &lt;<span class="pl-ent">server</span> <span class="pl-e">port</span>=<span class="pl-s1"><span class="pl-pds">"</span>5432<span class="pl-pds">"</span></span>&gt;
+                &lt;<span class="pl-ent">database-instance</span> <span class="pl-e">id</span>=<span class="pl-s1"><span class="pl-pds">"</span>db2<span class="pl-pds">"</span></span>/&gt;
+            &lt;/<span class="pl-ent">server</span>&gt;
+        &lt;/<span class="pl-ent">host</span>&gt;
+    &lt;/<span class="pl-ent">system</span>&gt;
+    &lt;<span class="pl-ent">database-definition</span> <span class="pl-e">name</span>=<span class="pl-s1"><span class="pl-pds">"</span>db1<span class="pl-pds">"</span></span>&gt;
+        &lt;<span class="pl-ent">namespace</span> <span class="pl-e">name</span>=<span class="pl-s1"><span class="pl-pds">"</span>ns1<span class="pl-pds">"</span></span>/&gt;
+    &lt;/<span class="pl-ent">database-definition</span>&gt;
+    &lt;<span class="pl-ent">database-definition</span> <span class="pl-e">name</span>=<span class="pl-s1"><span class="pl-pds">"</span>db2<span class="pl-pds">"</span></span>&gt;
+        &lt;<span class="pl-ent">namespace</span> <span class="pl-e">name</span>=<span class="pl-s1"><span class="pl-pds">"</span>ns2<span class="pl-pds">"</span></span>/&gt;
+    &lt;/<span class="pl-ent">database-definition</span>&gt;
+&lt;/<span class="pl-ent">registry</span>&gt;</pre></div>
+
+<p>this tells db_agg to connect to host1 on port 5432 when it finds the namespace ns1 in a sub query.</p>
+
+<h2>
+<a id="usage" class="anchor" href="#usage" aria-hidden="true"><span class="octicon octicon-link"></span></a>Usage</h2>
+
+<p>with the configuration given above db_agg could be used for a query like this:</p>
+
+<div class="highlight highlight-sql"><pre>with data_on_db1 <span class="pl-k">as</span> (
+    <span class="pl-k">select</span> <span class="pl-k">*</span>
+      <span class="pl-k">from</span> <span class="pl-c1">ns1</span>.<span class="pl-c1">data</span>
+)
+    <span class="pl-k">select</span> <span class="pl-k">*</span>
+      <span class="pl-k">from</span> data_on_db1
+      <span class="pl-k">join</span> <span class="pl-c1">ns2</span>.<span class="pl-c1">data</span>
+        <span class="pl-k">on</span> column_x <span class="pl-k">=</span> column_y</pre></div>
+
+<p>with this query saved in a file test_query.sql db_agg could be run on the command line
+using the follwing line:</p>
+
+<div class="highlight highlight-sh"><pre>/usr/local/bin/db_agg -e <span class="pl-s">local</span> test_query.sql</pre></div>
+
+<p>the results of running db_agg can be then found in the working directory under
+./test_query/local</p>
+      </section>
+    </div>
+    <footer>
+      <p>Project maintained by <a href="https://github.com/zalando">zalando</a></p>
+      <p>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></p>
+    </footer>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+    
+  </body>
+</html>
