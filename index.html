@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <title>db_agg by zalando</title>
+    <title>Db agg by zalando</title>
 
     <link rel="stylesheet" href="stylesheets/styles.css">
     <link rel="stylesheet" href="stylesheets/pygment_trac.css">
@@ -16,9 +16,9 @@
   </head>
   <body>
     <div class="wrapper">
-      <header class="without-description">
-        <h1>db_agg</h1>
-        <p></p>
+      <header>
+        <h1>Db agg</h1>
+        <p>Aggregator for query results over multiple data sources</p>
         <p class="view"><a href="https://github.com/zalando/db_agg">View the Project on GitHub <small>zalando/db_agg</small></a></p>
         <ul>
           <li><a href="https://github.com/zalando/db_agg/zipball/master">Download <strong>ZIP File</strong></a></li>
@@ -36,31 +36,17 @@
 common table expressions (WITH statements) that are referring to <em>different</em> databases.</p>
 
 <h2>
-<a id="requirements" class="anchor" href="#requirements" aria-hidden="true"><span class="octicon octicon-link"></span></a>Requirements</h2>
-
-<ul>
-<li>c++11 compatible compiler</li>
-<li>libpq</li>
-<li>pcre</li>
-<li>libxml2</li>
-<li>jansson</li>
-<li>libzip</li>
-</ul>
-
-<h2>
 <a id="motivation" class="anchor" href="#motivation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Motivation</h2>
 
-<p>comparing data across multiple databases can be cumbersome especially when sharding and multiple test of production environments
-comes in play. 
-most of the time this work consists of well defined steps that can be easily automatized.</p>
+<p>Comparing data across multiple databases can be cumbersome especially when sharding and multiple test of production environments comes in play. Most of the time this work consists of well defined steps that can be easily automatized.</p>
 
-<p>db_agg only requires a single query and determines the concrete databases it needs to talk to, resolves the
+<p>db_agg requires a single query and determines the concrete databases it needs to talk to, resolves the
 dependencies that are needed to join the query results, and caches the results for a short development roundtrip.</p>
 
 <h2>
 <a id="installation" class="anchor" href="#installation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Installation</h2>
 
-<p>db_agg useds standard gnu autotools build system, so the single steps for installation are:</p>
+<p>Compilation is performed using conventional gnu autotools build system as shown below:</p>
 
 <ul>
 <li>./configure</li>
@@ -71,9 +57,9 @@ dependencies that are needed to join the query results, and caches the results f
 <h2>
 <a id="configuration" class="anchor" href="#configuration" aria-hidden="true"><span class="octicon octicon-link"></span></a>Configuration</h2>
 
-<p>before db_agg can be used it needs to know where it can find databases to connect to.
-this is configured in a file called database-registry.xml located in ~/.db_agg/etc.
-a very simple example could look like this:</p>
+<p>Before db_agg can be used it needs to know where it can find databases to connect to.
+This is configured in a file called database-registry.xml located in ~/.db_agg/etc.
+A very simple example is shown below:</p>
 
 <div class="highlight highlight-xml"><pre>&lt;?<span class="pl-ent">xml</span><span class="pl-e"> version</span>=<span class="pl-s1"><span class="pl-pds">"</span>1.0<span class="pl-pds">"</span></span><span class="pl-e"> encoding</span>=<span class="pl-s1"><span class="pl-pds">"</span>utf-8<span class="pl-pds">"</span></span>?&gt;
 &lt;!<span class="pl-k">DOCTYPE</span> <span class="pl-v">registry</span> PUBLIC "database-registry.dtd" "/usr/local/db_agg/etc/database-registry.dtd"&gt;
@@ -98,12 +84,12 @@ a very simple example could look like this:</p>
     &lt;/<span class="pl-ent">database-definition</span>&gt;
 &lt;/<span class="pl-ent">registry</span>&gt;</pre></div>
 
-<p>this tells db_agg to connect to host1 on port 5432 when it finds the namespace ns1 in a sub query.</p>
+<p>This instructs db_agg to connect to host1 on port 5432 when it finds the namespace ns1 in the sub query.</p>
 
 <h2>
 <a id="usage" class="anchor" href="#usage" aria-hidden="true"><span class="octicon octicon-link"></span></a>Usage</h2>
 
-<p>with the configuration given above db_agg could be used for a query like this:</p>
+<p>With the configuration given above, db_agg could be used with a query like follows:</p>
 
 <div class="highlight highlight-sql"><pre>with data_on_db1 <span class="pl-k">as</span> (
     <span class="pl-k">select</span> <span class="pl-k">*</span>
@@ -114,12 +100,11 @@ a very simple example could look like this:</p>
       <span class="pl-k">join</span> <span class="pl-c1">ns2</span>.<span class="pl-c1">data</span>
         <span class="pl-k">on</span> column_x <span class="pl-k">=</span> column_y</pre></div>
 
-<p>with this query saved in a file test_query.sql db_agg could be run on the command line
-using the follwing line:</p>
+<p>Save this query as test_query.sql and tun db_agg on the command line:</p>
 
 <div class="highlight highlight-sh"><pre>/usr/local/bin/db_agg -e <span class="pl-s">local</span> test_query.sql</pre></div>
 
-<p>the results of running db_agg can be then found in the working directory under
+<p>the results of running db_agg can be afterwards found in the working directory under
 ./test_query/local</p>
       </section>
     </div>
