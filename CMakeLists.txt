@@ -87,3 +87,21 @@ configure_file(
 
 add_custom_target(uninstall
     COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
+
+
+set(CPACK_GENERATOR "DEB")
+
+# Set package per component
+set(CPACK_DEB_COMPONENT_INSTALL ON)
+set(CPACK_COMPONENTS_GROUPING "IGNORE")
+set(CPACK_DEB_CHANGELOG_FILE debian/changelog)
+set(CPACK_DEBIAN_PACKAGE_DEPENDS
+    "debhelper (>= 9), autotools-dev, libtool, libjansson-dev, libncurses5-dev, libncursesw5-dev, liblog4cplus-dev, libxml2-dev, cxxtest, libpcre3-dev, libzip-dev, libpq-dev")
+set(CPACK_PACKAGE_VERSION_MAJOR ${VERSION_MAJOR})
+set(CPACK_PACKAGE_VERSION_MINOR ${VERSION_MINOR})
+set(CPACK_PACKAGE_VERSION_PATCH ${VERSION_PATCH})
+set(CPACK_PACKAGE_DESCRIPTION "Join multiple datasources with a single query")
+set(CPACK_PACKAGE_CONTACT "Arnd Brusdeilins")
+set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${CMAKE_CURRENT_SOURCE_DIR}/debian/postinst")
+
+include(CPack)
