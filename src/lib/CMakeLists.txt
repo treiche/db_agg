@@ -14,7 +14,7 @@ foreach (subdir ${SUBDIRS})
     file(GLOB sources ${subdir}/*.cpp)
     add_library(${subdir} OBJECT ${sources})
     file(GLOB headers ${subdir}/*.h)
-    install(FILES ${headers} DESTINATION include/${CMAKE_PROJECT_NAME}/${subdir})
+    install(FILES ${headers} DESTINATION include/${CMAKE_PROJECT_NAME}/${subdir} COMPONENT dev)
 endforeach(subdir)
 
 set(OUTPUT_NAME db_agg)
@@ -35,4 +35,4 @@ add_library(libdbagg SHARED
 SET_TARGET_PROPERTIES(libdbagg PROPERTIES OUTPUT_NAME db_agg)
 SET_TARGET_PROPERTIES(libdbagg PROPERTIES VERSION ${PACKAGE_VERSION})
 
-install(TARGETS libdbagg DESTINATION lib)
+install(TARGETS libdbagg DESTINATION lib COMPONENT lib)
