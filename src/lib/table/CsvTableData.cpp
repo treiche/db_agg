@@ -65,7 +65,7 @@ namespace db_agg {
         loadOnDemand("calculateMD5Sum");
         MD5 digest;
         string cols;
-        for (int idx = 0;idx < getColCount(); idx++) {
+        for (uint32_t idx = 0;idx < getColCount(); idx++) {
             pair<string,uint32_t> column = getColumns()[idx];
             TypeInfo *ti = TypeRegistry::getInstance().getTypeInfo(column.second);
             cols += column.first + ":" + ti->name;

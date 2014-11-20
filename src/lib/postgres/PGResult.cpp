@@ -79,7 +79,7 @@ PGResult::operator bool() {
 vector<pair<string,uint32_t>> PGResult::getColumns() {
     vector<pair<string,uint32_t>> columns;
     size_t colCount = getColCount();
-    for (int idx = 0; idx < colCount; idx++) {
+    for (size_t idx = 0; idx < colCount; idx++) {
         //char *name = PQfname(res, idx);
         string name = getColumnName(idx);
         //uint32_t type = PQftype(res,idx);

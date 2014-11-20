@@ -61,7 +61,7 @@ QueryExecution& ExecutionGraph::getQueryExecution(Query *query,int shardId) {
 	}
 	vector<QueryExecution*>& executions = executionsByQuery[query];
     //return *executionsByQuery[query][shardId];
-	if (shardId >= executions.size()) {
+	if (shardId >= (int)executions.size()) {
 		THROW_EXC("invalid array index " << shardId);
 	}
 	return *executions.at(shardId);

@@ -141,7 +141,7 @@ namespace db_agg {
     }
 
 void Configuration::fromJson(std::string json) {
-    json_error_t *error;
+    json_error_t *error = 0;
     json_t *jsConfig = json_loads(json.c_str(),0,error);
     json_t *js = nullptr;
     const char *key;

@@ -24,7 +24,7 @@ ManyToMany::ManyToMany(vector<shared_ptr<ShardingStrategy>> sharders, short noSh
 }
 
 bool ManyToMany::process() {
-    assert(getDependencies().size() == noShards);
+    assert(getDependencies().size() == (size_t)noShards);
 
     vector<shared_ptr<TableData>> sources;
     for (auto& dep:getDependencies()) {
@@ -47,7 +47,7 @@ bool ManyToMany::process() {
         offsets[shardId].push_back(row);
     }
 
-    for (size_t idx=0;idx<noShards;idx++) {
+    for (short idx=0;idx<noShards;idx++) {
         shared_ptr<TableData> shardedData = TableDataFactory::getInstance().split(sourceTable,offsets[idx]);
         setResult(to_string(idx),shardedData);
     }

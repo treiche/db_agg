@@ -8,7 +8,7 @@
 #include "Channel.h"
 
 #include "utils/logging.h"
-#include "QueryExecution.h"
+#include "core/QueryExecution.h"
 
 using namespace std;
 using namespace log4cplus;

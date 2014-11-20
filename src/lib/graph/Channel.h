@@ -25,10 +25,10 @@ enum class ChannelState {
 
 class Channel {
 private:
-    std::string targetPort;
-    DataReceiver *target;
-    std::string sourcePort{""};
     DataSender *source{nullptr};
+    std::string sourcePort{""};
+    DataReceiver *target;
+    std::string targetPort;
     ChannelState state{ChannelState::READY};
 public:
     Channel(DataSender *source, std::string sourcePort, DataReceiver *target, std::string targetPort);

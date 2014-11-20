@@ -32,13 +32,13 @@ static std::thread *clockThread;
 static std::mutex screenMutex;
 static bool running = true;
 
+
 Column::Column(ColumnType type, std::string label, size_t requestedWidth, size_t minimalWidth, bool leftJustified):
+    type(type),
     label(label),
-    // offset(0),
+    width(requestedWidth),
     requestedWidth(requestedWidth),
     minimalWidth(minimalWidth),
-    width(requestedWidth),
-    type(type),
     leftJustified(leftJustified) {
     assert(requestedWidth >= minimalWidth);
 }
@@ -158,7 +158,6 @@ void CursesListener::handleEvent(shared_ptr<Event> event) {
 }
 
 void CursesListener::print(std::string resultId, ColumnType colType, std::string value) {
-    size_t offset = 0;
     size_t width = 0;
     bool leftJustified = false;
     bool show = false;
@@ -232,9 +231,7 @@ bool CursesListener::calculateRequiredSpace() {
         if (!compactView) {
             lines++;
         }
-        for (auto exec:executionGraph.getQueryExecutions(query)) {
-            lines++;
-        }
+        lines += executionGraph.getQueryExecutions(query).size();
     }
     for (size_t idx = 0; idx < columns.size(); idx++) {
         if (columns[idx].show) {

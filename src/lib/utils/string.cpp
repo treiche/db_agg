@@ -15,7 +15,7 @@ using namespace std;
 namespace db_agg {
 
 string string_format(const std::string &fmt, ...) {
-       int n, size=100;
+       int size=100;
        std::string str;
        va_list ap;
        while (1) {
@@ -119,7 +119,7 @@ string thousand_grouping(uint64_t number) {
 }
 
 bool isEmptyLine(string line) {
-    for (int idx=0; idx < line.length();idx++) {
+    for (size_t idx=0; idx < line.length();idx++) {
         if (!isspace(line[idx])) {
             return false;
         }
@@ -138,7 +138,7 @@ int getRightExtent(string line) {
 }
 
 int getLeftMargin(string line) {
-    for (int idx=0; idx < line.length();idx++) {
+    for (size_t idx=0; idx < line.length();idx++) {
         char c = line[idx];
         if (!isspace(c)) {
             return idx;
@@ -158,7 +158,7 @@ string cutBlock(string text) {
         }
     }
     int leftMargin = rightExtent;
-    for (int lineNo = 0; lineNo < lines.size(); lineNo++) {
+    for (size_t lineNo = 0; lineNo < lines.size(); lineNo++) {
         string line = lines[lineNo];
         if (isEmptyLine(line)) {
             continue;
@@ -169,7 +169,7 @@ string cutBlock(string text) {
         }
     }
     vector<string> cutted;
-    for (int lineNo = 0; lineNo < lines.size(); lineNo++) {
+    for (size_t lineNo = 0; lineNo < lines.size(); lineNo++) {
         string line = lines[lineNo];
         line.erase(line.find_last_not_of(" \n\r\t") + 1);
         if (isEmptyLine(line)) {

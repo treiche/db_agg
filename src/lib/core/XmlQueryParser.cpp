@@ -25,25 +25,6 @@ namespace db_agg {
 
 DECLARE_LOGGER("XmlQueryParser")
 
-static void errorHandler(void * ctx, const char * msg, ...) {
-    va_list ap;
-    va_start(ap, msg);
-    char buf[1024];
-    vsprintf(buf,msg,ap);
-    cout << "ERROR: " << buf << endl;
-    LOG_ERROR(buf);
-}
-
-static void warningHandler(void * ctx, const char * msg, ...) {
-    va_list ap;
-    va_start(ap, msg);
-    char buf[1024];
-    vsprintf(buf,msg,ap);
-    cout << "WARNING: " << buf << endl;
-    LOG_WARN(buf);
-}
-
-
 XmlQueryParser::~XmlQueryParser() {
 }
 

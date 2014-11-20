@@ -43,7 +43,7 @@ public:
           );
     ColumnType type;
     std::string label;
-    size_t width = 0;
+    size_t width;
     size_t requestedWidth;
     size_t minimalWidth;
     bool show = true;

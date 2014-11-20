@@ -50,7 +50,6 @@ xmlDocPtr parseDoc(std::string document, std::string baseUri, bool resolveXInclu
                     ) {
 
                     schemaUrl = (char*)attr->children->content;
-                    ((xmlNodePtr)attr)->ns->href;
                 }
                 attr = (xmlAttribute*)attr->next;
             }

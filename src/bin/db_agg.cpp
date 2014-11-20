@@ -57,7 +57,6 @@ void initLogging(std::string logFile, std::string logLevel) {
 
 void disableConsoleLogging() {
     SharedAppenderPtrList appenders = Logger::getRoot().getAllAppenders();
-    ConsoleAppender *ca = nullptr;
     for (auto appender:appenders) {
         ConsoleAppender *ca = dynamic_cast<ConsoleAppender*>(appender.get());
         if (ca != nullptr) {

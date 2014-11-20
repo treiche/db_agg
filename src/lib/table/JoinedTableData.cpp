@@ -55,7 +55,7 @@ string JoinedTableData::calculateMD5Sum() {
 }
 
 void JoinedTableData::calculateRelativeRow(uint64_t row,int& sourceIdx,uint64_t& relativeRow) {
-    for (int idx=0;idx<offsets.size()-1;idx++) {
+    for (size_t idx=0;idx<offsets.size()-1;idx++) {
         uint64_t offset = offsets[idx];
         if (row >= offset && row < offsets[idx+1]) {
             //cout << "source " << idx << endl;

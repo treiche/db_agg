@@ -96,7 +96,7 @@ vector<string> CommandLineParser::parse(std::vector<std::string> args) {
     }
     */
 
-    for (int cnt=0; cnt<posArgs.size(); cnt++) {
+    for (size_t cnt=0; cnt<posArgs.size(); cnt++) {
         values[arguments[cnt].name].push_back(posArgs[cnt]);
     }
     return posArgs;

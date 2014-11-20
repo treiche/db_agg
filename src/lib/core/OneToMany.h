@@ -15,8 +15,8 @@
 namespace db_agg {
 class OneToMany: public QueryExecution {
 private:
-	short noShards;
 	std::vector<std::shared_ptr<ShardingStrategy>> sharders;
+	short noShards;
 	std::string shardColSearchExpr;
 	std::pair<std::shared_ptr<ShardingStrategy>,int> findShardColIndex(std::vector<std::pair<std::string,uint32_t>> columns);
 public:

@@ -52,7 +52,7 @@ void Template::set(map<string,string> variables) {
 std::string Template::render(std::string tmpl) {
     string result;
     int offset = 0;
-    int lastOffset = 0;
+    size_t lastOffset = 0;
     vector<string> matches;
     while(regexp.find(tmpl,matches,offset)) {
         LOG_DEBUG("found " << matches[1] << " offset = " << offset);

@@ -272,7 +272,7 @@ bool AsyncQueryExecutor::processTask(int taskNo) {
                                 task->lastRowSent += rowsRead;
                                 shared_ptr<Event> rde(new SentDataEvent(task->id,task->lastRowSent + 1));
                                 EventProducer::fireEvent(rde);
-                                if ((task->lastRowSent+1)<rowCount) {
+                                if ((task->lastRowSent+1)<(int64_t)rowCount) {
                                     return false;
                                 }
                             } else if (copyDataResult == 0) {
@@ -281,7 +281,7 @@ bool AsyncQueryExecutor::processTask(int taskNo) {
                             } else if (copyDataResult==-1) {
                                 THROW_EXC("copy data failed: " << conn.errorMessage());
                             }
-                        } while((task->lastRowSent+1)<rowCount);
+                        } while((task->lastRowSent+1)<(int64_t)rowCount);
                         int copyEndResult = conn.putCopyEnd("");
                         if (copyEndResult == 0) {
                             LOG_DEBUG("putCopyEnd would block.");

@@ -163,12 +163,6 @@ static string getSysConfigDir() {
     return t.render(DBAGG_SYSCONFDIR);
 }
 
-static string getLocalStateDir() {
-    Template t{"${","}"};
-    t.set("prefix",DBAGG_PREFIX);
-    return t.render(DBAGG_LOCALSTATEDIR);
-}
-
 string Application::findConfigurationFile(string name, bool createIfNeeded, bool isDir) {
         LOG_INFO("find configuration file '" << name << "'");
         string effectiveFile;

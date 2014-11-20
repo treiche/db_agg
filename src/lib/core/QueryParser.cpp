@@ -22,7 +22,6 @@ static RegExp NS_EXTRACT(R"((?<!distinct )(table|from|join)\s+([a-z_0-9]+)\.[a-z
 
 string QueryParser::normalizeQuery(std::string query) {
     string normalized;
-    bool isWhitespace = false;
     bool insideSingleLineComment = false;
     bool insideMultiLineComment = false;
     bool insideString = false;

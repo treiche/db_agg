@@ -157,7 +157,7 @@ void ExcelToTextFormat::parseData(xmlTextReaderPtr reader, ParseState *state) {
             xmlTextReaderMoveToAttribute(reader,(xmlChar*)"r");
             string region = (const char*)xmlTextReaderValue(reader);
             auto coord = regionToPoint(region);
-            int gap = 0;
+            uint32_t gap = 0;
             if (coord.second > state->columns.size()) {
                 LOG_TRACE("ignore orphan value");
                 gap = state->columns.size() - state->currentCol;
@@ -218,8 +218,8 @@ void ExcelToTextFormat::parseEntry(std::string entry,std::function<void (xmlText
     if (zip_stat(archive,entry.c_str(),ZIP_STAT_SIZE,&info) == 0) {
         zip_file *zipEntry = zip_fopen(archive,entry.c_str(),0);
         char *buf = new char[info.size+1];
-        int ret = zip_fread(zipEntry,buf,info.size);
-        if (ret != info.size) {
+        auto ret = zip_fread(zipEntry,buf,info.size);
+        if (ret != (int64_t)info.size) {
             LOG_ERROR("zip_fread returned " << ret);
         }
         zip_fclose(zipEntry);

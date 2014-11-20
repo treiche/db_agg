@@ -145,7 +145,7 @@ namespace db_agg {
     string RegExp::replace(std::string value, std::string replace, bool& matched) {
         const char *qs = value.c_str();
         size_t len = value.size();
-        int offset = 0;
+        size_t offset = 0;
         int groups[30];
         int ret;
         string result;

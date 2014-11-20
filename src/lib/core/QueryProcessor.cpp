@@ -585,8 +585,6 @@ void QueryProcessor::handleEvent(shared_ptr<Event> event) {
         for (auto result:exec) {
             LOG_DEBUG("schedule executable  " << result->getSql());
             string sql = result->inject(result->getSql(), copyThreshold);
-            ExecutionHandler *eh = dynamic_cast<ExecutionHandler*>(result);
-            //queryExecutor->addQuery(result->getId(), result->getConnectionUrl().getUrl(true,false,true), sql, eh);
             result->schedule();
         }
     }

@@ -23,7 +23,7 @@ OneToMany::OneToMany(vector<shared_ptr<ShardingStrategy>> sharders, short noShar
 	noShards(noShards) {
 
 	vector<string> portNames;
-	for (size_t idx = 0; idx < noShards; idx++) {
+	for (short idx = 0; idx < noShards; idx++) {
 		portNames.push_back(to_string(idx+1));
 	}
 	setPortNames(portNames);
@@ -40,7 +40,7 @@ bool OneToMany::process() {
 
 	if (shardKeyIdx == -1) {
 		LOG_WARN("no shard key column found. falling back to unsharded one-to-many transition.")
-		for (size_t idx=0;idx<noShards;idx++) {
+		for (short idx=0;idx<noShards;idx++) {
 	        setResult(to_string(idx+1),sourceTable);
 	    }
 	} else {
@@ -57,7 +57,7 @@ bool OneToMany::process() {
 			}
 		}
 
-		for (size_t idx=0;idx<noShards;idx++) {
+		for (short idx=0;idx<noShards;idx++) {
 			shared_ptr<TableData> shardedData = TableDataFactory::getInstance().split(sourceTable,offsets[idx]);
 			setResult(to_string(idx+1),shardedData);
 		}
