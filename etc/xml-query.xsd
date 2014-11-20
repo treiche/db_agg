@@ -1,5 +1,7 @@
 <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">
 
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd"/>
+
     <xsd:element name="queries" type="QueriesType">
     </xsd:element>
 
@@ -7,6 +9,7 @@
         <xsd:sequence minOccurs="0" maxOccurs="unbounded">
            <xsd:element name="execution" type="ExecutionType" maxOccurs="unbounded"/>
         </xsd:sequence>
+        <xsd:attribute ref="xml:base"/> 
     </xsd:complexType>
 
     <xsd:complexType name="ExecutionType">
@@ -16,6 +19,7 @@
         <xsd:attribute name="name" type="xsd:Name" use="required"/>
         <xsd:attribute name="shardId" type="xsd:string"/>
         <xsd:attribute name="type" type="xsd:Name"/>
+        <xsd:attribute ref="xml:base"/> 
     </xsd:complexType>
 
 </xsd:schema>

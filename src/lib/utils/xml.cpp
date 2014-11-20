@@ -26,10 +26,17 @@ static void warningHandler(void * ctx, const char * msg, ...) {
 }
 
 
-xmlDocPtr parseDoc(std::string document, std::string baseUri) {
+xmlDocPtr parseDoc(std::string document, std::string baseUri, bool resolveXIncludes) {
     xmlDocPtr doc = xmlReadMemory(document.c_str(), document.size(), baseUri.c_str(), NULL, 0);
     if (doc == nullptr) {
         THROW_EXC("failed to parse xml queries");
+    }
+
+    if (resolveXIncludes) {
+        int ret = xmlXIncludeProcess(doc);
+        if (ret < 0) {
+            THROW_EXC("xinclude failed");
+        }
     }
 
     // search for noNamespaceSchemaLocation attribute

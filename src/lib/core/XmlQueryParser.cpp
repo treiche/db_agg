@@ -57,12 +57,8 @@ vector<Query*> XmlQueryParser::parse(string qu, string url, map<string,string>& 
         q = t.render(q);
     }
 
-    xmlDocPtr doc = parseDoc(qu,url);
+    xmlDocPtr doc = parseDoc(q,url,true);
 
-    int ret = xmlXIncludeProcess(doc);
-    if (ret < 0) {
-        THROW_EXC("xinclude failed");
-    }
     vector<Query*> queries;
 
     xmlNodePtr child = doc->children->children;
