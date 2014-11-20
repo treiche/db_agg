@@ -22,6 +22,8 @@ class JsonVar: public Var {
 private:
 	std::string name;
 	any value;
+	map<string,Var*> externalVars;
+	Var *getExternalVar(std::string path, string& relpath);
 	void fromJson(std::string path, json_t *json);
 	json_t *toJson(any& value);
 	any& get(std::string path);
@@ -32,6 +34,7 @@ public:
 	JsonVar(std::string name);
 	JsonVar(std::string name, any value);
 	void set(std::string path, any value);
+	void set(std::string path, Var *var);
 	void createList(std::string path);
 	void fromJson(std::string json);
 	std::string toJson(std::string path);

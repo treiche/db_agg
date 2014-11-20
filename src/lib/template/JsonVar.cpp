@@ -16,6 +16,16 @@ namespace db_agg {
 
 DECLARE_LOGGER("JsonVar")
 
+#define DELEGATE(method) \
+{ \
+	string relpath; \
+	Var *ext = getExternalVar(path,relpath); \
+	if (ext != nullptr) { \
+		return ext->method(relpath);\
+	} \
+}
+
+
 static any emptyAny = string("");
 
 JsonVar::JsonVar() {}
@@ -75,6 +85,7 @@ any& JsonVar::get() {
 }
 
 VarType JsonVar::type(std::string path) {
+	DELEGATE(type);
 	any& a = get(path);
 	if (a.type() == typeid(string)) {
 		return VarType::STRING;
@@ -94,6 +105,7 @@ VarType JsonVar::type(std::string path) {
 
 
 string JsonVar::get_string(string path) {
+	DELEGATE(get_string);
 	any& a = get(path);
 	stringstream ss;
 	ss << a;
@@ -126,6 +138,10 @@ void JsonVar::set(std::string path, any value) {
 	} else {
 		THROW_EXC("unknown type " << string(parent.type().name()) << " [path=" << path << "]");
 	}
+}
+
+void JsonVar::set(string path, Var *var) {
+	externalVars[path] = var;
 }
 
 void JsonVar::createList(std::string path) {
@@ -164,7 +180,7 @@ void JsonVar::fromJson(std::string path, json_t *json) {
 		return;
 	}
 	if (json_typeof(json) == JSON_FALSE) {
-		set(path, false);
+		set(path, any(false));
 		return;
 	}
 	if (json_typeof(json) == JSON_INTEGER) {
@@ -251,7 +267,24 @@ string JsonVar::getName() {
 	return name;
 }
 
+Var *JsonVar::getExternalVar(string path, string& relpath) {
+	for (auto ext:externalVars) {
+		if (path.substr(0,ext.first.size()) == ext.first) {
+			relpath = path.substr(ext.first.size() + 1);
+			return ext.second;
+		}
+	}
+	return nullptr;
+}
+
+
 size_t JsonVar::size(string path) {
+	string relpath;
+	Var *ext = getExternalVar(path,relpath);
+	if (ext != nullptr) {
+		cout << "got external path " << ext << " rel = " << relpath << endl;
+		return ext->size(relpath);
+	}
 	any& av = get(path);
 	if (av.type() != typeid(vector<any>)) {
 		THROW_EXC("path " << path << " is not a list [" << av.type().name() << "]");

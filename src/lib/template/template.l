@@ -20,7 +20,7 @@
 
     "}}" { begin(StartCondition__::INITIAL); return ParserBase::VAR_END; }
     
-    [a-z\.]+ { 
+    [a-z\._A-Z0-9]+ { 
        return ParserBase::VAR; 
     }
 }

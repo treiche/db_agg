@@ -56,6 +56,9 @@ VarType TableDataVar::type(string path) {
 }
 
 string TableDataVar::get_string(string path) {
+	if (type(path) == VarType::INTEGER) {
+		return to_string(get_integer(path));
+	}
 	vector<string> items;
 	split(path,'.',items);
 	if (items.size() == 3) {
