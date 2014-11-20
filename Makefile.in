@@ -11,8 +11,8 @@ bindir=@bindir@
 LIB_SRC = $(wildcard src/lib/*.cpp src/lib/*/*.cpp)
 LIB_OBJ = $(subst src/,build/,$(LIB_SRC:.cpp=.o))
 
-TEST_SRC = $(wildcard tests/*.h)
-TEST_OBJ = $(subst tests/,build/tests/,$(TEST_SRC:.h=.o))
+TEST_SRC = $(wildcard src/test/*.cpp)
+TEST_OBJ = $(subst src/test/,build/tests/,$(TEST_SRC:.cpp=.o))
 
 BIN_SRC = $(wildcard src/bin/*/*.cpp)
 BIN_OBJ = $(subst src/,build/,$(BIN_SRC:.cpp=.o))
@@ -27,10 +27,13 @@ build/%.o : src/%.cpp
 	@mkdir -p $(@D)
 	@$(CXX) $(CXXFLAGS) $< -o $@
 
-build/tests/%.cpp : tests/%.h
+build/tests/%.o : src/test/%.cpp build/lib/gtest-all.o
 	@echo "generate test $@"
 	@mkdir -p $(@D)
-	@cxxtestgen --error-printer --part $< -o $@
+	$(CXX) $(CXXFLAGS) -I/usr/src/gmock/gtest/ -I/usr/src/gmock/gtest/include $< -o $@
+
+build/lib/gtest-all.o: /usr/src/gmock/gtest/src/gtest-all.cc
+	@$(CXX) -I/usr/src/gmock/gtest/ -I/usr/src/gmock/gtest/include -c $< -o $@ 
 
 build/lib/libdb_agg.a: $(LIB_OBJ)
 	@echo "create library $@"
@@ -42,9 +45,9 @@ build/lib/libdb_agg.so: $(LIB_OBJ)
 	@mkdir -p $(@D)
 	@$(CXX) -fPIC -shared -Wl,-soname,libdb_agg.so $^ $(LDFLAGS) -o $@
 
-build/bin/testrunner: build/bin/testrunner.o $(TEST_OBJ) build/lib/libdb_agg.so
+build/bin/testrunner: build/bin/testrunner.o $(TEST_OBJ) build/lib/libdb_agg.so build/lib/gtest-all.o
 	@echo "generate testrunner"
-	@$(CXX) build/bin/testrunner.o $(TEST_OBJ) -fPIC $(LDFLAGS) -Lbuild/lib -ldb_agg -o $@
+	@$(CXX) $(TEST_OBJ)  build/lib/gtest-all.o -fPIC $(LDFLAGS) -Lbuild/lib -ldb_agg -lpthread -o $@
 
 build/bin/db_agg: $(BIN_OBJ) build/bin/db_agg.o build/lib/libdb_agg.so 
 	@echo "generate db_agg executable"
