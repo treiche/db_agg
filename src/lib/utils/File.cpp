@@ -158,8 +158,9 @@ void File::getChilds(vector<string>& childs) {
 }
 
 void File::linkTo(File source) {
+    unlink(abspath().c_str());
     if (symlink(source.abspath().c_str(),abspath().c_str()) == -1) {
-    	string message = "symlink failed: " + abspath() + " -> " + source.abspath();
+        string message = "symlink failed: " + abspath() + " -> " + source.abspath();
         throw runtime_error(message);
     }
 }
