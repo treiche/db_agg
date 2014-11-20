@@ -145,6 +145,7 @@ namespace db_agg {
 
     pair<string,string> PasswordManager::getCredentialFromPrompt(Url *url) {
         pair<string,string> c;
+        cout << "connecting to " << url->getUrl(false,false,false) << endl;
         string user = getinput("user>");
         string pass=getpass("password>", true);
         c.first = user;
