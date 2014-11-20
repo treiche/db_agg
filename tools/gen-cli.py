@@ -108,7 +108,7 @@ parser = argparse.ArgumentParser(
 parser.add_argument('clidef', help='the cli definition file')
 parser.add_argument('-b','--bean-output-dir', help='the output directory for the bean class')
 parser.add_argument('-p','--parser-output-dir', help='the output directory for the parser class')
-parser.add_argument('-a','--asciidoc-output-dir', help='the output directory for the asccidoc file')
+parser.add_argument('-a','--asciidoc-output-dir', help='the output directory for the asciidoc file')
 args = parser.parse_args()
 
 clidef = CLDef(args.clidef)
@@ -123,4 +123,7 @@ if args.parser_output_dir:
     createTemplate(clidef, outputFile, "parser.h.jinja")
     outputFile = args.parser_output_dir + "/" + clidef.data["parser"] + ".cpp"
     createTemplate(clidef, outputFile, "parser.cpp.jinja")
-
+if args.asciidoc_output_dir:
+    outputFile = args.asciidoc_output_dir + "/cli.asciidoc"
+    createTemplate(clidef, outputFile, "cli.asciidoc.jinja")
+    
