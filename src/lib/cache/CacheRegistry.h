@@ -13,6 +13,7 @@ namespace db_agg {
 
 struct CacheItem {
     std::string id;
+    std::string execId;
     Time lastExecuted;
     size_t lastDuration;
     std::string path;
@@ -27,7 +28,15 @@ class CacheRegistry {
     void removeOrphans();
 public:
     CacheRegistry(std::string cacheDir);
-    void registerItem(std::string id, Time lastExecuted, size_t lastDuration, std::string path, std::string format, uint64_t rowCount);
+    void registerItem(
+    		std::string resultId,
+    		std::string execId,
+    		Time lastExecuted,
+    		size_t lastDuration,
+    		std::string path,
+    		std::string format,
+    		uint64_t rowCount
+    );
     bool exists(std::string id);
     void save(std::string id);
     void load(std::string id);

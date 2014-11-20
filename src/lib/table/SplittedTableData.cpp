@@ -34,7 +34,8 @@ void SplittedTableData::getRows(uint64_t startRow, uint64_t count, std::vector<D
 }
 
 void SplittedTableData::save(string filePath) {
-    throw runtime_error("save not supported");
+    // throw runtime_error("save not supported");
+    TableData::save(filePath);
 }
 
 string SplittedTableData::calculateMD5Sum() {

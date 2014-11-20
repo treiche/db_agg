@@ -46,7 +46,7 @@ bool ResourceQueryExecution::process() {
     } else {
         data = TableDataFactory::getInstance().load("/" + getUrl()->getPath());
     }
-    setResult(data);
+    setResult("", data);
     shared_ptr<Event> event(new Event(EventType::PROCESSED,getId()));
     fireEvent(event);
     shared_ptr<Event> rde(new ReceiveDataEvent(getId(),data->getRowCount()));

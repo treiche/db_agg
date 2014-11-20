@@ -19,7 +19,8 @@
 #include "cache/CacheRegistry.h"
 #include "core/AsyncQueryExecutor.h"
 #include "table/TableData.h"
-#include "ExecutionGraph.h"
+//#include "ExecutionGraph.h"
+#include "graph/ExecutionGraph.h"
 
 namespace db_agg {
 class QueryProcessor : public EventListener, public EventProducer {
@@ -43,7 +44,6 @@ class QueryProcessor : public EventListener, public EventProducer {
     void checkConnections();
     std::vector<QueryExecution*> findExecutables();
     void cacheItem(std::string resultId);
-    void loadExternalSources();
     void cleanUp();
     std::vector<std::shared_ptr<ShardingStrategy>> resolveShardingStrategies(std::vector<ShardingStrategyConfiguration> configs, int shardCount);
     bool dontExecute;

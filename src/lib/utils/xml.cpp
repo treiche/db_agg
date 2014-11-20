@@ -39,7 +39,6 @@ xmlDocPtr parseDoc(std::string document, std::string baseUri, bool resolveXInclu
         }
     }
 
-    // search for noNamespaceSchemaLocation attribute
     string schemaUrl;
     xmlNodePtr tmp = doc->children;
     while (tmp) {

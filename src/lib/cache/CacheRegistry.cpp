@@ -18,17 +18,18 @@ namespace db_agg {
         cacheDir(cacheDir) {
     }
 
-    void CacheRegistry::registerItem(std::string id, Time lastExecuted, size_t lastDuration, string path, string format, uint64_t rowCount) {
-        if (items.find(id)==items.end()) {
-            items[id] = CacheItem();
+    void CacheRegistry::registerItem(std::string resultId, std::string execId, Time lastExecuted, size_t lastDuration, string path, string format, uint64_t rowCount) {
+        if (items.find(resultId)==items.end()) {
+            items[resultId] = CacheItem();
         }
-        items[id].id = id;
-        items[id].lastExecuted = lastExecuted;
-        items[id].lastDuration = lastDuration;
-        items[id].path = cacheDir + "/" + id + "." + format;
-        items[id].format = format;
-        items[id].rowCount = rowCount;
-        items[id].links.insert(path);
+        items[resultId].id = resultId;
+        items[resultId].execId = execId;
+        items[resultId].lastExecuted = lastExecuted;
+        items[resultId].lastDuration = lastDuration;
+        items[resultId].path = cacheDir + "/" + resultId + "." + format;
+        items[resultId].format = format;
+        items[resultId].rowCount = rowCount;
+        items[resultId].links.insert(path);
     }
 
     void CacheRegistry::save(string id) {
@@ -37,6 +38,7 @@ namespace db_agg {
         }
         CacheItem& item = items[id];
         json_t *jo = json_object();
+        json_object_set_new(jo, "execId", json_string(item.execId.c_str()));
         json_object_set_new(jo, "lastExecuted", json_string(item.lastExecuted.to_string().c_str()));
         json_object_set_new(jo, "lastDuration", json_integer(item.lastDuration));
         json_object_set_new(jo, "rowCount", json_integer(item.rowCount));
@@ -64,6 +66,10 @@ namespace db_agg {
             return;
         }
         CacheItem ci;
+        json_t *jsExecId = json_object_get(value,"execId");
+        if (jsExecId) {
+        	ci.execId = json_string_value(jsExecId);
+        }
         Time lastExecuted(json_string_value(json_object_get(value,"lastExecuted")));
         ci.lastExecuted = lastExecuted;
         ci.lastDuration = json_integer_value(json_object_get(value,"lastDuration"));

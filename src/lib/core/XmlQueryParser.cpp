@@ -124,12 +124,17 @@ Query *XmlQueryParser::parseQuery(xmlElementPtr executionNode) {
     if (properties.find("shardId") != properties.end()) {
         shardId = stoi(properties["shardId"]);
     }
+
+    string environment;
+    if (properties.find("environment") != properties.end()) {
+    	environment = properties["environment"];
+    }
+
     string name = properties["name"];
     string query = trim(properties["query"]);
     string formattedSql = cutBlock(properties["query"]);
     string normalizedSql = normalizeQuery(properties["query"]);
     string id = string(md5hex(name + ":" + query));
-    string environment;
     string type = properties["type"];
     if (type == "resource") {
         char *absUri = (char*)xmlBuildURI((xmlChar*)query.c_str(),(xmlChar*)baseUrl.c_str());
@@ -152,6 +157,7 @@ Query *XmlQueryParser::parseQuery(xmlElementPtr executionNode) {
 
     Query *q = new Query(id,type,loc,query,formattedSql,normalizedSql,usedNamespaces);
 
+    /*
     string depends = properties["depends"];
     vector<string> dependencies;
     split(depends,',',dependencies);
@@ -160,6 +166,7 @@ Query *XmlQueryParser::parseQuery(xmlElementPtr executionNode) {
         LOG_DEBUG("add dependency " << dep);
         q->addDependency(dloc,"");
     }
+    */
 
     return q;
 }

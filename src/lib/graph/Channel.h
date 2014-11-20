@@ -11,8 +11,11 @@
 #include <string>
 #include <memory>
 #include "DataReceiver.h"
+#include "DataSender.h"
 
 namespace db_agg {
+
+class QueryExecution;
 
 enum class ChannelState {
     READY,
@@ -22,17 +25,22 @@ enum class ChannelState {
 
 class Channel {
 private:
-    std::string name;
-    DataReceiver *receiver;
+    std::string targetPort;
+    DataReceiver *target;
+    std::string sourcePort{""};
+    DataSender *source{nullptr};
     ChannelState state{ChannelState::READY};
 public:
-    Channel(std::string name, DataReceiver *receiver);
+    Channel(DataSender *source, std::string sourcePort, DataReceiver *target, std::string targetPort);
     void open();
     void send(std::shared_ptr<TableData> data);
     void close();
     ChannelState getState();
-    std::string getName();
+    QueryExecution* getTarget();
+    std::string getTargetPort();
+    std::string getSourcePort();
     friend class ExecutionGraph;
+    friend class ExecutionGraph2;
 };
 }
 

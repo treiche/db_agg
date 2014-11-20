@@ -12,6 +12,7 @@
 #include "type/oids.h"
 #include "type/TypeRegistry.h"
 #include "utils/RegExp.h"
+#include "utils/string.h"
 
 using namespace std;
 using namespace log4cplus;
@@ -42,15 +43,19 @@ namespace db_agg {
 
     QueryExecution::~QueryExecution() {
         LOG_TRACE("delete query execution");
-        if (data!=nullptr) {
-            data.reset();
+        for (auto& result:results) {
+			if (result.second.get() != nullptr) {
+				result.second.reset();
+			}
         }
     }
 
     void QueryExecution::release() {
         LOG_INFO("use_count for result " << getName());
-        LOG_INFO("result use_count before release = " << data.use_count() << " unique = " << data.unique());
-        data.reset();
+        for (auto& result:results) {
+        	LOG_INFO("result use_count before release = " << result.second.use_count() << " unique = " << result.second.unique());
+        	result.second.reset();
+        }
         for (auto& dependency:dependencies) {
             LOG_INFO("dependency " << dependency.first << " use_count before release = " << dependency.second.use_count());
             dependency.second.reset();
@@ -60,13 +65,19 @@ namespace db_agg {
     }
 
 
-    shared_ptr<TableData> QueryExecution::getResult() {
-        return data;
+    shared_ptr<TableData> QueryExecution::getResult(string shardId) {
+    	if (results.find(shardId) == results.end()) {
+    		for (auto result:results) {
+    			LOG_INFO("result = " << result.first);
+    		}
+    		THROW_EXC("execution '" << getName() << "' does not have a result port '" << shardId << "' has " << results.size() << "candidates");
+    	}
+        return results[shardId];
     }
 
-    void QueryExecution::setResult(shared_ptr<TableData> data) {
-        LOG_DEBUG("set result to " << data);
-        this->data = data;
+    void QueryExecution::setResult(string shardId, shared_ptr<TableData> result) {
+        LOG_DEBUG("set result to " << result);
+        results[shardId] = result;
     }
 
     bool QueryExecution::isComplete() {
@@ -84,9 +95,12 @@ namespace db_agg {
     }
 
     void QueryExecution::receive(string name, shared_ptr<TableData> data) {
-        LOG_DEBUG("receive data " << data);
-        if (dependencies.find(name)==dependencies.end()) {
-            throw runtime_error("no dependency '" + name + "' declared");
+        LOG_DEBUG("receive data " << name);
+        if (dependencies.find(name) == dependencies.end()) {
+        	for (auto dep:dependencies) {
+        		LOG_INFO("declared " << dep.first);
+        	}
+            THROW_EXC("no dependency '" + name + "' declared");
         }
         dependencies[name] = data;
     }
@@ -110,14 +124,6 @@ namespace db_agg {
 
     string QueryExecution::getName() {
         return name;
-    }
-
-    shared_ptr<TableData> QueryExecution::getData() {
-        return data;
-    }
-
-    void QueryExecution::setData(std::shared_ptr<TableData> data) {
-        this->data = data;
     }
 
     void QueryExecution::setScheduled() {
@@ -171,6 +177,10 @@ namespace db_agg {
         setScheduled();
     }
 
+    bool QueryExecution::isTransition() {
+    	return false;
+    }
+
     void QueryExecution::cleanUp() {}
 
     bool QueryExecution::isResourceAvailable() {
@@ -178,6 +188,35 @@ namespace db_agg {
     }
 
     void QueryExecution::stop() {}
+
+    void QueryExecution::setPortNames(vector<std::string> portNames) {
+    	portIds.clear();
+    	for (auto& portName:portNames) {
+    		portIds[portName] = "";
+    	}
+    }
+
+    vector<string> QueryExecution::getPortNames() {
+    	vector<string> portNames;
+    	for (auto port:portIds) {
+    		portNames.push_back(port.first);
+    	}
+    	return portNames;
+    }
+
+    void QueryExecution::setPortId(string portName, string portId) {
+    	if (portIds.find(portName) == portIds.end()) {
+    		THROW_EXC("unknown port '" << portName << "'");
+    	}
+    	portIds[portName] = portId;
+    }
+
+    string QueryExecution::getPortId(string portName) {
+    	if (portIds.find(portName) == portIds.end()) {
+    		THROW_EXC("unknown port '" << portName << "'");
+    	}
+    	return portIds[portName];
+    }
 
 }
 
