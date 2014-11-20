@@ -1,0 +1,16 @@
+= Commandline Usage =
+
+== Usage ==
+
+[source,sh]
+----
+db_agg [OPTIONS] {% for argument in arguments %}${argument.name} [${argument.description}]{% endfor %}
+----
+
+== Options ==
+
+{%- for optionGroup in optionGroups %}
+{% for option in optionGroup.options %}
+-${option.short} --${option.long}:: ${option.shortDescription}
+{% endfor %}
+{%- endfor %}
