@@ -158,6 +158,9 @@ void CursesListener::handleEvent(shared_ptr<Event> event) {
 }
 
 void CursesListener::print(std::string resultId, ColumnType colType, std::string value) {
+    if (resultIdToPosition.find(resultId) == resultIdToPosition.end()) {
+        return;
+    }
     size_t width = 0;
     bool leftJustified = false;
     bool show = false;
