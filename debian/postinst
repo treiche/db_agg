@@ -4,3 +4,5 @@ set -e
 echo "Postinst running ..."
 ldconfig
 echo "Ran ldconfig"
+
+#DEBHELPER#

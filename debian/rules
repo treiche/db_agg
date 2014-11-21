@@ -5,5 +5,18 @@
 override_dh_strip:
 	dh_strip --dbg-package=db-agg-dbg
 
+multiarch=$(shell /usr/bin/dpkg-architecture -qDEB_HOST_MULTIARCH)
+
+override_dh_auto_configure:
+	@echo "mutliarch=$(multiarch)"
+	dh_auto_configure --buildsystem=cmake -- \
+       -Ddpkg_build=on\
+       -Dprefix=/usr \
+       -Dmandir="/usr/share/man"\
+       -Dinfodir="/usr/share/info"\
+       -Dsysconfdir="/etc"\
+       -Dlocalstatedir="/var"\
+       -Dlibdir=/usr/lib/$(multiarch)
+
 %:
-	dh $@
+	dh $@ --buildsystem=cmake
