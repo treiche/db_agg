@@ -9,7 +9,7 @@ endif()
 include_directories("${DB_AGG_CONFIG_HEADER_DIR}")
 include_directories("${PROJECT_BINARY_DIR}")
 
-set(SUBDIRS cache core event excel extension graph injection postgres sharding table type utils)
+set(SUBDIRS cache core event excel extension graph injection postgres sharding table type utils template)
 foreach (subdir ${SUBDIRS})
     file(GLOB sources ${subdir}/*.cpp)
     add_library(${subdir} OBJECT ${sources})
@@ -35,4 +35,4 @@ add_library(libdbagg SHARED
 SET_TARGET_PROPERTIES(libdbagg PROPERTIES OUTPUT_NAME db_agg)
 SET_TARGET_PROPERTIES(libdbagg PROPERTIES VERSION ${PACKAGE_VERSION})
 
-install(TARGETS libdbagg DESTINATION lib)
+install(TARGETS libdbagg DESTINATION ${libdir})

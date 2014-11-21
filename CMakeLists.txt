@@ -4,7 +4,7 @@ project(db_agg)
 
 set(VERSION_MAJOR 0)
 set(VERSION_MINOR 9)
-set(VERSION_PATCH 2)
+set(VERSION_PATCH 4)
 set(PACKAGE_VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
@@ -22,10 +22,26 @@ include_directories(${LIBXML2_INCLUDE_DIR})
 find_package(PostgreSQL REQUIRED)
 include_directories(${POSTGRESQL_INCLUDE_DIR})
 
-list(APPEND CMAKE_CXX_FLAGS " -Wall -std=c++11 -fPIC")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++11 -fPIC")
+
+#
+# configuration options formerly given by autoconf
+#
+
+if (NOT dpkg_build)
+
+    SET(prefix ${CMAKE_INSTALL_PREFIX})
+    SET(libdir "\${prefix}/libs")
+    SET(sysconfdir "\${prefix}/etc")
+    SET(includedir "\${prefix}/include")
+    SET(mandir "\${prefix}/share/man")
+    SET(infodir "\${prefix}/share/info")
+    SET(localstatedir "\${prefix}/var")
+
+endif()
 
 configure_file (
-    "${PROJECT_SOURCE_DIR}/src/installation_cmake.h.in"
+    "${PROJECT_SOURCE_DIR}/src/installation.h.in"
     "${PROJECT_BINARY_DIR}/installation.h"
     set(DB_AGG_CONFIG_HEADER_DIR ${PROJECT_BINARY_DIR})
 )
@@ -76,4 +92,15 @@ target_link_libraries(db_agg_config libdbagg
 )
 
 install(TARGETS db_agg DESTINATION bin)
-install(FILES src/lib/db_agg.h src/installation.h DESTINATION include/${CMAKE_PROJECT_NAME})
+if (dpkg_build)
+    install(
+        DIRECTORY etc/
+        DESTINATION "${sysconfdir}/db_agg"
+    )
+else()
+    install(
+        DIRECTORY etc/
+        DESTINATION etc
+    )
+endif()
+install(FILES src/lib/db_agg.h "${PROJECT_BINARY_DIR}/installation.h" DESTINATION include/${CMAKE_PROJECT_NAME})
