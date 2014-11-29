@@ -1,0 +1,184 @@
+/*
+ * VirtualTableData.cpp
+ *
+ *  Created on: Nov 29, 2014
+ *      Author: arnd
+ */
+
+#include "VirtualTableData.h"
+#include <iostream>
+#include "utils/logging.h"
+
+using namespace std;
+
+DECLARE_LOGGER("VirtualTableData")
+
+map<string, shared_ptr<db_agg::TableData>> tables;
+
+void registerTableData(std::string name,
+        std::shared_ptr<db_agg::TableData> tabledata) {
+    tables[name] = tabledata;
+}
+
+static shared_ptr<db_agg::TableData> currentTable;
+
+typedef struct {
+    sqlite3_vtab vtab;
+} tabledata_vtab;
+
+typedef struct {
+    sqlite3_vtab_cursor cursor;
+    long pos;
+} tabledata_cursor;
+
+static int tabledata_connect(sqlite3* db, void *pAux, int argc,
+        const char * const *argv, sqlite3_vtab **ppVTab, char **pzErr) {
+
+    for (int idx = 0; idx < argc; idx++) {
+        cout << "arg[" << idx << "] = " << argv[idx] << endl;
+    }
+    LOG_DEBUG("tabledata_connect");
+    string depName = argv[3];
+    if (tables.find(depName) == tables.end()) {
+        THROW_EXC("table '" << depName << "' is not registered");
+    }
+    cout << "depName = " << depName << endl;
+    currentTable = tables[depName];
+    cout << "tableData = " << currentTable->getRowCount() << endl;
+
+    string schema = "CREATE TABLE x(";
+    size_t rowCount = currentTable->getRowCount();
+    for (size_t idx = 0; idx < rowCount; idx++) {
+        auto col = currentTable->getColumns()[idx];
+        schema += col.first + " text";
+        if (idx < rowCount - 1) {
+            schema += ",";
+        }
+    }
+    schema += ")";
+    cout << "schema = " << schema << endl;
+    int rc = sqlite3_declare_vtab(db, schema.c_str());
+    if (rc != SQLITE_OK) {
+        THROW_EXC("schema declaration failed");
+    }
+
+    tabledata_vtab * vtab = (tabledata_vtab *) calloc(1,
+            sizeof(tabledata_vtab));
+    *ppVTab = &vtab->vtab;
+    return SQLITE_OK;
+}
+
+static int tabledata_create(sqlite3* db, void *pAux, int argc,
+        const char * const *argv, sqlite3_vtab **ppVTab, char **pzErr) {
+
+    LOG_DEBUG("tabledata_create");
+    return tabledata_connect(db, pAux, argc, argv, ppVTab, pzErr);
+}
+
+static
+int tabledata_disconnect(sqlite3_vtab *pVTab) {
+    LOG_DEBUG("tabledata_disconnect");
+    return SQLITE_OK;
+}
+
+static
+int tabledata_destroy(sqlite3_vtab *pVTab) {
+    LOG_DEBUG("tabledata_destroy");
+    return SQLITE_OK;
+}
+
+static
+int tabledata_best_index(sqlite3_vtab *pVTab, sqlite3_index_info* info) {
+    LOG_DEBUG("tabledata_best_index");
+    return SQLITE_OK;
+}
+
+static
+int tabledata_open(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor) {
+    LOG_DEBUG("tabledata_open");
+    tabledata_cursor * cur = (tabledata_cursor *) malloc(sizeof(*cur));
+    if (!cur)
+        return SQLITE_ERROR;
+
+    cur->cursor.pVtab = pVTab;
+    cur->pos = 0;
+
+    *ppCursor = &cur->cursor;
+    return SQLITE_OK;
+}
+
+static int tabledata_close(sqlite3_vtab_cursor* pCursor) {
+    LOG_DEBUG("tabledata_close");
+    free(pCursor);
+    return SQLITE_OK;
+}
+
+static int tabledata_filter(sqlite3_vtab_cursor* pCursor, int idxNum,
+        const char *idxStr, int argc, sqlite3_value **argv) {
+    LOG_DEBUG("tabledata_filter");
+    return SQLITE_OK;
+}
+
+static
+int tabledata_eof(sqlite3_vtab_cursor* pCursor) {
+    tabledata_cursor * cur = (tabledata_cursor *) pCursor;
+
+    LOG_DEBUG("tabledata_eof " << cur->pos);
+
+    if (cur->pos >= currentTable->getRowCount()) {
+        return 1;
+    }
+
+    return SQLITE_OK;
+}
+
+static
+int tabledata_next(sqlite3_vtab_cursor* pCursor) {
+    tabledata_cursor * cur = (tabledata_cursor *) pCursor;
+    tabledata_vtab * tab = (tabledata_vtab *) cur->cursor.pVtab;
+    LOG_DEBUG("tabledata_next pos = " << cur->pos);
+    cur->pos++;
+    return SQLITE_OK;
+}
+
+static
+int tabledata_rowid(sqlite3_vtab_cursor* pCursor, sqlite3_int64 *pRowid) {
+    LOG_DEBUG("tabledata_rowid");
+    return SQLITE_OK;
+}
+
+static
+int tabledata_column(sqlite3_vtab_cursor* pCursor, sqlite3_context* ctx,
+        int n) {
+    LOG_DEBUG("tabledata_column " << n);
+    tabledata_cursor * cur = (tabledata_cursor *) pCursor;
+    tabledata_vtab * tab = (tabledata_vtab *) cur->cursor.pVtab;
+
+    string value = currentTable->getValue(cur->pos, n);
+    cout << "value = " << value << endl;
+    if (value == "\\N") {
+        sqlite3_result_null(ctx);
+        return SQLITE_OK;
+    }
+    sqlite3_result_text(ctx, value.c_str(), -1, SQLITE_TRANSIENT);
+    return SQLITE_OK;
+}
+
+int sq3_register_virtual_tabledata(sqlite3 * db) {
+    static sqlite3_module tabledata_module;
+    tabledata_module.iVersion = 1;
+    tabledata_module.xCreate = tabledata_create;
+    tabledata_module.xConnect = tabledata_connect;
+    tabledata_module.xDisconnect = tabledata_disconnect;
+    tabledata_module.xDestroy = tabledata_destroy;
+    tabledata_module.xBestIndex = tabledata_best_index;
+    tabledata_module.xOpen = tabledata_open;
+    tabledata_module.xClose = tabledata_close;
+    tabledata_module.xFilter = tabledata_filter;
+    tabledata_module.xEof = tabledata_eof;
+    tabledata_module.xNext = tabledata_next;
+    tabledata_module.xRowid = tabledata_rowid;
+    tabledata_module.xColumn = tabledata_column;
+    return sqlite3_create_module(db, "DBAGG", &tabledata_module, nullptr);
+}
+
