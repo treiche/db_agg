@@ -11,9 +11,6 @@
 #include "Sqlite3Execution.h"
 #include "VirtualTableData.h"
 
-extern "C" {
-#include <sqlite3.h>
-}
 
 using namespace std;
 using namespace db_agg;
@@ -43,52 +40,65 @@ bool Sqlite3Execution::isResourceAvailable() {
 }
 
 bool Sqlite3Execution::process() {
-    LOG_DEBUG("process " << getUrl()->getUrl());
-    if (getUrl()->getProtocol() != "file") {
-        THROW_EXC("only protocol 'file' supported yet");
-    }
-
-    for (auto& dep : getDependencies()) {
-        LOG_DEBUG("register dependency " << dep.first);
-        registerTableData(dep.first, dep.second);
-    }
-
-    sqlite3_auto_extension((void (*)(void))xEntryPoint);sqlite3
-    *db;
-    sqlite3_stmt *stmt;
-    int rc;
     char *zErrMsg = 0;
-    string dbFile = "/" + getUrl()->getPath();
-    LOG_DEBUG("open db " << dbFile);
-    rc = sqlite3_open_v2(dbFile.c_str(), &db, SQLITE_OPEN_READWRITE, nullptr);
-    LOG_DEBUG("process db = " << db);
-    if (rc) {
-        THROW_EXC("open database failed")
-    }
-    sqlite3_enable_load_extension(db, 0);
-    //string sql = getSql() + "; create virtual table tbl using csvfile(/home/arnd/scratchpad/db_agg_github/tmp/csvfile/test.csv);";
+    int rc;
+    LOG_DEBUG("process " << lastOffset);
 
-    for (auto& dep : getDependencies()) {
-        string sql = "create virtual table if not exists " + dep.first
-                + " using dbagg(" + dep.first + ");";
+    if (lastOffset == 0) {
 
-        LOG_DEBUG("execute '" << sql << "'")
-        rc = sqlite3_exec(db, sql.c_str(), nullptr, nullptr, &zErrMsg);
-        if (rc != SQLITE_OK) {
-            THROW_EXC("err = " << zErrMsg);
+        LOG_DEBUG("process " << getUrl()->getUrl());
+        if (getUrl()->getProtocol() != "file") {
+            THROW_EXC("only protocol 'file' supported yet");
         }
+
+        for (auto& dep : getDependencies()) {
+            LOG_DEBUG("register dependency " << dep.first);
+            registerTableData(dep.first, dep.second);
+        }
+
+        sqlite3_auto_extension((void (*)(void))xEntryPoint);
+        string dbFile = "/" + getUrl()->getPath();
+        LOG_DEBUG("open db " << dbFile);
+        rc = sqlite3_open_v2(dbFile.c_str(), &db, SQLITE_OPEN_READWRITE, nullptr);
+        LOG_DEBUG("process db = " << db);
+        if (rc) {
+            THROW_EXC("open database failed")
+        }
+        sqlite3_enable_load_extension(db, 0);
+        //string sql = getSql() + "; create virtual table tbl using csvfile(/home/arnd/scratchpad/db_agg_github/tmp/csvfile/test.csv);";
+
+        for (auto& dep : getDependencies()) {
+            string sql = "create virtual table if not exists " + dep.first
+                    + " using dbagg(" + dep.first + ");";
+
+            LOG_DEBUG("execute '" << sql << "'")
+            rc = sqlite3_exec(db, sql.c_str(), nullptr, nullptr, &zErrMsg);
+            if (rc != SQLITE_OK) {
+                THROW_EXC("err = " << zErrMsg);
+            }
+            shared_ptr<Event> evs(new SentDataEvent(getId(),dep.second->getRowCount()));
+            fireEvent(evs);
+        }
+
+        string sql = getSql();
+        rc = sqlite3_prepare(db, sql.c_str(), -1, &stmt, 0);
+        if (rc != SQLITE_OK) {
+            THROW_EXC("preparation of '" << sql << "' failed");
+        }
+        shared_ptr<Event> ev(new ExecutionStateChangeEvent(getId(),"CONNECTED"));
+        fireEvent(ev);
     }
 
-    string sql = getSql();
-    rc = sqlite3_prepare(db, sql.c_str(), -1, &stmt, 0);
-    if (rc != SQLITE_OK) {
-        THROW_EXC("preparation of '" << sql << "' failed");
-    }
-
-    int rowReceived = 0;
-    bool tableCreated = false;
-    while ((rc = sqlite3_step(stmt)) != SQLITE_DONE) {
-        int n;
+    uint64_t row;
+    int n;
+    bool queryDone = false;
+    for (row = lastOffset; row < lastOffset + chunkSize; row++) {
+        int rc = sqlite3_step(stmt);
+        if (rc == SQLITE_DONE) {
+            sqlite3_finalize(stmt);
+            queryDone = true;
+            break;
+        }
         vector<pair<string, uint32_t>> colHeads;
         vector<string> colVals;
         switch (rc) {
@@ -119,39 +129,41 @@ bool Sqlite3Execution::process() {
                 }
             }
             resultTable->addRow(colVals);
-            rowReceived++;
             break;
         default:
             THROW_EXC("unknown error code " << rc);
         }
     }
-    sqlite3_finalize(stmt);
+
 
     shared_ptr<Event> rde(new ReceiveDataEvent(getId(),resultTable->getRowCount()));
     fireEvent(rde);
 
-    LOG_DEBUG("drop virtual tables " << getDependencies().size());
-    for (auto& dep : getDependencies()) {
-        string sql = "drop table " + dep.first + ";";
-        LOG_DEBUG(sql);
-        zErrMsg = nullptr;
-        rc = sqlite3_exec(db, sql.c_str(), nullptr, nullptr, &zErrMsg);
-        if (rc != SQLITE_OK) {
-            LOG_DEBUG(
-                    "err = code = " << rc << zErrMsg << " code = " << rc << " code");
+    if (queryDone) {
+        LOG_DEBUG("drop virtual tables " << getDependencies().size());
+        for (auto& dep : getDependencies()) {
+            string sql = "drop table " + dep.first + ";";
+            LOG_DEBUG(sql);
+            zErrMsg = nullptr;
+            rc = sqlite3_exec(db, sql.c_str(), nullptr, nullptr, &zErrMsg);
+            if (rc != SQLITE_OK) {
+                LOG_DEBUG(
+                        "err = code = " << rc << zErrMsg << " code = " << rc << " code");
+            }
         }
+        sqlite3_close(db);
+
+        setResult("", resultTable);
+        shared_ptr<Event> event(new Event(EventType::PROCESSED, getId()));
+        fireEvent(event);
+        shared_ptr<Event> e(new ExecutionStateChangeEvent(getId(), "DONE"));
+        EventProducer::fireEvent(e);
+        setDone();
+        LOG_DEBUG("process done");
+        return true;
     }
-    sqlite3_close(db);
-
-    setResult("", resultTable);
-    shared_ptr<Event> event(new Event(EventType::PROCESSED, getId()));
-    fireEvent(event);
-    shared_ptr<Event> e(new ExecutionStateChangeEvent(getId(), "DONE"));
-    EventProducer::fireEvent(e);
-    setDone();
-    LOG_DEBUG("process done");
-
-    return true;
+    lastOffset = row;
+    return false;
 }
 
 }
