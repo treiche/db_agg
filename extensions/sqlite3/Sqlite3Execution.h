@@ -20,6 +20,7 @@ private:
     uint32_t keyColIdx = 0;
 public:
     virtual bool process() override;
+    virtual bool isResourceAvailable() override;
 };
 }
 
