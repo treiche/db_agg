@@ -7,6 +7,12 @@
 
 #include "UrlRegistry.h"
 #include "utils/logging.h"
+#include "utils/utility.h"
+#include "utils/xml.h"
+#include "utils/File.h"
+#include "utils/RegExp.h"
+
+#include <list>
 
 using namespace std;
 using namespace log4cplus;
@@ -16,25 +22,6 @@ using namespace log4cplus;
 namespace db_agg {
 
 static Logger LOG = Logger::getInstance(LOG4CPLUS_TEXT("UrlRegistry"));
-
-void errorHandler(void * ctx, const char * msg, ...) {
-    va_list ap;
-    va_start(ap, msg);
-    char buf[1024];
-    vsprintf(buf,msg,ap);
-    cout << "ERROR: " << buf << endl;
-    LOG_ERROR(buf);
-}
-
-void warningHandler(void * ctx, const char * msg, ...) {
-    va_list ap;
-    va_start(ap, msg);
-    char buf[1024];
-    vsprintf(buf,msg,ap);
-    cout << "WARNING: " << buf << endl;
-    LOG_WARN(buf);
-}
-
 
 bool hasAttribute(xmlElementPtr element, string attrName) {
     xmlAttribute *attr = element->attributes;
@@ -120,33 +107,23 @@ void UrlRegistry::getElementsById(xmlNodePtr node) {
     }
 }
 
-UrlRegistry::UrlRegistry(string regfile, string schemaFile) {
-    // load schema file
-    xmlSchemaParserCtxtPtr ctx = xmlSchemaNewParserCtxt(schemaFile.c_str());
-    xmlSchemaSetParserErrors(ctx,(xmlSchemaValidityErrorFunc)errorHandler,(xmlSchemaValidityWarningFunc)warningHandler,nullptr);
-    xmlSchemaPtr schema = xmlSchemaParse(ctx);
-    xmlSchemaFreeParserCtxt(ctx);
-    // load registry file
-    this->document = xmlReadFile(regfile.c_str(), NULL, 0);
-    // validate
-    xmlSchemaValidCtxtPtr vctx = xmlSchemaNewValidCtxt(schema);
-    xmlSchemaSetValidErrors(vctx, (xmlSchemaValidityErrorFunc)errorHandler, (xmlSchemaValidityErrorFunc)warningHandler,nullptr);
-    int ret = xmlSchemaValidateDoc(vctx, this->document);
-    xmlSchemaFreeValidCtxt(vctx);
-    xmlSchemaFree(schema);
-    if (ret != 0) {
-        THROW_EXC("url registry file is not valid");
-    }
+UrlRegistry::UrlRegistry(string regfile) {
+    string q = readFile(regfile);
+    File rf(regfile);
+    string baseUrl = "file://" + rf.abspath();
+    LOG_DEBUG("baseUrl = " << baseUrl);
+
+    this->document = parseDoc(q,baseUrl,false);
     // get id to element map
     getElementsById((xmlNodePtr)this->document);
 
     shared_ptr<Url> parentUrl;
     recurse((xmlNodePtr)this->document, parentUrl, "");
-    cout << "got " << this->urls.size() << " urls" << endl;
+    LOG_DEBUG("got " << this->urls.size() << " urls");
     for (auto env:this->urls) {
-        cout << env.first << ":" << endl;
+        LOG_DEBUG(env.first << ":");
         for (auto url:env.second) {
-            cout << "    " << url->getUrl() << endl;
+            LOG_DEBUG("    " << url->getUrl());
         }
     }
 }
@@ -167,6 +144,53 @@ vector<shared_ptr<Url>> UrlRegistry::findUrls(string env, shared_ptr<Url> wcUrl)
     }
     return matches;
 }
+
+vector<shared_ptr<Url>> UrlRegistry::findUrls(string env, string type, string query) {
+    vector<shared_ptr<Url>> matches;
+    string expr("/urls/environment[@name='" + env + "']//match");
+    xmlXPathContextPtr xpathCtx = xmlXPathNewContext(this->document);
+    xmlXPathObjectPtr xpathObj = xmlXPathEvalExpression((const xmlChar*)expr.c_str(), xpathCtx);
+    xmlNodeSetPtr nodes = xpathObj->nodesetval;
+    LOG_DEBUG("found " << nodes->nodeNr << " matchers");
+    for (int idx=0;idx<nodes->nodeNr;idx++) {
+        xmlNodePtr node = nodes->nodeTab[idx];
+        if(node->type == XML_ELEMENT_NODE) {
+        	string regexp = getAttribute((xmlElementPtr)node,"regexp");
+        	LOG_DEBUG("regexp = " << regexp);
+        	RegExp re(regexp);
+        	if (re.matches(query)) {
+        		LOG_DEBUG("matched");
+        		matches.push_back(getUrl((xmlElementPtr)node));
+        	}
+        }
+    }
+    return matches;
+}
+
+shared_ptr<Url> UrlRegistry::getUrl(xmlElementPtr element) {
+	shared_ptr<Url> url(new Url());
+	xmlNodePtr tmp = (xmlNodePtr)element;
+	list<string> path;
+	while(tmp->type != XML_DOCUMENT_NODE) {
+		LOG_DEBUG("tmp = " << tmp->name);
+		string name((const char*)tmp->name);
+		if (name == "path") {
+			path.push_front(getAttribute((xmlElementPtr)tmp,"value"));
+		} else if (name == "host") {
+			url->setHost(getAttribute((xmlElementPtr)tmp,"value"));
+		} else if (name == "port") {
+			url->setPort(getAttribute((xmlElementPtr)tmp,"value"));
+		} else if (name == "protocol") {
+			url->setProtocol(getAttribute((xmlElementPtr)tmp,"value"));
+		}
+		tmp = tmp->parent;
+	}
+	for (auto p:path) {
+		url->addPathItem(p);
+	}
+	return url;
+}
+
 
 }
 

@@ -10,6 +10,7 @@
 #include "JoinedTableData.h"
 #include "SplittedTableData.h"
 #include "ExtendedTableData.h"
+#include "TableDataRange.h"
 
 using namespace std;
 
@@ -54,6 +55,10 @@ shared_ptr<TableData> TableDataFactory::extend(vector<shared_ptr<TableData>> tab
 
 shared_ptr<TableData> TableDataFactory::extend(vector<ColRef> colRefs) {
     return shared_ptr<TableData>(new ExtendedTableData(colRefs));
+}
+
+shared_ptr<TableData> TableDataFactory::range(shared_ptr<TableData> source, uint64_t startRow, uint64_t rowCount) {
+    return shared_ptr<TableData>(new TableDataRange(source,startRow,rowCount));
 }
 
 }

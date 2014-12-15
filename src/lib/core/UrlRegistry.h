@@ -15,6 +15,7 @@
 #include "Url.h"
 extern "C" {
     #include <libxml/xmlschemas.h>
+	#include <libxml/xpath.h>
 }
 
 namespace db_agg {
@@ -25,10 +26,12 @@ private:
     std::map<std::string, xmlElementPtr> elementById;
     void getElementsById(xmlNodePtr node);
     void recurse(xmlNodePtr node, std::shared_ptr<Url> parentUrl, std::string environment);
+    std::shared_ptr<Url> getUrl(xmlElementPtr element);
 public:
-    UrlRegistry(std::string regfile, std::string schemaFile);
+    UrlRegistry(std::string regfile);
     ~UrlRegistry();
     std::vector<std::shared_ptr<Url>> findUrls(std::string env, std::shared_ptr<Url> wcUrl);
+    std::vector<std::shared_ptr<Url>> findUrls(std::string env, std::string type, std::string query);
 };
 }
 

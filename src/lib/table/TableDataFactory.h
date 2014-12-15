@@ -28,6 +28,7 @@ public:
     std::shared_ptr<TableData> split(std::shared_ptr<TableData> source, std::vector<uint64_t> offsets);
     std::shared_ptr<TableData> extend(std::vector<std::shared_ptr<TableData>> tables);
     std::shared_ptr<TableData> extend(std::vector<ColRef> colRefs);
+    std::shared_ptr<TableData> range(std::shared_ptr<TableData> source, uint64_t startRow, uint64_t rowCount);
 };
 }
 
