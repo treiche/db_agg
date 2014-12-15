@@ -26,6 +26,14 @@ namespace db_agg {
         this->type = type;
     }
 
+    void Query::setUrl(shared_ptr<Url> url) {
+        this->url = url;
+    }
+
+    shared_ptr<Url> Query::getUrl() {
+        return url;
+    }
+
     void Query::addDependency(Locator locator, string alias) {
         Dependency dep{Locator(locator),alias};
         dependencies.push_back(dep);
