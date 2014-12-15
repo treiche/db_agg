@@ -7,6 +7,8 @@
 
 #include "VirtualTableData.h"
 #include "utils/logging.h"
+#include "type/TypeRegistry.h"
+
 
 using namespace std;
 
@@ -50,7 +52,8 @@ static int tabledata_connect(sqlite3* db, void *pAux, int argc,
     for (size_t idx = 0; idx < colCount; idx++) {
         LOG_DEBUG("get column definition " << idx);
         auto col = currentTable->getColumns()[idx];
-        schema += col.first + " text";
+        db_agg::TypeInfo *ti = db_agg::TypeRegistry::getInstance().getTypeInfo(col.second);
+        schema += col.first + " " + ti->name;
         if (idx < colCount - 1) {
             schema += ",";
         }

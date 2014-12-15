@@ -81,12 +81,28 @@ bool Sqlite3Execution::process() {
         }
 
         string sql = getSql();
-        rc = sqlite3_prepare(db, sql.c_str(), -1, &stmt, 0);
+        rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, 0);
         if (rc != SQLITE_OK) {
-            THROW_EXC("preparation of '" << sql << "' failed");
+            THROW_EXC("preparation of '" << sql << "' failed:" << sqlite3_errmsg(db));
         }
         shared_ptr<Event> ev(new ExecutionStateChangeEvent(getId(),"CONNECTED"));
         fireEvent(ev);
+
+        vector<string> colHeads;
+        int n = sqlite3_column_count(stmt);
+        for (int i = 0; i < n; i++) {
+            string colName(sqlite3_column_name(stmt, i));
+            //string colType(sqlite3_column_decltype(stmt, i));
+            const char *ct = sqlite3_column_decltype(stmt, i);
+            if (!ct) {
+                ct = "text";
+            }
+            string head = colName + ":" + ct;
+            colHeads.push_back(head);
+        }
+        resultTable = TableDataFactory::getInstance().create("text",
+                colHeads);
+
     }
 
     uint64_t row;
@@ -99,7 +115,6 @@ bool Sqlite3Execution::process() {
             queryDone = true;
             break;
         }
-        vector<pair<string, uint32_t>> colHeads;
         vector<string> colVals;
         switch (rc) {
         case SQLITE_ERROR:
@@ -109,7 +124,7 @@ bool Sqlite3Execution::process() {
             throw runtime_error("SQLITE_MISUSE");
             break;
         case SQLITE_ROW:
-            n = sqlite3_column_count(stmt);
+            /*
             if (!tableCreated) {
                 for (int i = 0; i < n; i++) {
                     string colName(sqlite3_column_name(stmt, i));
@@ -119,9 +134,12 @@ bool Sqlite3Execution::process() {
                         colHeads);
                 tableCreated = true;
             }
+            */
+            n = sqlite3_column_count(stmt);
             colVals.clear();
             for (int i = 0; i < n; i++) {
                 char *val = (char *) sqlite3_column_text(stmt, i);
+                string colName(sqlite3_column_name(stmt, i));
                 if (val) {
                     colVals.push_back(string(val));
                 } else {

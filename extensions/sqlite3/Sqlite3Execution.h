@@ -24,7 +24,6 @@ private:
     std::shared_ptr<db_agg::TableData> resultTable;
     sqlite3_stmt *stmt;
     sqlite3 *db;
-    bool tableCreated = false;
 public:
     virtual bool process() override;
     virtual bool isResourceAvailable() override;
