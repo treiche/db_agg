@@ -67,6 +67,7 @@ vector<Query*> XmlQueryParser::parse(string qu, string url, map<string,string>& 
         }
         string absolutePath = resourceFile.abspath();
         */
+        shared_ptr<Url> url;
         queries.push_back(new Query(id, "resource", loc, externalSource.second, externalSource.second, externalSource.second, empty));
     }
 
@@ -111,6 +112,11 @@ Query *XmlQueryParser::parseQuery(xmlElementPtr executionNode) {
     	environment = properties["environment"];
     }
 
+    shared_ptr<Url> url;
+    if (properties.find("url") != properties.end()) {
+        url = shared_ptr<Url>(new Url(properties["url"]));
+    }
+
     string name = properties["name"];
     string query = trim(properties["query"]);
     string formattedSql = cutBlock(properties["query"]);
@@ -137,6 +143,13 @@ Query *XmlQueryParser::parseQuery(xmlElementPtr executionNode) {
     }
 
     Query *q = new Query(id,type,loc,query,formattedSql,normalizedSql,usedNamespaces);
+    q->setUrl(url);
+
+    if (properties.find("dependency") != properties.end()) {
+        q->addDependency(Locator(properties["dependency"],-1,""),"");
+    }
+
+
 
     /*
     string depends = properties["depends"];
@@ -163,13 +176,25 @@ map<string,string> XmlQueryParser::getProperties(xmlElementPtr element) {
     while (child) {
         if (child->type == XML_ELEMENT_NODE) {
             xmlElementPtr childElement = (xmlElementPtr)child;
-            properties[(char*)childElement->name] = (char*)childElement->children->content;
+            xmlNodePtr tmp = child->children;
+            string content = "";
+            while(tmp) {
+                if (tmp->type == XML_TEXT_NODE) {
+                    content += (char*)tmp->content;
+                } else if (tmp->type == XML_ELEMENT_NODE) {
+                    xmlBufferPtr buf = xmlBufferCreate();
+                    xmlNodeDump(buf,tmp->doc,tmp,1,1);
+                    content += (char*)buf->content;
+                } else {
+                    THROW_EXC("unknown node type " << tmp->type);
+                }
+                tmp = tmp->next;
+            }
+            properties[(char*)childElement->name] = trim(content);
         }
         child = child->next;
     }
     return properties;
 }
-
-
 
 }
