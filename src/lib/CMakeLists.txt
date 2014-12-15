@@ -30,7 +30,9 @@ add_library(libdbagg SHARED
     $<TARGET_OBJECTS:sharding>
     $<TARGET_OBJECTS:table>
     $<TARGET_OBJECTS:type>
-    $<TARGET_OBJECTS:utils>)
+    $<TARGET_OBJECTS:utils>
+    $<TARGET_OBJECTS:template>
+)
 
 SET_TARGET_PROPERTIES(libdbagg PROPERTIES OUTPUT_NAME db_agg)
 SET_TARGET_PROPERTIES(libdbagg PROPERTIES VERSION ${PACKAGE_VERSION})
