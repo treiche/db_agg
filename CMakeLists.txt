@@ -13,16 +13,18 @@ find_package(PCRE REQUIRED)
 find_package(Jansson REQUIRED)
 find_package(LibZip REQUIRED)
 find_package(Log4cplus REQUIRED)
-
 find_package(Curses REQUIRED)
-
 find_package(LibXml2 REQUIRED)
+find_package(LibXslt REQUIRED)
+find_package (Threads REQUIRED)
+
+include_directories(${LIBXSLT_INCLUDE_DIR})
 include_directories(${LIBXML2_INCLUDE_DIR})
 
 find_package(PostgreSQL REQUIRED)
 include_directories(${POSTGRESQL_INCLUDE_DIR})
 
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++11 -fPIC")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -g -std=c++11 -fPIC")
 
 #
 # configuration options formerly given by autoconf
@@ -47,6 +49,9 @@ configure_file (
 )
 
 add_subdirectory("src/lib")
+add_subdirectory("extensions/memcached")
+add_subdirectory("extensions/sqlite3")
+add_subdirectory("extensions/soap")
 
 include_directories("${PROJECT_BINARY_DIR}")
 include_directories("${PROJECT_SOURCE_DIR}/src/lib")
@@ -73,6 +78,7 @@ target_link_libraries(db_agg libdbagg
     ${JANSSON_LIBRARIES}
     ${CURSES_LIBRARIES}
     ${LIBZIP_LIBRARY}
+    ${LIBXSLT_LIBRARIES}
 )
 
 add_executable(db_agg_config
@@ -89,6 +95,36 @@ target_link_libraries(db_agg_config libdbagg
     ${JANSSON_LIBRARIES}
     ${CURSES_LIBRARIES}
     ${LIBZIP_LIBRARY}
+    ${LIBXSLT_LIBRARIES}
+)
+
+
+file(GLOB sources src/test/*.cpp)
+add_library(testsrc OBJECT ${sources})
+
+add_executable(testrunner
+    src/bin/testrunner.cpp
+    "/usr/src/gmock/gtest/src/gtest-all.cc"
+    $<TARGET_OBJECTS:bin-cli>
+    $<TARGET_OBJECTS:bin-ui>
+    $<TARGET_OBJECTS:testsrc>
+)
+
+include_directories("/usr/src/gmock/gtest/")
+include_directories("/usr/src/gmock/gtest/include")
+
+target_link_libraries(testrunner
+    libdbagg
+    ${POSTGRESQL_LIBRARIES}
+    ${LIBXML2_LIBRARIES}
+    ${PCRE_LIBRARIES}
+    ${LOG4CPLUS_LIBRARIES}
+    ${JANSSON_LIBRARIES}
+    ${CURSES_LIBRARIES}
+    ${LIBZIP_LIBRARY}
+    ${CMAKE_THREAD_LIBS_INIT}
+    ${LIBXSLT_LIBRARIES}
+
 )
 
 install(TARGETS db_agg DESTINATION bin)
@@ -103,4 +139,5 @@ else()
         DESTINATION etc
     )
 endif()
+
 install(FILES src/lib/db_agg.h "${PROJECT_BINARY_DIR}/installation.h" DESTINATION include/${CMAKE_PROJECT_NAME})
