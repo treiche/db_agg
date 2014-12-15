@@ -30,6 +30,7 @@ static Logger LOG = Logger::getInstance(LOG4CPLUS_TEXT("QueryProcessor"));
 QueryProcessor::QueryProcessor(
     QueryParser& queryParser,
     DatabaseRegistry& registry,
+    UrlRegistry& urlRegistry,
     ExtensionLoader& extensionLoader,
     PasswordManager& passwordManager,
     CacheRegistry& cacheRegistry,
@@ -43,6 +44,7 @@ QueryProcessor::QueryProcessor(
     size_t maxParallelExecutions):
     queryParser(queryParser),
     databaseRegistry(registry),
+    urlRegistry(urlRegistry),
     extensionLoader(extensionLoader),
     passwordManager(passwordManager),
     cacheRegistry(cacheRegistry),
@@ -59,6 +61,8 @@ QueryProcessor::QueryProcessor(
 QueryProcessor::~QueryProcessor() {
 }
 
+//! \todo stop needs to be
+//! \callgraph
 void QueryProcessor::stop() {
     stopped = true;
     for (auto exec:executionGraph.getQueryExecutions()) {
@@ -210,18 +214,60 @@ void QueryProcessor::loadFromCache() {
     }
 }
 
+void QueryProcessor::populateUrls2(string environment) {
+    for (auto query:executionGraph.getQueries()) {
+        vector<shared_ptr<Url>> urls;
+
+        if (query->getUrl()) {
+            urls.push_back(query->getUrl());
+        } else {
+            urls = urlRegistry.findUrls(environment,query->getType(),query->getQuery());
+        }
+
+        if (urls.empty()) {
+            THROW_EXC("no url found for " <<  query->getName());
+        }
+
+        vector<string> deps;
+        for (auto& dep:query->getDependencies()) {
+            deps.push_back(dep.locator.getQName());
+        }
+
+        for (size_t idx=0; idx<urls.size(); idx++) {
+            shared_ptr<Url> url = urls[idx];
+            if (query->getType() == "postgres") {
+                pair<string,string> c = passwordManager.getCredential(url.get());
+                url->setUser(c.first);
+                url->setPassword(c.second);
+            }
+            string linkPath = query->getLocator().getQName();
+            if (urls.size() > 1) {
+                linkPath += "_" + to_string(idx + 1);
+            }
+            string resultId = md5hex(url->getUrl(false,false,false) + query->getQuery());
+            QueryExecution *exec = extensionLoader.getQueryExecution(query->getType());
+            string injectorName = query->getMetaData("injector","default");
+            shared_ptr<DependencyInjector> di = extensionLoader.getDependencyInjector(injectorName);
+            exec->init(linkPath, resultId, url ,query->getNormalizedQuery(),deps,di, query->getArguments());
+            exec->addEventListener(this);
+            executionGraph.addQueryExecution(query,exec);
+        }
+
+    }
+}
+
 void QueryProcessor::populateUrls(string environment) {
     LOG_TRACE("populate urls");
     for (auto query:executionGraph.getQueries()) {
         LOG_DEBUG("    [" << query->getName() << "] = " << query->toString());
         vector<shared_ptr<Url>> urls;
 
-        if (query->getType() == "script") {
+        if (query->getUrl()) {
+            urls.push_back(query->getUrl());
+        } else if (query->getType() == "script") {
             shared_ptr<Url> url(new Url("file","","","script.sh"));
             urls.push_back(url);
-        } else
-
-        if (query->getType() == "resource") {
+        } else if (query->getType() == "resource") {
             shared_ptr<Url> url(new Url(query->getQuery()));
             urls.push_back(url);
         } else if (query->getType() == "memcached") {
@@ -232,8 +278,7 @@ void QueryProcessor::populateUrls(string environment) {
             urls = databaseRegistry.getUrls(env,query->getType());
             // cout << "urls = " << urls.size() << endl;
             // urls.push_back(urls[0]);
-        } else
-        if (query->getUsedNamespaces().empty()) {
+        } else if (query->getUsedNamespaces().empty()) {
             // get worker url
             urls.push_back(databaseRegistry.getWorker());
         } else {
@@ -496,7 +541,7 @@ void QueryProcessor::checkConnections() {
                     shared_ptr<Event> event(new ExecutionStateChangeEvent(exec->getId(),"OK"));
                     fireEvent(event);
                 } else {
-                    throw runtime_error("resource " + exec->getUrl()->getUrl() + " is not available.");
+                    THROW_EXC("resource " + exec->getUrl()->getUrl(false,false,true) + " is not available.");
                 }
             }
         }
@@ -536,6 +581,7 @@ void QueryProcessor::cacheItem(string execId) {
     	LOG_DEBUG("save port '" << portName << "' with id " << exec.getPortId(portName));
         File linkPath{outputDir + "/" + exec.getName() + portName + ".csv"};
     	string portId = exec.getPortId(portName);
+        LOG_DEBUG("result = " << exec.getResult(portName) << " ports = '" << join(exec.getPortNames(),",") << "'");
 		uint64_t rowCount = exec.getResult(portName)->getRowCount();
 		cacheRegistry.registerItem(portId, execId, Time(),exec.getDuration(),linkPath.abspath(),"csv", rowCount);
 		exec.getResult(portName)->save(cacheRegistry.getPath(portId));

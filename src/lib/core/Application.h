@@ -8,6 +8,7 @@
 #include "cache/CacheRegistry.h"
 #include "core/Configuration.h"
 #include "core/DatabaseRegistry.h"
+#include "core/UrlRegistry.h"
 #include "extension/ExtensionLoader.h"
 #include "utils/PasswordManager.h"
 #include "core/QueryParser.h"
@@ -22,20 +23,17 @@ namespace db_agg {
             QueryProcessor *queryProcessor = nullptr;
             QueryParser *queryParser = nullptr;
             DatabaseRegistry *databaseRegistry = nullptr;
+            UrlRegistry *urlRegistry = nullptr;
             CacheRegistry *cacheRegistry = nullptr;
-            ExtensionLoader extensionLoader;
+            ExtensionLoader *extensionLoader = nullptr;
             std::string query;
             std::string queryUrl;
             std::string environment;
             std::map<std::string,std::string> externalSources;
             std::map<std::string,std::string> queryParameter;
-            static Application instance;
-            Application();
         public:
+            Application();
             static std::string findConfigurationFile(std::string name, bool createIfNeeded, bool isDir);
-            static Application& getInstance() {
-                return instance;
-            }
             virtual ~Application();
             virtual void handleEvent(std::shared_ptr<Event> event) override;
             void bootstrap(Configuration& config);

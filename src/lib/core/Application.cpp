@@ -36,8 +36,6 @@ void Application::handleSignal(int signal) {
     }
 }
 
-Application Application::instance;
-
 Application::Application() {
 }
 
@@ -54,6 +52,10 @@ Application::~Application() {
     if (passwordManager) {
         LOG_TRACE("delete PasswordManager instance");
         delete passwordManager;
+    }
+    if (extensionLoader) {
+        LOG_TRACE("delete ExtensionLoader instance");
+        delete extensionLoader;
     }
 }
 
@@ -79,6 +81,7 @@ void Application::bootstrap(Configuration& config) {
     LOG_DEBUG("load database registry");
     string databaseRegistryFile = findConfigurationFile(config.getDatabaseRegistryFile(), false, false);
     databaseRegistry = new DatabaseRegistry(databaseRegistryFile);
+    urlRegistry = new UrlRegistry("/etc/db_agg/url-registry.xml");
     LOG_DEBUG("use database registry file: " << databaseRegistryFile);
     vector<string> environments = databaseRegistry->getSystems();
     bool environmentExists = false;
@@ -134,10 +137,15 @@ void Application::bootstrap(Configuration& config) {
     	}
     }
     queryParameter = config.getQueryParameter();
+    LOG_DEBUG("load extensions");
+    string extensionDir = findConfigurationFile(config.getExtensionDir(), false,false);
+    extensionLoader = new ExtensionLoader();
+    extensionLoader->loadExtensions(extensionDir);
     queryProcessor = new QueryProcessor(
             *queryParser,
             *databaseRegistry,
-            extensionLoader,
+            *urlRegistry,
+            *extensionLoader,
             *passwordManager,
             *cacheRegistry,
             resultDir,
@@ -150,9 +158,6 @@ void Application::bootstrap(Configuration& config) {
             config.getMaxParallelExecutions()
     );
     queryProcessor->addEventListener(this);
-    LOG_DEBUG("load extensions");
-    string extensionDir = findConfigurationFile(config.getExtensionDir(), false,false);
-    extensionLoader.loadExtensions(extensionDir);
     LOG_DEBUG("bootstrapping ok");
 
 }
@@ -164,7 +169,7 @@ static string getSysConfigDir() {
 }
 
 string Application::findConfigurationFile(string name, bool createIfNeeded, bool isDir) {
-        LOG_INFO("find configuration file '" << name << "'");
+        //LOG_INFO("find configuration file '" << name << "'");
         string effectiveFile;
         if (name.find("${HOME}") == 0) {
             string homeLocation = getHomeDir() + "/.db_agg/" + name.substr(7);

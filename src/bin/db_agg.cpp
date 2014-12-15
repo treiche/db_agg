@@ -85,7 +85,7 @@ int main(int argc, char **argv) {
     // parser.dumpConfiguration(config);
     signal(SIGINT,&cancel);
     signal(SIGHUP,&cancel);
-    Application& app = Application::getInstance();
+    Application& app = *new Application();
     app.bootstrap(config);
     CursesListener *cl = nullptr;
     if (config.getShowProgress()) {
@@ -98,5 +98,6 @@ int main(int argc, char **argv) {
     if (cl!=nullptr) {
         delete cl;
     }
+    delete &app;
 }
 

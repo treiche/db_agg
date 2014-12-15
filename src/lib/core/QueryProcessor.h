@@ -13,6 +13,7 @@
 #include <memory>
 
 #include "core/DatabaseRegistry.h"
+#include "core/UrlRegistry.h"
 #include "utils/PasswordManager.h"
 #include "core/QueryParser.h"
 #include "extension/ExtensionLoader.h"
@@ -23,9 +24,24 @@
 #include "graph/ExecutionGraph.h"
 
 namespace db_agg {
+
+/*! \todo paragraph describing what is to be done
+ *
+ * \section intro_sec Introduction
+ *
+ * This is the introduction.
+ *
+ * \section install_sec Installation
+ *
+ * \subsection step1 Step 1: Opening the box
+ *
+ * etc...
+ */
+
 class QueryProcessor : public EventListener, public EventProducer {
     QueryParser& queryParser;
     DatabaseRegistry& databaseRegistry;
+    UrlRegistry& urlRegistry;
     ExtensionLoader& extensionLoader;
     PasswordManager& passwordManager;
     CacheRegistry& cacheRegistry;
@@ -37,6 +53,7 @@ class QueryProcessor : public EventListener, public EventProducer {
     size_t statementTimeout;
     std::map<std::string,std::string> queryParameter;
     void populateUrls(std::string environment);
+    void populateUrls2(std::string environment);
     void populateTransitions();
     void loadFromCache();
     void calculateExecutionIds();
@@ -53,6 +70,7 @@ public:
     QueryProcessor(
             QueryParser& queryParser,
             DatabaseRegistry& databaseRegistry,
+            UrlRegistry& urlRegistry,
             ExtensionLoader& extensionLoader,
             PasswordManager& passwordManager,
             CacheRegistry& cacheRegistry,
@@ -66,6 +84,12 @@ public:
             size_t maxParallelExecutions
     );
     ~QueryProcessor();
+    /*! \brief process query.
+     *         process description continued.
+     *
+     *  Detailed process description starts here.
+     *  \sa handleEvent()
+     */
     void process(std::string query, std::string url, std::string environment);
     void handleEvent(std::shared_ptr<Event> event) override;
     void stop();
