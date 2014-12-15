@@ -57,8 +57,9 @@ xmlDocPtr parseDoc(std::string document, std::string baseUri, bool resolveXInclu
         tmp = tmp->next;
     }
     LOG_INFO("using schema '" << schemaUrl << "' for validating");
+    char *absUri = (char*)xmlBuildURI((xmlChar*)schemaUrl.c_str(),(xmlChar*)baseUri.c_str());
     if (!schemaUrl.empty()) {
-        validateDoc(doc,schemaUrl);
+        validateDoc(doc,string(absUri));
     }
     return doc;
 }
@@ -79,6 +80,15 @@ void validateDoc(xmlDocPtr doc, std::string schemaFile) {
             THROW_EXC("xml query file is not valid");
         }
     }
+}
+
+
+string as_string(xmlNodePtr node) {
+    xmlBufferPtr buf = xmlBufferCreate();
+    xmlNodeDump(buf,node->doc,node,0,1);
+    string result((char*)buf->content);
+    xmlBufferFree(buf);
+    return result;
 }
 
 }
