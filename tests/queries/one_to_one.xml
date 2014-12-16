@@ -1,0 +1,27 @@
+<queries
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:noNamespaceSchemaLocation="../../etc/xml-query.xsd">
+
+    <execution name="source" type="sqlite3">
+        <query>
+            select code, name
+              from article
+             order
+                by code
+        </query>
+    </execution>
+
+    <execution name="target" type="sqlite3">
+        <url>../data/local_unsharded_db.sqlite3</url>
+        <query>
+            select ad.code, ad.name 
+              from article as ad
+              join source as s
+                on s.name = ad.name
+             order
+                by ad.code
+        </query>
+    </execution>
+
+
+</queries>

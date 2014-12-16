@@ -165,6 +165,14 @@
             <default>${HOME}/etc/database-registry.xml</default>
         </option>
         <option>
+            <short>i</short>
+            <long>url-registry-file</long>
+            <args>true</args>
+            <shortDescription>path to the url registry</shortDescription>
+            <type>string</type>
+            <default>${HOME}/etc/url-registry.xml</default>
+        </option>
+        <option>
             <short>x</short>
             <long>extension-dir</long>
             <args>true</args>

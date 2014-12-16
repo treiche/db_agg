@@ -8,17 +8,9 @@
 
 #include "core/Locator.h"
 #include "core/QueryExecution.h"
+#include "core/Dependency.h"
 
 namespace db_agg {
-
-class Query;
-
-class Dependency {
-public:
-    Locator locator;
-    std::string alias;
-    Query *sourceQuery;
-};
 
 class Query {
 private:

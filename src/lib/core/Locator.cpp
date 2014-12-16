@@ -73,5 +73,18 @@ namespace db_agg {
         return qname;
     }
 
+    const string& Locator::getEnvironment() const {
+        return environment;
+    }
+
+    const string& Locator::getName() const {
+        return name;
+    }
+
+    short Locator::getShardId() const {
+        return shardId;
+    }
+
+
 }
 

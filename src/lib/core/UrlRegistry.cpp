@@ -13,6 +13,7 @@
 #include "utils/RegExp.h"
 
 #include <list>
+#include <set>
 
 using namespace std;
 using namespace log4cplus;
@@ -145,13 +146,14 @@ vector<shared_ptr<Url>> UrlRegistry::findUrls(string env, shared_ptr<Url> wcUrl)
     return matches;
 }
 
-vector<shared_ptr<Url>> UrlRegistry::findUrls(string env, string type, string query) {
+vector<shared_ptr<Url>> UrlRegistry::findUrls(string env, string type, string query, string& sid) {
     vector<shared_ptr<Url>> matches;
     string expr("/urls/environment[@name='" + env + "']//match");
     xmlXPathContextPtr xpathCtx = xmlXPathNewContext(this->document);
     xmlXPathObjectPtr xpathObj = xmlXPathEvalExpression((const xmlChar*)expr.c_str(), xpathCtx);
     xmlNodeSetPtr nodes = xpathObj->nodesetval;
     LOG_DEBUG("found " << nodes->nodeNr << " matchers");
+    set<string> serverIds;
     for (int idx=0;idx<nodes->nodeNr;idx++) {
         xmlNodePtr node = nodes->nodeTab[idx];
         if(node->type == XML_ELEMENT_NODE) {
@@ -160,20 +162,29 @@ vector<shared_ptr<Url>> UrlRegistry::findUrls(string env, string type, string qu
         	RegExp re(regexp);
         	if (re.matches(query)) {
         		LOG_DEBUG("matched");
-        		matches.push_back(getUrl((xmlElementPtr)node));
+        		string serverId;
+        		matches.push_back(getUrl((xmlElementPtr)node,serverId));
+        		serverIds.insert(serverId);
         	}
         }
     }
+    if (serverIds.size() > 1) {
+        THROW_EXC("ambigous server id");
+    }
+    sid = *(serverIds.begin());
     return matches;
 }
 
-shared_ptr<Url> UrlRegistry::getUrl(xmlElementPtr element) {
+shared_ptr<Url> UrlRegistry::getUrl(xmlElementPtr element, string& serverId) {
 	shared_ptr<Url> url(new Url());
 	xmlNodePtr tmp = (xmlNodePtr)element;
 	list<string> path;
 	while(tmp->type != XML_DOCUMENT_NODE) {
 		LOG_DEBUG("tmp = " << tmp->name);
 		string name((const char*)tmp->name);
+		if (hasAttribute((xmlElementPtr)tmp,"ref")) {
+		    serverId = getAttribute((xmlElementPtr)tmp,"ref");
+		}
 		if (name == "path") {
 			path.push_front(getAttribute((xmlElementPtr)tmp,"value"));
 		} else if (name == "host") {
@@ -191,6 +202,21 @@ shared_ptr<Url> UrlRegistry::getUrl(xmlElementPtr element) {
 	return url;
 }
 
+vector<ShardingStrategyConfiguration> UrlRegistry::getShardingStrategies(string serverId) {
+    vector<ShardingStrategyConfiguration> strategies;
+    xmlElementPtr ge = elementById[serverId];
+    xmlNodePtr tmp = ge->children;
+    while(tmp) {
+        if (tmp->type == XML_ELEMENT_NODE && string((char*)tmp->name) == "sharding-strategy") {
+            xmlElementPtr shardingStrategy = (xmlElementPtr)tmp;
+            string name = getAttribute(shardingStrategy,"name");
+            string shardCol = getAttribute(shardingStrategy,"shardCol");
+            strategies.push_back(ShardingStrategyConfiguration(name,shardCol));
+        }
+        tmp = tmp->next;
+    }
+    return strategies;
+}
 
 }
 

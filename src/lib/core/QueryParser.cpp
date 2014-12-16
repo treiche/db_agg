@@ -83,22 +83,22 @@ set<string> QueryParser::extractUsedNamespaces(std::string query) {
 Query* QueryParser::getSourceQuery(Dependency dep, vector<Query*>& queries) {
     Query *src = nullptr;
     for (auto query:queries) {
-        int diff = query->getLocator().compare(dep.locator);
+        int diff = query->getLocator().compare(dep.getLocator());
         if (diff>-1) {
             LOG_DEBUG("found candidate '" << query->getLocator().getQName());
             src = query;
         }
         if (src==nullptr) {
             // search for inter system transition
-            if (query->getName().compare(dep.locator.getName())==0) {
+            if (query->getName().compare(dep.getLocator().getName())==0) {
                 if (!query->getEnvironment().empty() &&
-                    dep.locator.getEnvironment().empty()) {
+                    dep.getLocator().getEnvironment().empty()) {
                     src = query;
                 }
             }
         }
     }
-    LOG_TRACE("getSourceQuery(" << dep.locator.getQName() << ") = " << (Query*)src);
+    LOG_TRACE("getSourceQuery(" << dep.getLocator().getQName() << ") = " << (Query*)src);
     return src;
 }
 
@@ -154,7 +154,7 @@ void QueryParser::detectDependencies(vector<Query*>& queries) {
             q->addDependency(loc, alias);
         }
         for (auto& dep:q->getDependencies()) {
-            LOG_DEBUG("detected dependency " + dep.locator.getQName() << " in query " << q->getName());
+            LOG_DEBUG("detected dependency " + dep.getLocator().getQName() << " in query " << q->getName());
         }
     }
 }

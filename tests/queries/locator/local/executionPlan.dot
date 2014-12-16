@@ -1,0 +1,30 @@
+digraph plan {
+    graph [rankdir=LR, splines=true]
+    node  [shape=box, style=filled, labelloc=t]
+    subgraph cluster_1 {
+        label = "one_shard$3 [sqlite3]"
+        "select article_code, price\l              from price\l" [fontsize=7.0, fontname="Courier new", shape=note]
+        "c817c43a1b8cd7b4efabcd5d982f5bd1" [label="one_shard$3", fillcolor=yellow, height=0.2, fontsize=8.5]
+    }
+    subgraph cluster_2 {
+        label = "all_shards [sqlite3]"
+        "select price, article_code\l              from price\l" [fontsize=7.0, fontname="Courier new", shape=note]
+        "9a3cfbf2b70ccbbcc1f17b3455dc84ec" [label="all_shards_1", fillcolor=yellow, height=0.2, fontsize=8.5]
+        "b3e115637851bef71ac25d94f67426c2" [label="all_shards_2", fillcolor=yellow, height=0.2, fontsize=8.5]
+        "b96cbc1ad05df3f33ba2fc433f530802" [label="all_shards_3", fillcolor=yellow, height=0.2, fontsize=8.5]
+        "669c33390dae992d552f8823bd22eba9" [label="all_shards_4", fillcolor=yellow, height=0.2, fontsize=8.5]
+    }
+    subgraph cluster_3 {
+        label = "join_one_shard [sqlite3]"
+        "select article_code, price\l              from one_shard\l              join article\l                on code = article_code\l" [fontsize=7.0, fontname="Courier new", shape=note]
+        "30fd5a7a417bfe21c855cb7fa65d1125" [label="join_one_shard", fillcolor=yellow, height=0.2, fontsize=8.5]
+    }
+    subgraph cluster_4 {
+        label = "select_one_shard [sqlite3]"
+        "select article_code, price\l              from all_shards$4\l              join article\l                on code = article_code\l" [fontsize=7.0, fontname="Courier new", shape=note]
+        "a39dba6f57ecd5b2d55313c662d45d17" [label="select_one_shard", fillcolor=yellow, height=0.2, fontsize=8.5]
+    }
+  "c817c43a1b8cd7b4efabcd5d982f5bd1" -> "30fd5a7a417bfe21c855cb7fa65d1125" [taillabel="", headlabel="one_shard"]
+  "669c33390dae992d552f8823bd22eba9" -> "a39dba6f57ecd5b2d55313c662d45d17" [taillabel="", headlabel="all_shards$4"]
+
+}

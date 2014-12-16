@@ -50,7 +50,7 @@ bool OneToMany::process() {
 		for (uint64_t row = 0; row < rows; row++) {
 			try {
 				int shardId = sharder->getShardId(sourceTable->getValue(row,shardKeyIdx));
-				LOG_TRACE("shardId of '" << sourceTable->getValue(row,shardKeyIdx) << "' = " << shardId);
+				LOG_DEBUG("shardId of '" << sourceTable->getValue(row,shardKeyIdx) << "' = " << shardId);
 				offsets[shardId-1].push_back(row);
 			} catch(InvalidShardKeyException& iske) {
 				LOG_WARN("invalid shard key '" << sourceTable->getValue(row,shardKeyIdx) << "'");

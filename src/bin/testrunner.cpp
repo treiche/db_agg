@@ -9,11 +9,16 @@
 #include <log4cplus/logger.h>
 #include <log4cplus/fileappender.h>
 #include <log4cplus/layout.h>
-
+#include <iostream>
+#include <libgen.h>
+#include <unistd.h>
+#include "testrunner.h"
 
 using ::testing::InitGoogleTest;
 using namespace log4cplus;
 using namespace log4cplus::helpers;
+using namespace std;
+
 
 void initLogging() {
     // PropertyConfigurator::doConfigure("src/test/resources/log4cplus.properties");
@@ -26,11 +31,36 @@ void initLogging() {
     Logger::getRoot().setLogLevel(DEBUG_LOG_LEVEL);
 }
 
+string calculateHomePath(string testrunnerLocation) {
+    char *ap = ::realpath(testrunnerLocation.c_str(),nullptr);
+    char *dirName = dirname(ap);
+    return string(dirName);
+}
+
+string findTestDir(string homeDir) {
+    struct stat info;
+    string sameDir = homeDir + "/tests";
+    int ret = stat(sameDir.c_str(), &info);
+    if (ret==0 && S_ISDIR(info.st_mode)) {
+        return sameDir;
+    } else {
+        // search one level up
+        int idx = homeDir.rfind("/");
+        if (idx == string::npos) {
+            throw runtime_error("can't find test directory");
+        }
+        return findTestDir(homeDir.substr(0,idx));
+    }
+}
+
+std::string TEST_DATA_DIR;
 
 int main(int argc, char **argv) {
-	initLogging();
-	InitGoogleTest(&argc, argv);
-	return RUN_ALL_TESTS();
+    string homeDir = calculateHomePath(argv[0]);
+    TEST_DATA_DIR = findTestDir(homeDir);
+    initLogging();
+    InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }
 
 

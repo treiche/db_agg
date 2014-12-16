@@ -1,0 +1,25 @@
+digraph plan {
+    graph [rankdir=LR, splines=true]
+    node  [shape=box, style=filled, labelloc=t]
+    subgraph cluster_1 {
+        label = "source [sqlite3]"
+        "select article_code, price\l              from price\l             order\l                by 1\l" [fontsize=7.0, fontname="Courier new", shape=note]
+        "830643f4cfd4f509789ce6cb7bdd137e" [label="source_1", fillcolor=yellow, height=0.2, fontsize=8.5]
+        "dc57cdc520934445d53a94a1cbabc341" [label="source_2", fillcolor=yellow, height=0.2, fontsize=8.5]
+        "565961d9dce1ed85bfcb55639acbe43a" [label="source_3", fillcolor=yellow, height=0.2, fontsize=8.5]
+        "bc76f5049493a8818a20302cbff56420" [label="source_4", fillcolor=yellow, height=0.2, fontsize=8.5]
+    }
+    subgraph cluster_2 {
+        label = "target [sqlite3]"
+        "select p1.article_code, p1.price\l              from price p1\l              join source p2\l                on p1.article_code = p2.article_code\l             order\l                by 1\l" [fontsize=7.0, fontname="Courier new", shape=note]
+        "3b007bbee7ed5600619983ec86a6fc37" [label="target_1", fillcolor=yellow, height=0.2, fontsize=8.5]
+        "eb8962909d4e0f59cffdb40f74552266" [label="target_2", fillcolor=yellow, height=0.2, fontsize=8.5]
+        "d6a7e880fab8f0570f2e5b62cdc761f3" [label="target_3", fillcolor=yellow, height=0.2, fontsize=8.5]
+        "fd8eb60754e48faacc0026cc317a169e" [label="target_4", fillcolor=yellow, height=0.2, fontsize=8.5]
+    }
+  "830643f4cfd4f509789ce6cb7bdd137e" -> "3b007bbee7ed5600619983ec86a6fc37" [taillabel="", headlabel="source"]
+  "dc57cdc520934445d53a94a1cbabc341" -> "eb8962909d4e0f59cffdb40f74552266" [taillabel="", headlabel="source"]
+  "565961d9dce1ed85bfcb55639acbe43a" -> "d6a7e880fab8f0570f2e5b62cdc761f3" [taillabel="", headlabel="source"]
+  "bc76f5049493a8818a20302cbff56420" -> "fd8eb60754e48faacc0026cc317a169e" [taillabel="", headlabel="source"]
+
+}

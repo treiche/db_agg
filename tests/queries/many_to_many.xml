@@ -1,0 +1,25 @@
+<queries
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:noNamespaceSchemaLocation="../../etc/xml-query.xsd">
+
+    <execution name="source" type="sqlite3">
+        <query>
+            select article_code, price
+              from price
+             order
+                by 1
+        </query>
+    </execution>
+
+    <execution name="target" type="sqlite3">
+        <query>
+            select p1.article_code, p1.price
+              from price p1
+              join source p2
+                on p1.article_code = p2.article_code
+             order
+                by 1
+        </query>
+    </execution>
+
+</queries>

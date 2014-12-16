@@ -78,10 +78,10 @@ vector<Query*> XmlQueryParser::parse(string qu, string url, map<string,string>& 
         for (auto& dep:query->getDependencies()) {
             Query *src = getSourceQuery(dep, queries);
             if (src==nullptr) {
-                THROW_EXC("no source found for dependency " << dep.locator.getName() + " used in query " << query->getName());
+                THROW_EXC("no source found for dependency " << dep.getLocator().getName() + " used in query " << query->getName());
             }
-            dep.sourceQuery = src;
-            LOG_DEBUG(query->getLocator().getQName() << ": " << dep.locator.getQName() << " -> " << src->getLocator().getQName());
+            dep.setSourceQuery(src);
+            LOG_DEBUG(query->getLocator().getQName() << ": " << dep.getLocator().getQName() << " -> " << src->getLocator().getQName());
         }
     }
 
@@ -109,12 +109,18 @@ Query *XmlQueryParser::parseQuery(xmlElementPtr executionNode) {
 
     string environment;
     if (properties.find("environment") != properties.end()) {
-    	environment = properties["environment"];
+        environment = properties["environment"];
     }
 
     shared_ptr<Url> url;
     if (properties.find("url") != properties.end()) {
-        url = shared_ptr<Url>(new Url(properties["url"]));
+        string propUrl = properties["url"];
+        if (propUrl[0] == '.') {
+            char *absUri = (char*)xmlBuildURI((xmlChar*)propUrl.c_str(),(xmlChar*)baseUrl.c_str());
+            url = shared_ptr<Url>(new Url(absUri));
+        } else {
+            url = shared_ptr<Url>(new Url(properties["url"]));
+        }
     }
 
     string name = properties["name"];

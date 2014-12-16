@@ -33,7 +33,7 @@ static int xEntryPoint(sqlite3 *db, const char **pzErrMsg,
 }
 
 bool Sqlite3Execution::isResourceAvailable() {
-    string path = "/" + getUrl()->getPath();
+    string path = getUrl()->getPath();
     LOG_DEBUG("check if " << path << " exists");
     File dbFile(path);
     return dbFile.exists();

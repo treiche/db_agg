@@ -81,7 +81,8 @@ void Application::bootstrap(Configuration& config) {
     LOG_DEBUG("load database registry");
     string databaseRegistryFile = findConfigurationFile(config.getDatabaseRegistryFile(), false, false);
     databaseRegistry = new DatabaseRegistry(databaseRegistryFile);
-    urlRegistry = new UrlRegistry("/etc/db_agg/url-registry.xml");
+    string urlRegistryFile = findConfigurationFile(config.getUrlRegistryFile(), false, false);
+    urlRegistry = new UrlRegistry(urlRegistryFile);
     LOG_DEBUG("use database registry file: " << databaseRegistryFile);
     vector<string> environments = databaseRegistry->getSystems();
     bool environmentExists = false;

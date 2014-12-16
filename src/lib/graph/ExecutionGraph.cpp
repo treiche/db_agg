@@ -165,7 +165,7 @@ void ExecutionGraph::dumpExecutionPlan(string outputDir) {
             if (exec->isDone()) {
                 fillcolor = "green";
             }
-            out << "        \"" << exec << "\" [label=\"" << exec->getName() << "\", fillcolor=" << fillcolor << ", height=0.2, fontsize=8.5]" << endl;
+            out << "        \"" << exec->getId() << "\" [label=\"" << exec->getName() << "\", fillcolor=" << fillcolor << ", height=0.2, fontsize=8.5]" << endl;
         }
         out << "    }" << endl;
     }
@@ -176,14 +176,14 @@ void ExecutionGraph::dumpExecutionPlan(string outputDir) {
             fillcolor = "green";
         }
     	if (exec->isTransition()) {
-    		out << "        \"" << exec << "\" [label=\"" << exec->getName() << "\", fillcolor=" << fillcolor << ", height=0.2, fontsize=8.5]" << endl;
+    		out << "        \"" << exec->getId() << "\" [label=\"" << exec->getName() << "\", fillcolor=" << fillcolor << ", height=0.2, fontsize=8.5]" << endl;
     	}
     }
 
     for (auto& channel:channels) {
     	QueryExecution *source = dynamic_cast<QueryExecution*>(channel->source);
     	QueryExecution *target = dynamic_cast<QueryExecution*>(channel->target);
-    	out << "  \"" << source << "\" -> \"" << target << "\" [taillabel=\"" << channel->sourcePort << "\", headlabel=\"" << channel->targetPort << "\"]" << endl;
+    	out << "  \"" << source->getId() << "\" -> \"" << target->getId() << "\" [taillabel=\"" << channel->sourcePort << "\", headlabel=\"" << channel->targetPort << "\"]" << endl;
     }
 
     out << "\n}";

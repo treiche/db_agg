@@ -28,18 +28,9 @@ namespace db_agg {
             static void setDefaultEnvironment(std::string env);
             short compare(Locator& other);
             std::string getQName();
-
-            const std::string& getEnvironment() const {
-                return environment;
-            }
-
-            const std::string& getName() const {
-                return name;
-            }
-
-            short getShardId() const {
-                return shardId;
-            }
+            const std::string& getEnvironment() const;
+            const std::string& getName() const;
+            short getShardId() const;
     };
 }
 

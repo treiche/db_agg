@@ -13,9 +13,15 @@
 #include <vector>
 #include <memory>
 
+extern "C" {
+#include <libxml/uri.h>
+}
+
+
 namespace db_agg {
 class Url {
 private:
+    xmlURIPtr uri = nullptr;
     std::string protocol;
     std::string host;
     std::string port;
@@ -28,6 +34,7 @@ private:
     std::string decode(std::string);
 public:
     Url();
+    ~Url();
     Url(std::string url);
     Url(std::string protocol, std::string host, std::string port, std::string path, std::string fragment = "");
     std::string getUrl();

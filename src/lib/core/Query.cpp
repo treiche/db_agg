@@ -88,7 +88,7 @@ namespace db_agg {
         }
         ss << ",dependencies = [";
         for (auto &dep:dependencies) {
-            ss << dep.locator.getQName();
+            ss << dep.getLocator().getQName();
             ss << " ";
         }
         ss << "]";

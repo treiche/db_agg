@@ -8,3 +8,4 @@ add_library(soap SHARED
 )
 
 target_link_libraries(soap "/usr/lib/x86_64-linux-gnu/libcurl.so")
+install(TARGETS soap DESTINATION extensions)

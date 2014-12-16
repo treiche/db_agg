@@ -11,26 +11,73 @@
 #include "utils/string.h"
 #include "utils/RegExp.h"
 #include "utils/utility.h"
+#include "utils/logging.h"
 
 using namespace std;
 
+
 namespace db_agg {
+
+DECLARE_LOGGER("Url")
 
 Url::Url() {}
 
-Url::Url(string url) {
-    RegExp re("([a-z]+)?://([a-z\\.]+)?(:([0-9]+))?/([a-zA-Z0-9-\\./_]+)?(#([a-zA-Z_]+))?");
-    vector<RegExp::match> matches = re.exec(url);
-    if (matches.empty()) {
-        throw runtime_error("invalid url");
+Url::~Url() {
+    if (uri) {
+        xmlFreeURI(uri);
     }
-    this->protocol = matches[1].substr.empty() ? "file" : matches[1].substr;
-    this->host = matches[2].substr;
-    this->port = matches[4].substr.empty() ? 0 : stoi(matches[4].substr);
-    string pathItems = matches[5].substr;
-    split(pathItems, '/', this->path);
-    if (matches.size() == 8) {
-        this->fragment = matches[7].substr;
+}
+
+Url::Url(string url) {
+    if (true) {
+        uri = xmlParseURIRaw(url.c_str(),0);
+        if (!uri) {
+            THROW_EXC("invalid url: '" << url << "'");
+        }
+        if (uri->scheme) {
+            this->protocol = uri->scheme;
+        }
+        if (uri->server) {
+            this->host = uri->server;
+        }
+        if (uri->port) {
+            this->port = to_string(uri->port);
+        }
+        if (uri->path) {
+            split(uri->path, '/', this->path);
+        }
+        if (uri->fragment) {
+            this->fragment = uri->fragment;
+        }
+        if (uri->query) {
+            vector<string> items;
+            split(uri->query, '&', items);
+            for (auto item:items) {
+                vector<string> kv;
+                split(item, '=', kv);
+                if (kv.size()==1) {
+                    parameters[kv[0]] = "";
+                } else if (kv.size()==2) {
+                    parameters[kv[0]] = kv[1];
+                } else {
+                    THROW_EXC("invalid parameter '" << item << "'");
+                }
+            }
+        }
+    } else {
+        RegExp re("([a-z]+)?://([a-z\\.]+)?(:([0-9]+))?/([a-zA-Z0-9-\\./_]+)?(#([a-zA-Z_0-9]+))?");
+        vector<RegExp::match> matches = re.exec(url);
+        if (matches.empty()) {
+            throw runtime_error("invalid url");
+        }
+        this->protocol = matches[1].substr.empty() ? "file" : matches[1].substr;
+        this->host = matches[2].substr;
+        this->port = matches[4].substr;;
+        string pathItems = matches[5].substr;
+        split(pathItems, '/', this->path);
+        if (matches.size() == 8) {
+            this->fragment = matches[7].substr;
+        }
     }
 }
 
@@ -69,7 +116,7 @@ void Url::setPort(string port) {
 }
 
 string Url::getPath() {
-    return join(path,"/");
+    return "/" + join(path,"/");
 }
 
 void Url::setPath(string path) {
@@ -125,7 +172,11 @@ string Url::getUrl() {
 }
 
 string Url::getUrl(bool includeParameters, bool includeCredentials, bool maskPassword) {
-    string url = protocol + "://" + host + ":" + port + "/" + join(path,"/");
+    string url = protocol + "://" + host;
+    if (!port.empty()) {
+        url += ":" + port;
+    }
+    url +=  join(path,"/");
     if (includeParameters && !parameters.empty()) {
         url += "?";
         int len = parameters.size();

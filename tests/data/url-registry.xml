@@ -1,0 +1,32 @@
+<urls
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:noNamespaceSchemaLocation="../../etc/url-registry.xsd"
+>
+    <environment name="local">
+        <protocol value="file">
+            <path value="/home/arnd/tmp/db_agg_installed/tests/data">
+                <path ref="unsharded" value="local_unsharded_db.sqlite3">
+                    <match regexp="(from|join)\s+article"/>
+                </path>
+                <path ref="sharded" value="local_sharded1_db.sqlite3">
+                    <match regexp="(from|join)\s+price"/>
+                </path>
+                <path ref="sharded" value="local_sharded2_db.sqlite3">
+                    <match regexp="(from|join)\s+price"/>
+                </path>
+                <path ref="sharded" value="local_sharded3_db.sqlite3">
+                    <match regexp="(from|join)\s+price"/>
+                </path>
+                <path ref="sharded" value="local_sharded4_db.sqlite3">
+                    <match regexp="(from|join)\s+price"/>
+                </path>
+            </path>
+        </protocol>
+    </environment>
+    <globals>
+        <path id="sharded">
+            <sharding-strategy name="md5" shardCol=".*code.*"/>
+        </path>
+        <path id="unsharded"/>
+    </globals>
+ </urls>

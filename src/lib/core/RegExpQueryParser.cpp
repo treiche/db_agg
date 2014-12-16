@@ -101,10 +101,10 @@ vector<Query*> RegExpQueryParser::parse(string q, string url, map<string,string>
         for (auto& dep:query->getDependencies()) {
             Query *src = getSourceQuery(dep, queries);
             if (src==nullptr) {
-                throw runtime_error("no source found for dependency " + dep.locator.getName());
+                throw runtime_error("no source found for dependency " + dep.getLocator().getName());
             }
-            dep.sourceQuery = src;
-            LOG_DEBUG(query->getLocator().getQName() << ": " << dep.locator.getQName() << " -> " << src->getLocator().getQName());
+            dep.setSourceQuery(src);
+            LOG_DEBUG(query->getLocator().getQName() << ": " << dep.getLocator().getQName() << " -> " << src->getLocator().getQName());
         }
     }
 

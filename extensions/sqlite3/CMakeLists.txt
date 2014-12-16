@@ -9,3 +9,4 @@ add_library(sqlite3 SHARED
 )
 
 target_link_libraries(sqlite3 "/usr/lib/x86_64-linux-gnu/libsqlite3.so")
+install(TARGETS sqlite3 DESTINATION extensions)

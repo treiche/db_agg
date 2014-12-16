@@ -1,0 +1,16 @@
+digraph plan {
+    graph [rankdir=LR, splines=true]
+    node  [shape=box, style=filled, labelloc=t]
+    subgraph cluster_1 {
+        label = "source [sqlite3]"
+        "select code, name\l              from article\l             order\l                by code\l" [fontsize=7.0, fontname="Courier new", shape=note]
+        "ba3fe016baf51576ee3762efeb007556" [label="source", fillcolor=yellow, height=0.2, fontsize=8.5]
+    }
+    subgraph cluster_2 {
+        label = "target [sqlite3]"
+        "select ad.code, ad.name\l              from article as ad\l              join source as s\l                on s.name = ad.name\l             order\l                by ad.code\l" [fontsize=7.0, fontname="Courier new", shape=note]
+        "4624541704ba4169eab06387d2a6c83d" [label="target", fillcolor=yellow, height=0.2, fontsize=8.5]
+    }
+  "ba3fe016baf51576ee3762efeb007556" -> "4624541704ba4169eab06387d2a6c83d" [taillabel="", headlabel="source"]
+
+}

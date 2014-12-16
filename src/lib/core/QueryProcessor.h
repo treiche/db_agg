@@ -25,19 +25,6 @@
 
 namespace db_agg {
 
-/*! \todo paragraph describing what is to be done
- *
- * \section intro_sec Introduction
- *
- * This is the introduction.
- *
- * \section install_sec Installation
- *
- * \subsection step1 Step 1: Opening the box
- *
- * etc...
- */
-
 class QueryProcessor : public EventListener, public EventProducer {
     QueryParser& queryParser;
     DatabaseRegistry& databaseRegistry;
@@ -60,7 +47,7 @@ class QueryProcessor : public EventListener, public EventProducer {
     void calculateExecutionId(QueryExecution& exec,std::string& md5data);
     void checkConnections();
     std::vector<QueryExecution*> findExecutables();
-    void cacheItem(std::string resultId);
+    void cacheItem(QueryExecution& exec);
     void cleanUp();
     std::vector<std::shared_ptr<ShardingStrategy>> resolveShardingStrategies(std::vector<ShardingStrategyConfiguration> configs, int shardCount);
     bool dontExecute;

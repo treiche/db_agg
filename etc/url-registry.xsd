@@ -1,0 +1,86 @@
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+
+    <xsd:element name="urls" type="UrlType">
+        <xsd:key name="ID">
+            <xsd:selector xpath="book|author|character"/>
+            <xsd:field xpath="@id"/>
+        </xsd:key>
+	  <xsd:keyref name="IDREF" refer="ID">
+	    <xsd:selector xpath="book/author-ref|book/character-ref"/>
+	    <xsd:field xpath="@ref"/>
+	  </xsd:keyref>
+    </xsd:element>
+
+
+    <xsd:complexType name="UrlType">
+        <xsd:sequence minOccurs="0" maxOccurs="unbounded">
+           <xsd:element name="environment" type="EnvironmentType" maxOccurs="unbounded"/>
+           <xsd:element name="globals" type="GlobalsType" minOccurs="0"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="EnvironmentType">
+	    <xsd:sequence minOccurs="1" maxOccurs="unbounded">
+	       <xsd:element name="protocol" type="ProtocolType"/>
+	    </xsd:sequence>
+	    <xsd:attribute name="name" type="xsd:string" use="required"/>
+    </xsd:complexType>
+
+    <xsd:complexType name="ProtocolType">
+        <xsd:choice minOccurs="1" maxOccurs="unbounded">
+           <xsd:element name="host" type="HostType"/>
+           <xsd:element name="path" type="PathType"/>
+        </xsd:choice>
+        <xsd:attribute name="value" type="xsd:string"/>
+    </xsd:complexType>
+
+    <xsd:complexType name="HostType">
+        <xsd:sequence minOccurs="1" maxOccurs="unbounded">
+           <xsd:element name="port" type="PortType"/>
+        </xsd:sequence>
+        <xsd:attribute name="value" type="xsd:string"/>
+    </xsd:complexType>
+
+    <xsd:complexType name="PortType">
+        <xsd:sequence minOccurs="0" maxOccurs="unbounded">
+           <xsd:element name="path" type="PathType"/>
+        </xsd:sequence>
+        <xsd:attribute name="value" type="xsd:string"/>
+    </xsd:complexType>
+
+    <xsd:complexType name="PathType">
+        <xsd:choice minOccurs="0" maxOccurs="unbounded">
+           <xsd:element name="match" type="MatchType"/>
+           <xsd:element name="path" type="PathType"/>
+           <xsd:element name="parameter" type="ParameterType"/>
+           <xsd:element name="sharding-strategy" type="ShardingStrategyType"/>
+        </xsd:choice>
+        <xsd:attribute name="value" type="xsd:string"/>
+        <xsd:attribute name="ref" type="xsd:IDREF"/>
+        <xsd:attribute name="id" type="xsd:ID"/>
+    </xsd:complexType>
+
+    <xsd:complexType name="ParameterType">
+        <xsd:attribute name="name" type="xsd:string"/>
+        <xsd:attribute name="value" type="xsd:string"/>
+    </xsd:complexType>
+
+    <xsd:complexType name="GlobalsType">
+        <xsd:choice minOccurs="0" maxOccurs="unbounded">
+           <xsd:element name="path" type="PathType"/>
+           <xsd:element name="parameter" type="ParameterType"/>
+           <xsd:element name="protocol" type="ProtocolType"/>
+           <xsd:element name="host" type="HostType"/>
+           <xsd:element name="port" type="PortType"/>
+        </xsd:choice>
+    </xsd:complexType>
+
+    <xsd:complexType name="MatchType">
+        <xsd:attribute name="regexp" type="xsd:string"/>
+    </xsd:complexType>
+
+    <xsd:complexType name="ShardingStrategyType">
+        <xsd:attribute name="name" type="xsd:string"/>
+        <xsd:attribute name="shardCol" type="xsd:string"/>
+    </xsd:complexType>
+</xsd:schema>

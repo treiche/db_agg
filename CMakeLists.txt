@@ -128,6 +128,17 @@ target_link_libraries(testrunner
 )
 
 install(TARGETS db_agg DESTINATION bin)
+install(TARGETS testrunner DESTINATION bin)
+
+install(DIRECTORY tests/queries DESTINATION tests)
+install(FILES tests/data/database-registry.xml DESTINATION tests/data/)
+install(FILES tests/data/url-registry.xml DESTINATION tests/data/)
+install(FILES tests/data/local_unsharded_db.sqlite3 DESTINATION tests/data/)
+install(FILES tests/data/local_sharded1_db.sqlite3 DESTINATION tests/data/)
+install(FILES tests/data/local_sharded2_db.sqlite3 DESTINATION tests/data/)
+install(FILES tests/data/local_sharded3_db.sqlite3 DESTINATION tests/data/)
+install(FILES tests/data/local_sharded4_db.sqlite3 DESTINATION tests/data/)
+
 if (dpkg_build)
     install(
         DIRECTORY etc/
