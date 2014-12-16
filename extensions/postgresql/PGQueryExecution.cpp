@@ -11,7 +11,7 @@
 
 #include "type/oids.h"
 #include "table/TableDataFactory.h"
-#include "postgres/PGConnection.h"
+#include "PGConnection.h"
 
 
 using namespace std;
@@ -83,7 +83,7 @@ namespace db_agg {
     }
 
     string PGQueryExecution::toPostgresUrl(shared_ptr<Url> url) {
-        string pgurl = "host=" + url->getHost() + " port=" + url->getPort() + " dbname=" + url->getPath();
+        string pgurl = "host=" + url->getHost() + " port=" + url->getPort() + " dbname=" + url->getPath().substr(1);
         pgurl += " user=" + url->getUser() + " password=" + url->getPassword();
         vector<string> options;
         if (url->hasParameter("statementTimeout")) {

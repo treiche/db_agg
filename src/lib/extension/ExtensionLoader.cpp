@@ -49,6 +49,7 @@ namespace db_agg {
             Extension *(*getExtension)() = (Extension *(*)())dlsym(handle,"getExtension");
             if (!getExtension) {
                 LOG_WARN("no method getExtension found: " << dlerror());
+                continue;
             }
             extensions[child] = getExtension();
             libraries[child] = handle;

@@ -81,7 +81,7 @@ void QueryProcessor::process(string query, string url, string environment) {
         executionGraph.addQuery(query);
     }
     LOG_DEBUG("parse query done");
-    populateUrls2(environment);
+    populateUrls(environment);
     populateTransitions();
     calculateExecutionIds();
     shared_ptr<Event> event(new Event(EventType::APPLICATION_INITIALIZED,""));
@@ -242,7 +242,7 @@ void QueryProcessor::populateUrls2(string environment) {
 
         for (size_t idx=0; idx<urls.size(); idx++) {
             shared_ptr<Url> url = urls[idx];
-            if (query->getType() == "postgres") {
+            if (query->getType() == "postgresql") {
                 pair<string,string> c = passwordManager.getCredential(url.get());
                 url->setUser(c.first);
                 url->setPassword(c.second);
@@ -328,7 +328,7 @@ void QueryProcessor::populateUrls(string environment) {
         for (size_t idx=0; idx<urls.size(); idx++) {
             shared_ptr<Url> url = urls[idx];
             string resultId = md5hex(url->getUrl(false,false,false) + query->getQuery());
-            if (query->getType() == "postgres") {
+            if (query->getType() == "postgresql") {
                 pair<string,string> c = passwordManager.getCredential(url.get());
                 url->setUser(c.first);
                 url->setPassword(c.second);

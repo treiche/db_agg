@@ -135,7 +135,7 @@ Query *XmlQueryParser::parseQuery(xmlElementPtr executionNode) {
         free(absUri);
     }
     if (type.empty()) {
-        type = "postgres";
+        type = "postgresql";
     }
 
     Locator loc(name,shardId,environment);
@@ -185,7 +185,7 @@ map<string,string> XmlQueryParser::getProperties(xmlElementPtr element) {
             xmlNodePtr tmp = child->children;
             string content = "";
             while(tmp) {
-                if (tmp->type == XML_TEXT_NODE) {
+                if (tmp->type == XML_TEXT_NODE || tmp->type == XML_CDATA_SECTION_NODE) {
                     content += (char*)tmp->content;
                 } else if (tmp->type == XML_ELEMENT_NODE) {
                     xmlBufferPtr buf = xmlBufferCreate();

@@ -21,8 +21,6 @@ find_package (Threads REQUIRED)
 include_directories(${LIBXSLT_INCLUDE_DIR})
 include_directories(${LIBXML2_INCLUDE_DIR})
 
-find_package(PostgreSQL REQUIRED)
-include_directories(${POSTGRESQL_INCLUDE_DIR})
 
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -g -std=c++11 -fPIC")
 
@@ -52,6 +50,7 @@ add_subdirectory("src/lib")
 add_subdirectory("extensions/memcached")
 add_subdirectory("extensions/sqlite3")
 add_subdirectory("extensions/soap")
+add_subdirectory("extensions/postgresql")
 
 include_directories("${PROJECT_BINARY_DIR}")
 include_directories("${PROJECT_SOURCE_DIR}/src/lib")
@@ -71,7 +70,6 @@ add_executable(db_agg
 )
 
 target_link_libraries(db_agg libdbagg
-    ${POSTGRESQL_LIBRARIES}
     ${LIBXML2_LIBRARIES}
     ${PCRE_LIBRARIES}
     ${LOG4CPLUS_LIBRARIES}
@@ -88,7 +86,6 @@ add_executable(db_agg_config
 )
 
 target_link_libraries(db_agg_config libdbagg
-    ${POSTGRESQL_LIBRARIES}
     ${LIBXML2_LIBRARIES}
     ${PCRE_LIBRARIES}
     ${LOG4CPLUS_LIBRARIES}
@@ -115,7 +112,6 @@ include_directories("/usr/src/gmock/gtest/include")
 
 target_link_libraries(testrunner
     libdbagg
-    ${POSTGRESQL_LIBRARIES}
     ${LIBXML2_LIBRARIES}
     ${PCRE_LIBRARIES}
     ${LOG4CPLUS_LIBRARIES}

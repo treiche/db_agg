@@ -11,7 +11,7 @@
 #include <vector>
 #include <map>
 #include "ExecutionHandler.h"
-#include "QueryExecution.h"
+#include "core/QueryExecution.h"
 #include "AsyncQueryExecutor.h"
 
 namespace db_agg {

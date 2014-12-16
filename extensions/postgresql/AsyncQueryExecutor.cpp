@@ -1,7 +1,7 @@
 #include "AsyncQueryExecutor.h"
 
-#include "postgres/PGConnection.h"
-#include "postgres/PGResult.h"
+#include "PGConnection.h"
+#include "PGResult.h"
 
 #include "utils/logging.h"
 #include <log4cplus/loggingmacros.h>

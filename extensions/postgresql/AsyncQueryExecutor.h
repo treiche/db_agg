@@ -4,7 +4,7 @@
 #include <stdexcept>
 #include <string>
 
-#include "core/ExecutionHandler.h"
+#include "ExecutionHandler.h"
 #include "event/Event.h"
 
 namespace db_agg {

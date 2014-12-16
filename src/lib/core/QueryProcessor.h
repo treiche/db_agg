@@ -18,9 +18,7 @@
 #include "core/QueryParser.h"
 #include "extension/ExtensionLoader.h"
 #include "cache/CacheRegistry.h"
-#include "core/AsyncQueryExecutor.h"
 #include "table/TableData.h"
-//#include "ExecutionGraph.h"
 #include "graph/ExecutionGraph.h"
 
 namespace db_agg {
