@@ -11,7 +11,7 @@
 #include "utils/md5.h"
 #include "core/Query.h"
 #include "utils/RegExp.h"
-#include "utils/Template.h"
+#include "template/Template.h"
 
 
 using namespace std;

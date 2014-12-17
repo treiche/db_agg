@@ -31,7 +31,7 @@ private:
     size_t maxParallelExecutions{ 1000 };
     bool disableCache;
     string outputDir{ "." };
-    string resultDir{ "{outputDir}/{queryName}/{environment}" };
+    string resultDir{ "{{outputDir}}/{{queryName}}/{{environment}}" };
     string cacheDir{ "${HOME}/cache" };
     string prefix{ "/usr/local/db_agg" };
     string databaseRegistryFile{ "${HOME}/etc/database-registry.xml" };

@@ -663,10 +663,10 @@ int Scanner::lex__()
 void ScannerBase::print__() const
 {
     // $insert print
-    std::cout << "Token: " << d_token__;
-    if (isprint(d_token__))
-        std::cout << " (`" << static_cast<char>(d_token__) << "')";
-    std::cout << ", matched: `" << d_matched << "'\n";
+    //std::cout << "Token: " << d_token__;
+    //if (isprint(d_token__))
+    //    std::cout << " (`" << static_cast<char>(d_token__) << "')";
+    //std::cout << ", matched: `" << d_matched << "'\n";
 }
 
 

@@ -1,7 +1,6 @@
 #include <iostream>
 
 #include "installation.h"
-#include "utils/Template.h"
 
 #include <log4cplus/configurator.h>
 #include <log4cplus/consoleappender.h>
@@ -9,6 +8,7 @@
 
 #include "cli/CommandLineParser.h"
 #include "cli/OptionGroup.h"
+#include "template/Template.h"
 #include <vector>
 
 using namespace std;
@@ -30,7 +30,7 @@ static vector<OptionGroup> options = {
 
 
 static string interpolate(string path) {
-    db_agg::Template t{"${","}"};
+    db_agg::Template t;
     t.set("prefix",DBAGG_PREFIX);
     t.set("exec_prefix", DBAGG_EXEC_PREFIX);
     string ip = t.render(path);

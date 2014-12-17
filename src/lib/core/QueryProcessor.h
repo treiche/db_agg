@@ -69,12 +69,6 @@ public:
             size_t maxParallelExecutions
     );
     ~QueryProcessor();
-    /*! \brief process query.
-     *         process description continued.
-     *
-     *  Detailed process description starts here.
-     *  \sa handleEvent()
-     */
     void process(std::string query, std::string url, std::string environment);
     void handleEvent(std::shared_ptr<Event> event) override;
     void stop();

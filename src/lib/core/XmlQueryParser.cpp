@@ -9,7 +9,7 @@
 #include "utils/logging.h"
 #include "utils/md5.h"
 #include "utils/string.h"
-#include "utils/Template.h"
+#include "template/Template.h"
 #include "utils/File.h"
 #include "utils/xml.h"
 

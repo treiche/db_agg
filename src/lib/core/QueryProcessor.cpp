@@ -61,8 +61,6 @@ QueryProcessor::QueryProcessor(
 QueryProcessor::~QueryProcessor() {
 }
 
-//! \todo stop needs to be
-//! \callgraph
 void QueryProcessor::stop() {
     stopped = true;
     for (auto exec:executionGraph.getQueryExecutions()) {

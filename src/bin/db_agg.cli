@@ -138,7 +138,7 @@
             <args>true</args>
             <shortDescription>path to the result directory</shortDescription>
             <type>string</type>
-            <default>{outputDir}/{queryName}/{environment}</default>
+            <default>{{outputDir}}/{{queryName}}/{{environment}}</default>
         </option>
         <option>
             <short>c</short>

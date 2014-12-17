@@ -6,7 +6,7 @@ using namespace log4cplus;
 
 #include "core/DatabaseRegistry.h"
 #include "utils/File.h"
-#include "utils/Template.h"
+#include "template/Template.h"
 
 bool hasAttribute(xmlElementPtr element, string attrName) {
     xmlAttribute *attr = element->attributes;
@@ -269,7 +269,7 @@ namespace db_agg {
             if (this->databaseNamingStrategy.empty()) {
                 throw runtime_error("no database name attribute found");
             }
-            Template t("{","}");
+            Template t;
             t.set("system",environment);
             t.set("id",database);
             if (shard == -1) {

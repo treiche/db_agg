@@ -18,7 +18,7 @@
 #include "utils/string.h"
 #include "utils/File.h"
 #include "excel/ExcelToTextFormat.h"
-#include "utils/Template.h"
+#include "template/Template.h"
 #include "installation.h"
 
 using namespace std;
@@ -164,7 +164,7 @@ void Application::bootstrap(Configuration& config) {
 }
 
 static string getSysConfigDir() {
-    Template t{"${","}"};
+    Template t;
     t.set("prefix",DBAGG_PREFIX);
     return t.render(DBAGG_SYSCONFDIR);
 }
