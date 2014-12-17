@@ -36,6 +36,9 @@ namespace db_agg {
         this->name = name;
         this->dependencyInjector = dependencyInjector;
         this->arguments = arguments;
+        if (depNames.empty()) {
+            setState(QueryExecutionState::COMPLETE);
+        }
         for (auto& depName:depNames) {
             dependencies[depName] = nullptr;
         }
@@ -44,17 +47,17 @@ namespace db_agg {
     QueryExecution::~QueryExecution() {
         LOG_TRACE("delete query execution");
         for (auto& result:results) {
-			if (result.second.get() != nullptr) {
-				result.second.reset();
-			}
+            if (result.second.get() != nullptr) {
+                result.second.reset();
+            }
         }
     }
 
     void QueryExecution::release() {
         LOG_INFO("use_count for result " << getName());
         for (auto& result:results) {
-        	LOG_INFO("result use_count before release = " << result.second.use_count() << " unique = " << result.second.unique());
-        	result.second.reset();
+            LOG_INFO("result use_count before release = " << result.second.use_count() << " unique = " << result.second.unique());
+            result.second.reset();
         }
         for (auto& dependency:dependencies) {
             LOG_INFO("dependency " << dependency.first << " use_count before release = " << dependency.second.use_count());
@@ -66,26 +69,18 @@ namespace db_agg {
 
 
     shared_ptr<TableData> QueryExecution::getResult(string shardId) {
-    	if (results.find(shardId) == results.end()) {
-    		for (auto result:results) {
-    			LOG_INFO("result = " << result.first);
-    		}
-    		THROW_EXC("execution '" << getName() << "' does not have a result port '" << shardId << "' has " << results.size() << "candidates");
-    	}
+        if (results.find(shardId) == results.end()) {
+            for (auto result:results) {
+                LOG_INFO("result = " << result.first);
+            }
+            THROW_EXC("execution '" << getName() << "' does not have a result port '" << shardId << "' has " << results.size() << "candidates");
+        }
         return results[shardId];
     }
 
     void QueryExecution::setResult(string shardId, shared_ptr<TableData> result) {
         LOG_DEBUG("set result to " << result);
         results[shardId] = result;
-    }
-
-    bool QueryExecution::isComplete() {
-        bool complete = true;
-        for (auto& dep:dependencies) {
-            complete &= (dep.second!=nullptr);
-        }
-        return complete;
     }
 
     string QueryExecution::inject(string query, size_t copyThreshold) {
@@ -95,14 +90,23 @@ namespace db_agg {
     }
 
     void QueryExecution::receive(string name, shared_ptr<TableData> data) {
-        LOG_DEBUG("receive data " << name);
+        LOG_DEBUG("receive data " << name << " [depsize=" << dependencies.size() << "]");
         if (dependencies.find(name) == dependencies.end()) {
-        	for (auto dep:dependencies) {
-        		LOG_INFO("declared " << dep.first);
-        	}
+            for (auto dep:dependencies) {
+                LOG_INFO("declared " << dep.first);
+            }
             THROW_EXC("no dependency '" + name + "' declared");
         }
         dependencies[name] = data;
+        // check if complete
+        bool complete = true;
+        for (auto& dep:dependencies) {
+            complete &= (dep.second!=nullptr);
+        }
+        if (complete) {
+            LOG_ERROR("set state of '" << name << "' to complete as all dependencies are there");
+            setState(QueryExecutionState::COMPLETE);
+        }
     }
 
     void QueryExecution::addChannel(Channel* channel) {
@@ -111,6 +115,34 @@ namespace db_agg {
 
     std::ostream& operator<<(std::ostream& cout,const QueryExecution& qe) {
         cout << "QueryExecution[sql=" << qe.sql << "]";
+        return cout;
+    }
+
+    std::ostream& operator<<(std::ostream& cout,const QueryExecutionState state) {
+        cout << "State[";
+        switch(state) {
+            case QueryExecutionState::INITIAL:
+                cout << "INITIAL";
+                break;
+            case QueryExecutionState::COMPLETE:
+                cout << "COMPLETE";
+                break;
+            case QueryExecutionState::SCHEDULED:
+                cout << "SCHEDULED";
+                break;
+            case QueryExecutionState::RUNNING:
+                cout << "RUNNING";
+                break;
+            case QueryExecutionState::STOPPED:
+                cout << "STOPPED";
+                break;
+            case QueryExecutionState::DONE:
+                cout << "DONE";
+                break;
+            default:
+                cout << "UNKNOWN";
+        }
+        cout << "]";
         return cout;
     }
 
@@ -126,22 +158,54 @@ namespace db_agg {
         return name;
     }
 
+    void QueryExecution::setState(QueryExecutionState state) {
+        if (this->state == state) {
+            THROW_EXC("state " << state << " is already set !");
+            return;
+        }
+
+        if (state == QueryExecutionState::SCHEDULED && this->state != QueryExecutionState::COMPLETE) {
+            THROW_EXC("cannot set SCHEDULED state as execution is not COMPLETE: current state = " << state);
+        }
+
+        if (this->state == QueryExecutionState::DONE) {
+            THROW_EXC("execution is already in final state DONE");
+        }
+
+        if (this->state == QueryExecutionState::STOPPED) {
+            THROW_EXC("execution is already in final state STOPPED");
+        }
+
+        if (state == QueryExecutionState::SCHEDULED) {
+            startTime = std::chrono::system_clock::now();
+        } else if (state == QueryExecutionState::DONE) {
+            endTime = std::chrono::system_clock::now();
+        }
+        this->state = state;
+    }
+
+    QueryExecutionState QueryExecution::getState() {
+        return state;
+    }
+
+    bool QueryExecution::isComplete() {
+        return state == QueryExecutionState::COMPLETE;
+    }
+
     void QueryExecution::setScheduled() {
-        scheduled = true;
-        startTime = std::chrono::system_clock::now();
+        setState(QueryExecutionState::SCHEDULED);
     }
 
     bool QueryExecution::isScheduled() {
-        return scheduled;
+        return state == QueryExecutionState::SCHEDULED;
     }
 
     void QueryExecution::setDone() {
-        endTime = std::chrono::system_clock::now();
-        done = true;
+        setState(QueryExecutionState::DONE);
     }
 
     bool QueryExecution::isDone() {
-        return done;
+        return state == QueryExecutionState::DONE;
     }
 
     size_t QueryExecution::getDuration() {
@@ -178,7 +242,7 @@ namespace db_agg {
     }
 
     bool QueryExecution::isTransition() {
-    	return false;
+        return false;
     }
 
     void QueryExecution::cleanUp() {}
@@ -190,32 +254,32 @@ namespace db_agg {
     void QueryExecution::stop() {}
 
     void QueryExecution::setPortNames(vector<std::string> portNames) {
-    	portIds.clear();
-    	for (auto& portName:portNames) {
-    		portIds[portName] = "";
-    	}
+        portIds.clear();
+        for (auto& portName:portNames) {
+            portIds[portName] = "";
+        }
     }
 
     vector<string> QueryExecution::getPortNames() {
-    	vector<string> portNames;
-    	for (auto port:portIds) {
-    		portNames.push_back(port.first);
-    	}
-    	return portNames;
+        vector<string> portNames;
+        for (auto port:portIds) {
+            portNames.push_back(port.first);
+        }
+        return portNames;
     }
 
     void QueryExecution::setPortId(string portName, string portId) {
-    	if (portIds.find(portName) == portIds.end()) {
-    		THROW_EXC("unknown port '" << portName << "'");
-    	}
-    	portIds[portName] = portId;
+        if (portIds.find(portName) == portIds.end()) {
+            THROW_EXC("unknown port '" << portName << "'");
+        }
+        portIds[portName] = portId;
     }
 
     string QueryExecution::getPortId(string portName) {
-    	if (portIds.find(portName) == portIds.end()) {
-    		THROW_EXC("unknown port '" << portName << "'");
-    	}
-    	return portIds[portName];
+        if (portIds.find(portName) == portIds.end()) {
+            THROW_EXC("unknown port '" << portName << "'");
+        }
+        return portIds[portName];
     }
 
 }

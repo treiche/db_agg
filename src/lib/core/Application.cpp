@@ -203,7 +203,8 @@ void Application::handleEvent(shared_ptr<Event> event) {
 bool Application::run() {
     LOG_DEBUG("run application");
     try {
-        queryProcessor->process(query, queryUrl, environment);
+        queryProcessor->prepare(query, queryUrl, environment);
+        queryProcessor->process();
         shared_ptr<Event> event(new Event({EventType::APPLICATION_FINISHED,""}));
         fireEvent(event);
         return true;

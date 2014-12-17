@@ -24,12 +24,14 @@
 #include "graph/Channel.h"
 
 namespace db_agg {
-class Transition;
+
 
 enum class QueryExecutionState {
+    INITIAL,
     COMPLETE,
     SCHEDULED,
     RUNNING,
+    STOPPED,
     DONE
 };
 
@@ -40,8 +42,7 @@ class QueryExecution: public DataReceiver, public DataSender, public EventProduc
         std::shared_ptr<Url> url;
         std::string sql;
         std::string name;
-        bool scheduled = false;
-        bool done = false;
+        QueryExecutionState state{QueryExecutionState::INITIAL};
         std::map<std::string,std::shared_ptr<TableData>> dependencies;
         std::map<std::string,std::string> portIds{{"",""}};
         std::shared_ptr<DependencyInjector> dependencyInjector;
@@ -67,10 +68,13 @@ class QueryExecution: public DataReceiver, public DataSender, public EventProduc
         std::string getId();
         void setId(std::string id);
         std::string getName();
+        void setState(QueryExecutionState state);
+        QueryExecutionState getState();
         void setScheduled();
         bool isScheduled();
         void setDone();
         bool isDone();
+        bool isComplete();
         void release();
         size_t getDuration();
         std::shared_ptr<Url> getUrl();
@@ -78,7 +82,6 @@ class QueryExecution: public DataReceiver, public DataSender, public EventProduc
         std::shared_ptr<TableData> getResult(std::string shardId);
         void setResult(std::string shardId, std::shared_ptr<TableData> data);
         std::string inject(std::string query, size_t copyThreshold);
-        bool isComplete();
         std::vector<Channel*> getChannels();
 
         std::vector<std::string> getPortNames();
@@ -101,6 +104,8 @@ class QueryExecution: public DataReceiver, public DataSender, public EventProduc
 };
 
 std::ostream& operator<<(std::ostream& cout,const QueryExecution& t);
+
+std::ostream& operator<<(std::ostream& cout,const QueryExecutionState t);
 
 }
 

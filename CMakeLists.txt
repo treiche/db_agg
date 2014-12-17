@@ -12,7 +12,10 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 find_package(PCRE REQUIRED)
 find_package(Jansson REQUIRED)
 find_package(LibZip REQUIRED)
-find_package(Log4cplus REQUIRED)
+#find_package(Log4cplus REQUIRED)
+
+set(LOG4CPLUS_LIBRARIES "/usr/lib/liblog4cplus.so")
+
 find_package(Curses REQUIRED)
 find_package(LibXml2 REQUIRED)
 find_package(LibXslt REQUIRED)

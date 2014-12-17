@@ -68,7 +68,7 @@ void QueryProcessor::stop() {
     }
 }
 
-void QueryProcessor::process(string query, string url, string environment) {
+void QueryProcessor::prepare(string query, string url, string environment) {
     LOG_DEBUG("process query = " << query << " environment = " << environment);
     Locator::setDefaultEnvironment(environment);
 
@@ -87,25 +87,39 @@ void QueryProcessor::process(string query, string url, string environment) {
     loadFromCache();
     executionGraph.dumpExecutionPlan(outputDir);
     LOG_DEBUG("got " << executionGraph.getQueryExecutions().size() << " executions");
+}
+
+void QueryProcessor::process() {
     if (dontExecute) {
         shared_ptr<Event> fe(new Event(EventType::APPLICATION_FINISHED,""));
         fireEvent(fe);
         return;
     }
     checkConnections();
-
     set<QueryExecution*> runningQueries;
     bool done = false;
     do {
         done = true;
         for (auto exec:executionGraph.getQueryExecutions()) {
             try {
-                if (!exec->isDone() && exec->isComplete()) {
+                QueryExecutionState state = exec->getState();
+                LOG_DEBUG("state of '" << exec->getName() << "' -> " << (int)state);
+                if (
+                    state == QueryExecutionState::COMPLETE ||
+                    state == QueryExecutionState::SCHEDULED ||
+                    state == QueryExecutionState::RUNNING
+                   ) {
+
+                    if (state == QueryExecutionState::COMPLETE) {
+                        exec->schedule();
+                    }
+
                     if (runningQueries.size() < maxParallelExecutions || runningQueries.find(exec) != runningQueries.end()) {
                         runningQueries.insert(exec);
                         bool execDone = exec->process();
                         if (execDone) {
                             runningQueries.erase(exec);
+                            outputResult(*exec);
                         }
                         done &= execDone;
                     } else {
@@ -119,19 +133,49 @@ void QueryProcessor::process(string query, string url, string environment) {
                 cleanUp();
                 throw ce;
             }
+            findExecutables();
         }
         for (auto exec:executionGraph.getQueryExecutions()) {
-        	if (!exec->isDone() && exec->isComplete()) {
-        		// cout << "exec " << exec->getName() << ": done = " << exec->isDone() << " complete = "  << exec->isComplete() << endl;
-        		done = false;
-        	}
+            if (!exec->isDone()) {
+                // cout << "exec " << exec->getName() << ": done = " << exec->isDone() << " complete = "  << exec->isComplete() << endl;
+                done = false;
+            }
         }
     } while(!done);
     for (auto kk:executionGraph.getQueryExecutions()) {
-    	if (!kk->isDone()) {
-    		LOG_ERROR("not done = " << kk->getName() << " complete: " << kk->isComplete());
-    	}
+        if (!kk->isDone()) {
+            LOG_ERROR("not done = " << kk->getName() << " complete: " << kk->isComplete());
+        }
     }
+}
+
+void QueryProcessor::outputResult(QueryExecution& result) {
+    LOG_DEBUG("PROCESSED: " << result.getSql() << " name =" << result.getName() << " address=" << &result << " state = " << result.getState());
+    assert(result.getState() == QueryExecutionState::DONE);
+    // result.setDone();
+    LOG_DEBUG("set execution " << result.getName() << " done.");
+    bool allReady = true;
+    for (auto channel:result.getChannels()) {
+        bool ready = result.getResult(channel->getSourcePort()) != nullptr;
+        LOG_DEBUG("channel source port = " << channel->getSourcePort() << " ready = " << ready);
+        allReady &= ready;
+    }
+    LOG_DEBUG("allReady = " << allReady);
+    //if (result.getResult("")==nullptr) {
+    if (!allReady) {
+        THROW_EXC("result not ready");
+    }
+    LOG_DEBUG("doTransitions");
+    //vector<Channel*> outputChannels = executionGraph.getOutputChannels(&result);
+    for (auto channel:result.getChannels()) {
+        channel->open();
+        channel->send(result.getResult(channel->getSourcePort()));
+        channel->close();
+    }
+    LOG_DEBUG("cacheItem " << result.getId());
+    cacheItem(result);
+    LOG_DEBUG("cacheItem done");
+    result.release();
 }
 
 void QueryProcessor::cleanUp() {
@@ -143,69 +187,50 @@ void QueryProcessor::cleanUp() {
 void QueryProcessor::loadFromCache() {
     LOG_INFO("load items from cache");
     for (auto& qr:executionGraph.getQueryExecutions()) {
-    	for (auto portName:qr->getPortNames()) {
-    		string resultId = qr->getPortId(portName);
-			if (cacheRegistry.exists(resultId)) {
-				File path(cacheRegistry.getPath(resultId));
-				if (path.exists()) {
-					LOG_INFO("cache item for " << qr->getName() << "[" << resultId << "] exists");
-					if (!disableCache) {
-						shared_ptr<TableData> data = cacheRegistry.getData(resultId);
-						qr->setResult(portName, data);
-						qr->setDone();
-						// close all incoming channels here
-						// executionGraph.getSources(qr);
-						//qr.second->doTransitions();
-						File linkPath(outputDir + "/" + qr->getName() + portName + ".csv");
-						if (!linkPath.exists()) {
-							linkPath.linkTo(path);
-						}
-						shared_ptr<Event> event(new ExecutionStateChangeEvent(qr->getId(),"CACHED"));
-						fireEvent(event);
-						shared_ptr<Event> re(new ReceiveDataEvent(resultId,cacheRegistry.getRowCount(resultId)));
-						fireEvent(re);
-					}
-					CacheItem& ci = cacheRegistry.get(resultId);
-					shared_ptr<Event> ce(new CacheLoadEvent(resultId,ci.lastExecuted,ci.lastDuration,ci.rowCount));
-					fireEvent(ce);
-				}
-			} else {
-				LOG_INFO("cache item for " << qr->getName() << "[" << qr->getId() << "] does not exist");
-			}
-    	}
+        for (auto portName:qr->getPortNames()) {
+            string resultId = qr->getPortId(portName);
+            if (cacheRegistry.exists(resultId)) {
+                File path(cacheRegistry.getPath(resultId));
+                if (path.exists()) {
+                    LOG_INFO("cache item for " << qr->getName() << "[" << resultId << "] exists");
+                    if (!disableCache) {
+                        shared_ptr<TableData> data = cacheRegistry.getData(resultId);
+                        qr->setResult(portName, data);
+                        qr->setDone();
+                        // close all incoming channels here
+                        // executionGraph.getSources(qr);
+                        //qr.second->doTransitions();
+                        File linkPath(outputDir + "/" + qr->getName() + portName + ".csv");
+                        if (!linkPath.exists()) {
+                            linkPath.linkTo(path);
+                        }
+                        shared_ptr<Event> event(new ExecutionStateChangeEvent(qr->getId(),"CACHED"));
+                        fireEvent(event);
+                        shared_ptr<Event> re(new ReceiveDataEvent(resultId,cacheRegistry.getRowCount(resultId)));
+                        fireEvent(re);
+                    }
+                    CacheItem& ci = cacheRegistry.get(resultId);
+                    shared_ptr<Event> ce(new CacheLoadEvent(resultId,ci.lastExecuted,ci.lastDuration,ci.rowCount));
+                    fireEvent(ce);
+                }
+            } else {
+                LOG_INFO("cache item for " << qr->getName() << "[" << qr->getId() << "] does not exist");
+            }
+        }
     }
     LOG_DEBUG("load items from cache done");
     for (auto& qr:executionGraph.getQueryExecutions()) {
         if (qr->isDone()) {
             for (auto channel:qr->getChannels()) {
-            	QueryExecution *target = channel->getTarget();
-            	if (!target->isDone()) {
+                QueryExecution *target = channel->getTarget();
+                if (!target->isDone()) {
                     if (channel->getState() == ChannelState::READY) {
-                    	channel->open();
-                		LOG_DEBUG("send data to target " << target->getName() << " port=" << channel->getTargetPort());
-                    	channel->send(qr->getResult(channel->getSourcePort()));
-                    	channel->close();
+                        channel->open();
+                        LOG_DEBUG("send data to target " << target->getName() << " port=" << channel->getTargetPort());
+                        channel->send(qr->getResult(channel->getSourcePort()));
+                        channel->close();
                     }
-            	}
-            	/*
-                vector<QueryExecution*> targets = executionGraph.getTargets(channel);
-                bool allDone = true;
-                for (auto target:targets) {
-                    allDone &= target->isDone();
                 }
-                if (allDone) {
-                    continue;
-                }
-                LOG_DEBUG("open channel " << channel->getTargetPort());
-                if (channel->getState() != ChannelState::READY) {
-                    continue;
-                }
-                channel->open();
-                LOG_INFO("send data");
-                channel->send(qr->getResult(""));
-                LOG_INFO("send data done");
-                channel->close();
-                */
             }
             qr->release();
         }
@@ -404,75 +429,75 @@ void QueryProcessor::populateTransitions() {
             } else if (dstSize == 1 && srcSize > 1) {
                 // many to one
                 QueryExecution *targetExecution = &executionGraph.getQueryExecution(&targetQuery,0);
-				string md5;
+                string md5;
                 for (size_t cnt=0;cnt<srcSize; cnt++) {
                     QueryExecution *sourceExecution = &executionGraph.getQueryExecution(&sourceQuery,cnt);
                     md5 += sourceExecution->getUrl()->getUrl(false,false,false) + sourceExecution->getSql();
                 }
-				string id = md5hex(md5 + ":joined");
-				bool execExists = executionGraph.exists(id);
+                string id = md5hex(md5 + ":joined");
+                bool execExists = executionGraph.exists(id);
                 ManyToOne *m2o = nullptr;
                 if (execExists) {
-                	m2o = dynamic_cast<ManyToOne*>(&executionGraph.getQueryExecution(id));
+                    m2o = dynamic_cast<ManyToOne*>(&executionGraph.getQueryExecution(id));
                 } else {
-                	m2o = new ManyToOne();
+                    m2o = new ManyToOne();
                 }
-				vector<string> args;
-				vector<string> depNames;
-				if (!execExists) {
-					for (size_t cnt=0;cnt<srcSize; cnt++) {
-						QueryExecution *sourceExecution = &executionGraph.getQueryExecution(&sourceQuery,cnt);
-						depNames.push_back(to_string(cnt+1));
-						executionGraph.createChannel(sourceExecution,"",m2o,to_string(cnt+1));
-					}
-					shared_ptr<DependencyInjector> di = extensionLoader.getDependencyInjector("default");
-					m2o->init(sourceQuery.getName() + ":joined", id,targetExecution->getUrl(),"query",depNames,di,args);
-					m2o->addEventListener(this);
-					executionGraph.addQueryExecution(m2o);
+                vector<string> args;
+                vector<string> depNames;
+                if (!execExists) {
+                    for (size_t cnt=0;cnt<srcSize; cnt++) {
+                        QueryExecution *sourceExecution = &executionGraph.getQueryExecution(&sourceQuery,cnt);
+                        depNames.push_back(to_string(cnt+1));
+                        executionGraph.createChannel(sourceExecution,"",m2o,to_string(cnt+1));
+                    }
+                    shared_ptr<DependencyInjector> di = extensionLoader.getDependencyInjector("default");
+                    m2o->init(sourceQuery.getName() + ":joined", id,targetExecution->getUrl(),"query",depNames,di,args);
+                    m2o->addEventListener(this);
+                    executionGraph.addQueryExecution(m2o);
                 }
                 executionGraph.createChannel(m2o,"",targetExecution,sourceQuery.getName());
             } else if (dstSize > 1 && srcSize == 1) {
                 if (dep.getSourceQuery()->getShardId() != -1) {
-                	LOG_DEBUG("prepare one to many unsharded transition");
-					QueryExecution *sourceExecution = &executionGraph.getQueryExecution(&sourceQuery,0);
-					for (size_t cnt=0;cnt<dstSize; cnt++) {
-						QueryExecution *targetExecution = &executionGraph.getQueryExecution(&targetQuery,cnt);
-						executionGraph.createChannel(sourceExecution,"",targetExecution,sourceExecution->getName());
-					}
+                    LOG_DEBUG("prepare one to many unsharded transition");
+                    QueryExecution *sourceExecution = &executionGraph.getQueryExecution(&sourceQuery,0);
+                    for (size_t cnt=0;cnt<dstSize; cnt++) {
+                        QueryExecution *targetExecution = &executionGraph.getQueryExecution(&targetQuery,cnt);
+                        executionGraph.createChannel(sourceExecution,"",targetExecution,sourceExecution->getName());
+                    }
                 } else {
-					LOG_DEBUG("prepare one-to-many transition");
+                    LOG_DEBUG("prepare one-to-many transition");
                     auto sharderConfigs = urlRegistry.getShardingStrategies(targetQuery.getDatabaseId());
                     auto sharders = resolveShardingStrategies(sharderConfigs,dstSize);
-					if (sharders.empty()) {
-						LOG_WARN("no sharding strategy for database '" << targetQuery.getDatabaseId() << "'");
-					}
-					QueryExecution *sourceExecution = &executionGraph.getQueryExecution(&sourceQuery,0);
-					string id = md5hex(sourceExecution->getUrl()->getUrl(false,false,false) + sourceExecution->getSql() + ":splitted");
-					OneToMany *o2m = nullptr;
-					bool execExists = executionGraph.exists(id);
-					if (execExists) {
-						o2m = dynamic_cast<OneToMany*>(&executionGraph.getQueryExecution(id));
-					} else {
-						o2m = new OneToMany(sharders, (size_t) dstSize);
-					}
-					vector<string> depNames;
-					depNames.push_back(sourceExecution->getName());
-					vector<string> args;
-					shared_ptr<DependencyInjector> di = extensionLoader.getDependencyInjector("default");
-					o2m->init(sourceExecution->getName() + ":splitted",id,sourceExecution->getUrl(),"query",depNames,di,args);
-					if (!execExists) {
-						o2m->addEventListener(this);
-						executionGraph.addQueryExecution(o2m);
-						executionGraph.createChannel(sourceExecution,"",o2m,sourceExecution->getName());
-					}
-					//vector<string> portNames;
-					for (size_t cnt=0;cnt<dstSize; cnt++) {
-						QueryExecution *targetExecution = &executionGraph.getQueryExecution(&targetQuery,cnt);
-						executionGraph.createChannel(o2m, to_string(cnt+1), targetExecution, sourceExecution->getName());
-						//portNames.push_back(to_string(cnt+1));
-					}
-					//LOG_DEBUG("set one-to-many portNames = " << join(portNames,","))
-					//o2m->setPortNames(portNames);
+                    if (sharders.empty()) {
+                        LOG_WARN("no sharding strategy for database '" << targetQuery.getDatabaseId() << "'");
+                    }
+                    QueryExecution *sourceExecution = &executionGraph.getQueryExecution(&sourceQuery,0);
+                    string id = md5hex(sourceExecution->getUrl()->getUrl(false,false,false) + sourceExecution->getSql() + ":splitted");
+                    OneToMany *o2m = nullptr;
+                    bool execExists = executionGraph.exists(id);
+                    if (execExists) {
+                        o2m = dynamic_cast<OneToMany*>(&executionGraph.getQueryExecution(id));
+                    } else {
+                        o2m = new OneToMany(sharders, (size_t) dstSize);
+                    }
+                    vector<string> depNames;
+                    depNames.push_back(sourceExecution->getName());
+                    vector<string> args;
+                    shared_ptr<DependencyInjector> di = extensionLoader.getDependencyInjector("default");
+                    o2m->init(sourceExecution->getName() + ":splitted",id,sourceExecution->getUrl(),"query",depNames,di,args);
+                    if (!execExists) {
+                        o2m->addEventListener(this);
+                        executionGraph.addQueryExecution(o2m);
+                        executionGraph.createChannel(sourceExecution,"",o2m,sourceExecution->getName());
+                    }
+                    //vector<string> portNames;
+                    for (size_t cnt=0;cnt<dstSize; cnt++) {
+                        QueryExecution *targetExecution = &executionGraph.getQueryExecution(&targetQuery,cnt);
+                        executionGraph.createChannel(o2m, to_string(cnt+1), targetExecution, sourceExecution->getName());
+                        //portNames.push_back(to_string(cnt+1));
+                    }
+                    //LOG_DEBUG("set one-to-many portNames = " << join(portNames,","))
+                    //o2m->setPortNames(portNames);
                 }
             }
         }
@@ -511,26 +536,26 @@ void QueryProcessor::calculateExecutionIds() {
                 dump_md5_sources(query->getName(), exec->getId(), md5data);
                 executionGraph.addQueryExecution(exec);
                 for (auto portName:exec->getPortNames()) {
-                	string resultId(md5hex(md5data + portName));
-                	exec->setPortId(portName,resultId);
+                    string resultId(md5hex(md5data + portName));
+                    exec->setPortId(portName,resultId);
                 }
             }
         }
     }
 
     for (auto exec:executionGraph.getQueryExecutions()) {
-    	if (exec->isTransition()) {
-    		string md5data;
-    		calculateExecutionId(*exec,md5data);
+        if (exec->isTransition()) {
+            string md5data;
+            calculateExecutionId(*exec,md5data);
             string execId(md5hex(md5data));
             exec->setId(execId);
             dump_md5_sources(exec->getName(), exec->getId(), md5data);
             executionGraph.addQueryExecution(exec);
             for (auto portName:exec->getPortNames()) {
-            	string resultId(md5hex(md5data+portName));
-            	exec->setPortId(portName,resultId);
+                string resultId(md5hex(md5data+portName));
+                exec->setPortId(portName,resultId);
             }
-    	}
+        }
     }
 
     LOG_TRACE("calculate execution ids done");
@@ -575,6 +600,13 @@ vector<QueryExecution*> QueryProcessor::findExecutables() {
             executables.push_back(exec);
         }
     }
+    if (!executables.empty()) {
+        LOG_DEBUG("found " << executables.size() << " executables");
+        for (auto result:executables) {
+            LOG_DEBUG("schedule executable  " << result->getSql());
+            result->schedule();
+        }
+    }
     return executables;
 }
 
@@ -582,62 +614,25 @@ void QueryProcessor::cacheItem(QueryExecution& exec) {
     LOG_DEBUG("save cache item "+exec.getId());
     LOG_DEBUG("execution: " << exec.getName());
     for (auto portName:exec.getPortNames()) {
-    	LOG_DEBUG("save port '" << portName << "' with id " << exec.getPortId(portName));
+        LOG_DEBUG("save port '" << portName << "' with id " << exec.getPortId(portName));
         File linkPath{outputDir + "/" + exec.getName() + portName + ".csv"};
-    	string portId = exec.getPortId(portName);
+        string portId = exec.getPortId(portName);
         LOG_DEBUG("result = " << exec.getResult(portName) << " ports = '" << join(exec.getPortNames(),",") << "'");
-		uint64_t rowCount = exec.getResult(portName)->getRowCount();
-		cacheRegistry.registerItem(portId, exec.getId(), Time(),exec.getDuration(),linkPath.abspath(),"csv", rowCount);
-		exec.getResult(portName)->save(cacheRegistry.getPath(portId));
-	    cacheRegistry.save(portId);
-	    if (!exec.isTransition()) {
+        uint64_t rowCount = exec.getResult(portName)->getRowCount();
+        cacheRegistry.registerItem(portId, exec.getId(), Time(),exec.getDuration(),linkPath.abspath(),"csv", rowCount);
+        exec.getResult(portName)->save(cacheRegistry.getPath(portId));
+        cacheRegistry.save(portId);
+        if (!exec.isTransition()) {
             if (linkPath.exists()) {
                 linkPath.remove();
             }
             linkPath.linkTo(cacheRegistry.getPath(portId));
-	    }
+        }
     }
     LOG_TRACE("save data done");
 }
 
 void QueryProcessor::handleEvent(shared_ptr<Event> event) {
-    if (event->type==EventType::PROCESSED) {
-        QueryExecution& result = executionGraph.getQueryExecution(event->resultId);
-        LOG_DEBUG("PROCESSED: " << result.getSql() << " name =" << result.getName() << " address=" << &result);
-        result.setDone();
-        LOG_DEBUG("set execution " << result.getName() << " done.");
-        bool allReady = true;
-        for (auto channel:result.getChannels()) {
-        	bool ready = result.getResult(channel->getSourcePort()) != nullptr;
-        	LOG_DEBUG("channel source port = " << channel->getSourcePort() << " ready = " << ready);
-        	allReady &= ready;
-        }
-        LOG_DEBUG("allReady = " << allReady);
-        //if (result.getResult("")==nullptr) {
-        if (!allReady) {
-            THROW_EXC("result not ready");
-        }
-        LOG_DEBUG("doTransitions");
-        //vector<Channel*> outputChannels = executionGraph.getOutputChannels(&result);
-        for (auto channel:result.getChannels()) {
-            channel->open();
-            channel->send(result.getResult(channel->getSourcePort()));
-            channel->close();
-        }
-        LOG_DEBUG("cacheItem " << event->resultId);
-        cacheItem(result);
-        LOG_DEBUG("cacheItem done");
-        result.release();
-    }
-    vector<QueryExecution*> exec = findExecutables();
-    if (!exec.empty()) {
-        LOG_DEBUG("found " << exec.size() << " executables");
-        for (auto result:exec) {
-            LOG_DEBUG("schedule executable  " << result->getSql());
-            string sql = result->inject(result->getSql(), copyThreshold);
-            result->schedule();
-        }
-    }
     fireEvent(event);
 }
 

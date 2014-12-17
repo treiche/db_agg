@@ -63,11 +63,11 @@ bool OneToMany::process() {
 		}
 	}
 
+	setState(QueryExecutionState::DONE);
 	shared_ptr<Event> event(new Event(EventType::PROCESSED,getId()));
 	LOG_DEBUG("send PROCESSED event");
     fireEvent(event);
 
-	setDone();
 	return true;
 }
 

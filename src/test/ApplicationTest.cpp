@@ -84,6 +84,7 @@ protected:
 
 
 vector<string> queries = {"one_to_one","one_to_many","many_to_one","many_to_many","locator"};
+//vector<string> queries = {"many_to_one"};
 INSTANTIATE_TEST_CASE_P(TestQueries, ApplicationTest,
                          ValuesIn(queries));
 

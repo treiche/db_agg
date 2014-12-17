@@ -75,6 +75,9 @@ namespace db_agg {
 
     // EventListener
     void PGQueryExecution::handleEvent(shared_ptr<Event> event) {
+        if (event->type == EventType::PROCESSED) {
+            setState(QueryExecutionState::DONE);
+        }
         fireEvent(event);
     }
 
