@@ -48,12 +48,6 @@ bool ResourceQueryExecution::process() {
     }
     setResult("", data);
     setState(QueryExecutionState::DONE);
-    shared_ptr<Event> event(new Event(EventType::PROCESSED,getId()));
-    fireEvent(event);
-    shared_ptr<Event> rde(new ReceiveDataEvent(getId(),data->getRowCount()));
-    fireEvent(rde);
-    shared_ptr<Event> e(new ExecutionStateChangeEvent(getId(),"DONE"));
-    EventProducer::fireEvent(e);
     return true;
 }
 

@@ -70,10 +70,6 @@ bool MemcachedQuery::process() {
 
         setResult("", resultTable);
         setState(QueryExecutionState::DONE);
-        shared_ptr<Event> event(new Event(EventType::PROCESSED,getId()));
-        fireEvent(event);
-        shared_ptr<Event> e(new ExecutionStateChangeEvent(getId(),"DONE"));
-        EventProducer::fireEvent(e);
         LOG4CPLUS_DEBUG(LOG,"process done");
         return true;
     } else {

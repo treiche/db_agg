@@ -180,6 +180,10 @@ namespace db_agg {
             startTime = std::chrono::system_clock::now();
         } else if (state == QueryExecutionState::DONE) {
             endTime = std::chrono::system_clock::now();
+            shared_ptr<Event> event(new Event(EventType::PROCESSED, getId()));
+            fireEvent(event);
+            shared_ptr<Event> e(new ExecutionStateChangeEvent(getId(), "DONE"));
+            EventProducer::fireEvent(e);
         }
         this->state = state;
     }

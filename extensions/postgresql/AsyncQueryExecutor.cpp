@@ -232,8 +232,6 @@ bool AsyncQueryExecutor::processTask(int taskNo) {
                     task->state = PGQueryExecutionState::DONE;
                     task->conn.finish();
                     LOG_DEBUG("released connection " << task->connectionUrl);
-                    fireStateChangeEvent(taskNo, "DONE");
-                    LOG_DEBUG("RESULT IS NULL");
                     fireEvent(EventType::PROCESSED, taskNo);
                     return true;
                 }
