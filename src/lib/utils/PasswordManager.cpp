@@ -86,71 +86,72 @@ string getpass(const char *prompt, bool show_asterisk=true)
 
 
 namespace db_agg {
-    static Logger LOG = Logger::getInstance(LOG4CPLUS_TEXT("PasswordManager"));
 
-    PasswordManager::PasswordManager(bool searchInPgPass) {
-        this->searchInPgPass = searchInPgPass;
-    }
+DECLARE_LOGGER("PasswordManager");
 
-    pair<string,string> PasswordManager::getCredential(Url *url) {
-        pair<string,string> c;
-        if (searchInPgPass) {
-            c = getCredentialFromPgPass(url);
-            if (!c.first.empty()) {
-                return c;
-            }
+PasswordManager::PasswordManager(bool searchInPgPass) {
+    this->searchInPgPass = searchInPgPass;
+}
+
+pair<string,string> PasswordManager::getCredential(Url *url) {
+    pair<string,string> c;
+    if (searchInPgPass) {
+        c = getCredentialFromPgPass(url);
+        if (!c.first.empty()) {
+            return c;
         }
-        return getCredentialFromPrompt(url);
     }
+    return getCredentialFromPrompt(url);
+}
 
-    pair<string,string> PasswordManager::getCredentialFromPgPass(Url *url) {
-        pair<string,string> c;
-        uid_t uid = getuid();
-        LOG_DEBUG("uid=" << uid);
-        struct passwd *pw = getpwuid(uid);
-        const char *homedir = pw->pw_dir;
-        LOG_DEBUG("homedir=" << homedir);
-        homedir = getenv("HOME");
-        LOG_DEBUG("homedir=" << homedir);
+pair<string,string> PasswordManager::getCredentialFromPgPass(Url *url) {
+    pair<string,string> c;
+    uid_t uid = getuid();
+    LOG_DEBUG("uid=" << uid);
+    struct passwd *pw = getpwuid(uid);
+    const char *homedir = pw->pw_dir;
+    LOG_DEBUG("homedir=" << homedir);
+    homedir = getenv("HOME");
+    LOG_DEBUG("homedir=" << homedir);
 
-        ifstream pgpass(string(homedir) + "/.pgpass");
+    ifstream pgpass(string(homedir) + "/.pgpass");
 
-        LOG_DEBUG("pgpass = " << pgpass);
+    LOG_DEBUG("pgpass = " << pgpass);
 
-        if (pgpass) {
-            while(pgpass) {
-                string line;
-                getline(pgpass,line,'\n');
-                //cout << line << endl;
-                vector<string> columns;
-                split(line,':',columns);
-                if (columns.size() == 5) {
-                    if (columns[0] == url->getHost() && columns[1] == url->getPort()) {
-                        LOG_DEBUG("found entry for host " << columns[0]);
-                        c.first = columns[3];
-                        c.second = columns[4];
-                        LOG_DEBUG("return " << columns[3]);
-                        pgpass.close();
-                        return c;
-                    }
-                } else {
-                    LOG_WARN("found line with " << columns.size() << " columns");
+    if (pgpass) {
+        while(pgpass) {
+            string line;
+            getline(pgpass,line,'\n');
+            //cout << line << endl;
+            vector<string> columns;
+            split(line,':',columns);
+            if (columns.size() == 5) {
+                if (columns[0] == url->getHost() && columns[1] == url->getPort()) {
+                    LOG_DEBUG("found entry for host " << columns[0]);
+                    c.first = columns[3];
+                    c.second = columns[4];
+                    LOG_DEBUG("return " << columns[3]);
+                    pgpass.close();
+                    return c;
                 }
+            } else {
+                LOG_WARN("found line with " << columns.size() << " columns");
             }
-            pgpass.close();
-            LOG_DEBUG("no credentials found");
         }
-        return c;
+        pgpass.close();
+        LOG_DEBUG("no credentials found");
     }
+    return c;
+}
 
-    pair<string,string> PasswordManager::getCredentialFromPrompt(Url *url) {
-        pair<string,string> c;
-        cout << "connecting to " << url->getUrl(false,false,false) << endl;
-        string user = getinput("user>");
-        string pass=getpass("password>", true);
-        c.first = user;
-        c.second = pass;
-        return c;
-    }
+pair<string,string> PasswordManager::getCredentialFromPrompt(Url *url) {
+    pair<string,string> c;
+    cout << "connecting to " << url->getUrl(false,false,false) << endl;
+    string user = getinput("user>");
+    string pass=getpass("password>", true);
+    c.first = user;
+    c.second = pass;
+    return c;
+}
 
 }

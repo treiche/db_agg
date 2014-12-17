@@ -20,7 +20,7 @@ using namespace log4cplus;
 
 namespace db_agg {
 
-static Logger LOG = Logger::getInstance(LOG4CPLUS_TEXT("Memcached"));
+DECLARE_LOGGER("Memcached");
 
 struct Memcached::XImpl {
     memcached_st *memc;

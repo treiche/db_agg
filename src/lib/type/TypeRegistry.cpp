@@ -11,7 +11,7 @@ using namespace log4cplus;
 
 namespace db_agg {
 
-static Logger LOG = Logger::getInstance(LOG4CPLUS_TEXT("TypeRegistry"));
+DECLARE_LOGGER("TypeRegistry");
 
 TypeInfo::TypeInfo(long oid,string name,char category,short length) {
     this->oid = oid;

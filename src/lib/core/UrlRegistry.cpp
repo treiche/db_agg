@@ -22,7 +22,7 @@ using namespace log4cplus;
 
 namespace db_agg {
 
-static Logger LOG = Logger::getInstance(LOG4CPLUS_TEXT("UrlRegistry"));
+DECLARE_LOGGER("UrlRegistry");
 
 bool hasAttribute(xmlElementPtr element, string attrName) {
     xmlAttribute *attr = element->attributes;

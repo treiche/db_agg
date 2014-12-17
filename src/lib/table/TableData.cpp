@@ -22,7 +22,7 @@ using namespace log4cplus;
 
 namespace db_agg {
 
-static Logger LOG = Logger::getInstance(LOG4CPLUS_TEXT("TableData"));
+DECLARE_LOGGER("TableData");
 
 TableData::TableData() {
 

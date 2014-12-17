@@ -25,7 +25,7 @@ using namespace std;
 using namespace log4cplus;
 
 namespace db_agg {
-    static Logger LOG = Logger::getInstance(LOG4CPLUS_TEXT("AsyncQueryExecutor"));
+    DECLARE_LOGGER("AsyncQueryExecutor");
 
     enum class PGQueryExecutionState {
         INITIAL,

@@ -14,7 +14,7 @@ using namespace std;
 using namespace log4cplus;
 
 namespace db_agg {
-static Logger LOG = Logger::getInstance(LOG4CPLUS_TEXT("MD5ShardingStrategy"));
+DECLARE_LOGGER("MD5ShardingStrategy");
 
 int MD5ShardingStrategy::getShardId(std::string shardKey) {
     MD5 md5 = MD5(shardKey);

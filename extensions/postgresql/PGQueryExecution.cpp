@@ -18,7 +18,7 @@ using namespace std;
 using namespace log4cplus;
 
 namespace db_agg {
-    static Logger LOG = Logger::getInstance(LOG4CPLUS_TEXT("QueryExecution"));
+    DECLARE_LOGGER("QueryExecution");
 
     PGQueryExecution::PGQueryExecution(): QueryExecution() {
         queryExecutor.addEventListener(this);

@@ -20,7 +20,7 @@ using namespace std;
 using namespace log4cplus;
 
 namespace db_agg {
-static Logger LOG = Logger::getInstance(LOG4CPLUS_TEXT("Builtin"));
+DECLARE_LOGGER("Builtin");
 
 map<ComponentType,vector<string>> Builtin::components = {
         {ComponentType::SHARDING_STRATEGY,{"md5","explicit","modulo"}},

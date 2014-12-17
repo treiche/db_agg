@@ -17,7 +17,7 @@ using namespace log4cplus;
 
 namespace db_agg {
 
-static Logger LOG = Logger::getInstance(LOG4CPLUS_TEXT("TableIndex"));
+DECLARE_LOGGER("TableIndex");
 
 
 void TableIndex::addOffset(uint64_t offset) {

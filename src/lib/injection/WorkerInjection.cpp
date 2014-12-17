@@ -17,7 +17,7 @@ using namespace log4cplus;
 
 namespace db_agg {
 
-static Logger LOG = Logger::getInstance(LOG4CPLUS_TEXT("WorkerInjection"));
+DECLARE_LOGGER("WorkerInjection");
 
 WorkerInjection::~WorkerInjection() {
     LOG_INFO("use_count delete injector");

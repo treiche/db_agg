@@ -16,7 +16,7 @@ using namespace log4cplus;
 
 namespace db_agg {
 
-static Logger LOG = Logger::getInstance(LOG4CPLUS_TEXT("ResourceQueryExecution"));
+DECLARE_LOGGER("ResourceQueryExecution");
 
 /*
 ResourceQueryExecution::ResourceQueryExecution(string name, string id, shared_ptr<Url> url, string sql, vector<string> depName, DependencyInjector *dependencyInjector):

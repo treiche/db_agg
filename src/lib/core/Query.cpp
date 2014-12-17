@@ -7,7 +7,7 @@
 using namespace std;
 using namespace log4cplus;
 namespace db_agg {
-    static Logger LOG = Logger::getInstance(LOG4CPLUS_TEXT("Query"));
+    DECLARE_LOGGER("Query");
 /*
     Query::Query(string name, string query, set<string> usedNamespaces)
       : Query(name, query, usedNamespaces, -1, "") {}

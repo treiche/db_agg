@@ -13,7 +13,7 @@ using namespace std;
 using namespace log4cplus;
 
 namespace db_agg {
-static Logger LOG = Logger::getInstance(LOG4CPLUS_TEXT("SplittedTableData"));
+DECLARE_LOGGER("SplittedTableData");
 
 
 SplittedTableData::SplittedTableData(shared_ptr<TableData> source, vector<uint64_t> rows) {

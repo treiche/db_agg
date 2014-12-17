@@ -12,7 +12,7 @@ using namespace std;
 using namespace log4cplus;
 
 namespace db_agg {
-    static Logger LOG = Logger::getInstance(LOG4CPLUS_TEXT("CacheRegistry"));
+    DECLARE_LOGGER("CacheRegistry");
 
     CacheRegistry::CacheRegistry(string cacheDir):
         cacheDir(cacheDir) {

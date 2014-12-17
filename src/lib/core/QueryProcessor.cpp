@@ -24,7 +24,7 @@ using namespace log4cplus;
 
 namespace db_agg {
 
-static Logger LOG = Logger::getInstance(LOG4CPLUS_TEXT("QueryProcessor"));
+DECLARE_LOGGER("QueryProcessor");
 
 
 QueryProcessor::QueryProcessor(

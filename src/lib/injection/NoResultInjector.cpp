@@ -17,7 +17,7 @@ using namespace log4cplus;
 
 namespace db_agg {
 
-static Logger LOG = Logger::getInstance(LOG4CPLUS_TEXT("NoResultInjector"));
+DECLARE_LOGGER("NoResultInjector");
 
 NoResultInjector::~NoResultInjector() {
 

@@ -20,7 +20,7 @@ using namespace std;
 using namespace log4cplus;
 
 namespace db_agg {
-    static Logger LOG = Logger::getInstance(LOG4CPLUS_TEXT("CsvTableData"));
+    DECLARE_LOGGER("CsvTableData");
 
     CsvTableData::CsvTableData(vector<string> columns) {
         vector<ColDef> colDefs;

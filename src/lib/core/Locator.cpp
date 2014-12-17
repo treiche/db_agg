@@ -15,7 +15,7 @@ using namespace std;
 using namespace log4cplus;
 
 namespace db_agg {
-    static Logger LOG = Logger::getInstance(LOG4CPLUS_TEXT("Locator"));
+    DECLARE_LOGGER("Locator");
     string Locator::defaultEnvironment;
 
     Locator::Locator(string name, short shardId, string environment):

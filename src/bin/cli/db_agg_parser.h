@@ -6,7 +6,7 @@
 #include <vector>
 
 #include "cli/CommandLineParser.h"
-#include "Configuration.h"
+#include "core/Configuration.h"
 
 using namespace std;
 

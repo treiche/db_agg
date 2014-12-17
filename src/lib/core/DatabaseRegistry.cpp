@@ -31,7 +31,7 @@ string getAttribute(xmlElementPtr element, string attrName) {
 }
 
 namespace db_agg {
-    static Logger LOG = Logger::getInstance(LOG4CPLUS_TEXT("DatabaseRegistry"));
+    DECLARE_LOGGER("DatabaseRegistry");
 
     DatabaseRegistry::DatabaseRegistry(string regfile) {
         LOG_DEBUG("load database registry from " << regfile);

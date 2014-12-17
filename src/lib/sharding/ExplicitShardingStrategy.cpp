@@ -13,7 +13,7 @@ using namespace std;
 using namespace log4cplus;
 
 namespace db_agg {
-static Logger LOG = Logger::getInstance(LOG4CPLUS_TEXT("ExplicitShardingStrategy"));
+DECLARE_LOGGER("ExplicitShardingStrategy");
 
 int ExplicitShardingStrategy::getShardId(std::string shardKey) {
 	return stoi(shardKey);

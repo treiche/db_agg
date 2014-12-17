@@ -58,7 +58,7 @@ add_subdirectory("extensions/postgresql")
 include_directories("${PROJECT_BINARY_DIR}")
 include_directories("${PROJECT_SOURCE_DIR}/src/lib")
 include_directories("${PROJECT_SOURCE_DIR}/src/bin")
-include_directories("${PROJECT_SOURCE_DIR}/src/lib/core")
+#include_directories("${PROJECT_SOURCE_DIR}/src/lib/core")
 
 set(BIN_SUBDIRS cli ui)
 foreach (subdir ${BIN_SUBDIRS})

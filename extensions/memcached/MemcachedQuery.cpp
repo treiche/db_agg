@@ -5,7 +5,7 @@
  *      Author: arnd
  */
 
-#include <log4cplus/logger.h>
+#include "utils/logging.h"
 
 
 #include "db_agg.h"
@@ -24,7 +24,7 @@ using namespace log4cplus;
 
 namespace memcached {
 
-static Logger LOG = Logger::getInstance(LOG4CPLUS_TEXT("MemcachedQuery"));
+DECLARE_LOGGER("MemcachedQuery");
 
 
 bool MemcachedQuery::process() {

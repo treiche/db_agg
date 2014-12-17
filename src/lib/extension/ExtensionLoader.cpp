@@ -20,7 +20,7 @@ using namespace std;
 using namespace log4cplus;
 
 namespace db_agg {
-    static Logger LOG = Logger::getInstance(LOG4CPLUS_TEXT("ExtensionLoader"));
+    DECLARE_LOGGER("ExtensionLoader");
 
     ExtensionLoader::~ExtensionLoader() {
         LOG_TRACE("delete extension loader " << this);

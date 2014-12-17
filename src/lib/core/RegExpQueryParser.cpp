@@ -17,6 +17,7 @@
 using namespace std;
 
 namespace db_agg {
+
 DECLARE_LOGGER("RegExpQueryParser");
 
 

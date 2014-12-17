@@ -24,7 +24,7 @@ using namespace log4cplus;
 
 namespace db_agg {
 
-static Logger LOG = Logger::getInstance(LOG4CPLUS_TEXT("File"));
+DECLARE_LOGGER("File");
 
 File::File(string path) : path(path) {
 }

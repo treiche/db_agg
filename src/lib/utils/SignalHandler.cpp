@@ -13,13 +13,12 @@ using namespace std;
 using namespace log4cplus;
 
 namespace db_agg {
-static Logger LOG = Logger::getInstance(LOG4CPLUS_TEXT("SignalHandler"));
+
+DECLARE_LOGGER("SignalHandler");
 
 void GlobalSignalHandler::handleSignal(int signal) {
-    //cout << "GlobalSignalHandler::handle signal" << endl;
     LOG_TRACE("received signal " << signal);
     for (auto& child:childs) {
-        //cout << "GlobalSignalHandler::handle forward " << signal << endl;
         LOG_TRACE("forward signal " << signal);
         child->handleSignal(signal);
     }

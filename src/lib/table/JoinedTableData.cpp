@@ -13,7 +13,7 @@ using namespace std;
 using namespace log4cplus;
 
 namespace db_agg {
-static Logger LOG = Logger::getInstance(LOG4CPLUS_TEXT("JoinedTableData"));
+DECLARE_LOGGER("JoinedTableData");
 
 
 JoinedTableData::JoinedTableData(std::vector<std::shared_ptr<TableData>> sources) {
