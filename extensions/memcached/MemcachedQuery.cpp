@@ -69,11 +69,11 @@ bool MemcachedQuery::process() {
         LOG_DEBUG("result colCount = " << resultTable->getColCount());
 
         setResult("", resultTable);
+        setState(QueryExecutionState::DONE);
         shared_ptr<Event> event(new Event(EventType::PROCESSED,getId()));
         fireEvent(event);
         shared_ptr<Event> e(new ExecutionStateChangeEvent(getId(),"DONE"));
         EventProducer::fireEvent(e);
-        setDone();
         LOG4CPLUS_DEBUG(LOG,"process done");
         return true;
     } else {

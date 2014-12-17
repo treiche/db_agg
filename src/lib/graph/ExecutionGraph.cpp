@@ -160,7 +160,7 @@ void ExecutionGraph::dumpExecutionPlan(string outputDir) {
         // out << "  \"" << query.first << "\" [label=\"" << query.second.getLocator().getQName() << "\", fillcolor=red]" << endl;
         for (auto exec:executionsByQuery[query]) {
             string fillcolor = "yellow";
-            if (exec->isDone()) {
+            if (exec->getState() == QueryExecutionState::DONE) {
                 fillcolor = "green";
             }
             out << "        \"" << exec->getId() << "\" [label=\"" << exec->getName() << "\", fillcolor=" << fillcolor << ", height=0.2, fontsize=8.5]" << endl;
@@ -170,7 +170,7 @@ void ExecutionGraph::dumpExecutionPlan(string outputDir) {
 
     for (auto exec:executions) {
         string fillcolor = "yellow";
-        if (exec->isDone()) {
+        if (exec->getState() == QueryExecutionState::DONE) {
             fillcolor = "green";
         }
     	if (exec->isTransition()) {

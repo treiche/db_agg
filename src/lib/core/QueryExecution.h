@@ -70,11 +70,6 @@ class QueryExecution: public DataReceiver, public DataSender, public EventProduc
         std::string getName();
         void setState(QueryExecutionState state);
         QueryExecutionState getState();
-        void setScheduled();
-        bool isScheduled();
-        void setDone();
-        bool isDone();
-        bool isComplete();
         void release();
         size_t getDuration();
         std::shared_ptr<Url> getUrl();

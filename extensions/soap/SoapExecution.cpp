@@ -93,7 +93,7 @@ bool SoapExecution::process() {
 
     if (row >= source->getRowCount()) {
         setResult("",resultTable);
-        setDone();
+        setState(QueryExecutionState::DONE);
 
         shared_ptr<Event> event(new Event(EventType::PROCESSED, getId()));
         fireEvent(event);

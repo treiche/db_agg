@@ -136,15 +136,15 @@ void QueryProcessor::process() {
             findExecutables();
         }
         for (auto exec:executionGraph.getQueryExecutions()) {
-            if (!exec->isDone()) {
+            if (exec->getState() != QueryExecutionState::DONE) {
                 // cout << "exec " << exec->getName() << ": done = " << exec->isDone() << " complete = "  << exec->isComplete() << endl;
                 done = false;
             }
         }
     } while(!done);
     for (auto kk:executionGraph.getQueryExecutions()) {
-        if (!kk->isDone()) {
-            LOG_ERROR("not done = " << kk->getName() << " complete: " << kk->isComplete());
+        if (kk->getState() != QueryExecutionState::DONE) {
+            LOG_ERROR("not done = " << kk->getName() << " state: " << kk->getState());
         }
     }
 }
@@ -196,7 +196,7 @@ void QueryProcessor::loadFromCache() {
                     if (!disableCache) {
                         shared_ptr<TableData> data = cacheRegistry.getData(resultId);
                         qr->setResult(portName, data);
-                        qr->setDone();
+                        qr->setState(QueryExecutionState::DONE);
                         // close all incoming channels here
                         // executionGraph.getSources(qr);
                         //qr.second->doTransitions();
@@ -220,10 +220,10 @@ void QueryProcessor::loadFromCache() {
     }
     LOG_DEBUG("load items from cache done");
     for (auto& qr:executionGraph.getQueryExecutions()) {
-        if (qr->isDone()) {
+        if (qr->getState() == QueryExecutionState::DONE) {
             for (auto channel:qr->getChannels()) {
                 QueryExecution *target = channel->getTarget();
-                if (!target->isDone()) {
+                if (target->getState() != QueryExecutionState::DONE) {
                     if (channel->getState() == ChannelState::READY) {
                         channel->open();
                         LOG_DEBUG("send data to target " << target->getName() << " port=" << channel->getTargetPort());
@@ -564,7 +564,7 @@ void QueryProcessor::calculateExecutionIds() {
 void QueryProcessor::checkConnections() {
     for (auto query:executionGraph.getQueries()) {
         for (auto exec:executionGraph.getQueryExecutions(query)) {
-            if (!exec->isDone()) {
+            if (exec->getState() != QueryExecutionState::DONE) {
                 shared_ptr<Event> event(new ExecutionStateChangeEvent(exec->getId(),"PING"));
                 fireEvent(event);
                 if (exec->isResourceAvailable()) {
@@ -596,7 +596,8 @@ void QueryProcessor::calculateExecutionId(QueryExecution& exec, string& md5data)
 vector<QueryExecution*> QueryProcessor::findExecutables() {
     vector<QueryExecution*> executables;
     for (auto& exec:executionGraph.getQueryExecutions()) {
-        if (!exec->isDone() && exec->isComplete() && !exec->isScheduled()) {
+        QueryExecutionState state = exec->getState();
+        if (state == QueryExecutionState::COMPLETE) {
             executables.push_back(exec);
         }
     }

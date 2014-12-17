@@ -52,7 +52,7 @@ bool ManyToMany::process() {
         setResult(to_string(idx),shardedData);
     }
 
-    setDone();
+    setState(QueryExecutionState::DONE);
     return true;
 }
 

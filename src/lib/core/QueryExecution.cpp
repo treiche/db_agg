@@ -188,26 +188,6 @@ namespace db_agg {
         return state;
     }
 
-    bool QueryExecution::isComplete() {
-        return state == QueryExecutionState::COMPLETE;
-    }
-
-    void QueryExecution::setScheduled() {
-        setState(QueryExecutionState::SCHEDULED);
-    }
-
-    bool QueryExecution::isScheduled() {
-        return state == QueryExecutionState::SCHEDULED;
-    }
-
-    void QueryExecution::setDone() {
-        setState(QueryExecutionState::DONE);
-    }
-
-    bool QueryExecution::isDone() {
-        return state == QueryExecutionState::DONE;
-    }
-
     size_t QueryExecution::getDuration() {
         std::chrono::system_clock::duration duration = endTime - startTime;
         return duration.count();
@@ -238,7 +218,7 @@ namespace db_agg {
     }
 
     void QueryExecution::schedule() {
-        setScheduled();
+        setState(QueryExecutionState::SCHEDULED);
     }
 
     bool QueryExecution::isTransition() {

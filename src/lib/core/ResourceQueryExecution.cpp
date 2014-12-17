@@ -31,7 +31,7 @@ void ResourceQueryExecution::stop() {
 
 void ResourceQueryExecution::schedule() {
     LOG_DEBUG("schedule");
-    setScheduled();
+    setState(QueryExecutionState::SCHEDULED);
 }
 
 bool ResourceQueryExecution::process() {
@@ -47,13 +47,13 @@ bool ResourceQueryExecution::process() {
         data = TableDataFactory::getInstance().load("/" + getUrl()->getPath());
     }
     setResult("", data);
+    setState(QueryExecutionState::DONE);
     shared_ptr<Event> event(new Event(EventType::PROCESSED,getId()));
     fireEvent(event);
     shared_ptr<Event> rde(new ReceiveDataEvent(getId(),data->getRowCount()));
     fireEvent(rde);
     shared_ptr<Event> e(new ExecutionStateChangeEvent(getId(),"DONE"));
     EventProducer::fireEvent(e);
-    setDone();
     return true;
 }
 

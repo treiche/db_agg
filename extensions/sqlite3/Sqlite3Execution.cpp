@@ -172,11 +172,11 @@ bool Sqlite3Execution::process() {
         sqlite3_close(db);
 
         setResult("", resultTable);
+        setState(QueryExecutionState::DONE);
         shared_ptr<Event> event(new Event(EventType::PROCESSED, getId()));
         fireEvent(event);
         shared_ptr<Event> e(new ExecutionStateChangeEvent(getId(), "DONE"));
         EventProducer::fireEvent(e);
-        setDone();
         LOG_DEBUG("process done");
         return true;
     }

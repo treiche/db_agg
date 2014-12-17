@@ -65,7 +65,7 @@ namespace db_agg {
     void PGQueryExecution::schedule() {
         string injectedSql = this->inject(getSql(), 0);
         queryExecutor.addQuery(getId(),toPostgresUrl(getUrl()), injectedSql, this);
-        setScheduled();
+        setState(QueryExecutionState::SCHEDULED);
     }
 
     bool PGQueryExecution::process() {
