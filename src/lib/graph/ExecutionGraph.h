@@ -17,13 +17,13 @@
 namespace db_agg {
 class ExecutionGraph {
 private:
-	std::vector<Query*> queries;
-	std::set<QueryExecution*> executions;
-	std::vector<Channel*> channels;
-	std::map<Query*,std::vector<QueryExecution*>> executionsByQuery;
+    std::vector<Query*> queries;
+    std::set<QueryExecution*> executions;
+    std::vector<Channel*> channels;
+    std::map<Query*,std::vector<QueryExecution*>> executionsByQuery;
     std::map<std::string,QueryExecution*> executionById;
 public:
-	void addQuery(Query *query);
+    void addQuery(Query *query);
     void addQueryExecution(Query*,QueryExecution*);
     void addQueryExecution(QueryExecution*);
     std::vector<Query*>& getQueries();
@@ -31,9 +31,7 @@ public:
     std::vector<QueryExecution*>& getQueryExecutions(Query *query);
     QueryExecution& getQueryExecution(Query *query,int shardId);
     QueryExecution& getQueryExecution(std::string id);
-    // std::vector<QueryExecution*> getTargets(Channel* source);
     void createChannel(QueryExecution *source, std::string sourcePort, QueryExecution *target, std::string targetPort);
-    // std::vector<Channel*>& getOutputChannels(QueryExecution *exec);
     std::vector<QueryExecution*> getDependencies(QueryExecution *exec);
     void dumpExecutionPlan(std::string outputDir);
     bool exists(std::string id);

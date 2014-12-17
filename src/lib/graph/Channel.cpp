@@ -15,16 +15,16 @@ using namespace log4cplus;
 
 namespace db_agg {
 
-static Logger LOG = Logger::getInstance(LOG4CPLUS_TEXT("Channel"));
+DECLARE_LOGGER("Channel");
 
 
-Channel::Channel(DataSender *source, std::string sourcePort, DataReceiver *target, std::string targetPort):
-	source(source),
-	sourcePort(sourcePort),
-	target(target),
-	targetPort(targetPort) {
-
+Channel::Channel(QueryExecution *source, string sourcePort, QueryExecution *target, string targetPort):
+    source(source),
+    sourcePort(sourcePort),
+    target(target),
+    targetPort(targetPort) {
 }
+
 
 void Channel::open() {
     if (state != ChannelState::READY) {
@@ -33,7 +33,7 @@ void Channel::open() {
     state = ChannelState::OPEN;
 }
 
-void Channel::send(std::shared_ptr<TableData> data) {
+void Channel::send(shared_ptr<TableData> data) {
     if (state != ChannelState::OPEN) {
         THROW_EXC("channel is not open.");
     }
@@ -42,7 +42,7 @@ void Channel::send(std::shared_ptr<TableData> data) {
 
 void Channel::close() {
     if (state != ChannelState::OPEN) {
-        throw runtime_error("channel is not open.");
+        THROW_EXC("channel is not open.");
     }
     state = ChannelState::CLOSED;
 }
@@ -60,7 +60,7 @@ string Channel::getSourcePort() {
 }
 
 QueryExecution* Channel::getTarget() {
-	return dynamic_cast<QueryExecution*>(target);
+	return target;
 }
 
 

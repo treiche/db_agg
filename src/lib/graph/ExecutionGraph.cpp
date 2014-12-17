@@ -73,9 +73,7 @@ vector<QueryExecution*>& ExecutionGraph::getQueryExecutions(Query *query) {
 
 
 void ExecutionGraph::createChannel(QueryExecution *source, std::string sourcePort, QueryExecution *target, std::string targetPort) {
-	DataSender *sender = dynamic_cast<DataSender*>(source);
-	DataReceiver *receiver = dynamic_cast<DataReceiver*>(target);
-	Channel *channel = new Channel(sender, sourcePort, receiver, targetPort);
+    Channel *channel = new Channel(source, sourcePort, target, targetPort);
     source->addChannel(channel);
     channels.push_back(channel);
 }
@@ -101,9 +99,9 @@ vector<Channel*>& ExecutionGraph::getOutputChannels(QueryExecution *exec) {
 vector<QueryExecution*> ExecutionGraph::getDependencies(QueryExecution *exec) {
     vector<QueryExecution*> dependencies;
     for (auto channel:channels) {
-    	QueryExecution *tgt = dynamic_cast<QueryExecution*>(channel->target);
+    	QueryExecution *tgt = channel->target;
     	if (tgt == exec) {
-    		QueryExecution *src = dynamic_cast<QueryExecution*>(channel->source);
+    		QueryExecution *src = channel->source;
     		dependencies.push_back(src);
     		for (auto transitive:getDependencies(src)) {
     			dependencies.push_back(transitive);
@@ -181,8 +179,8 @@ void ExecutionGraph::dumpExecutionPlan(string outputDir) {
     }
 
     for (auto& channel:channels) {
-    	QueryExecution *source = dynamic_cast<QueryExecution*>(channel->source);
-    	QueryExecution *target = dynamic_cast<QueryExecution*>(channel->target);
+    	QueryExecution *source =  channel->source;
+    	QueryExecution *target = channel->target;
     	out << "  \"" << source->getId() << "\" -> \"" << target->getId() << "\" [taillabel=\"" << channel->sourcePort << "\", headlabel=\"" << channel->targetPort << "\"]" << endl;
     }
 

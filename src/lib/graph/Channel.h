@@ -25,13 +25,13 @@ enum class ChannelState {
 
 class Channel {
 private:
-    DataSender *source{nullptr};
+    QueryExecution *source{nullptr};
     std::string sourcePort{""};
-    DataReceiver *target;
+    QueryExecution *target;
     std::string targetPort;
     ChannelState state{ChannelState::READY};
 public:
-    Channel(DataSender *source, std::string sourcePort, DataReceiver *target, std::string targetPort);
+    Channel(QueryExecution *source, std::string sourcePort, QueryExecution *target, std::string targetPort);
     void open();
     void send(std::shared_ptr<TableData> data);
     void close();
@@ -40,7 +40,6 @@ public:
     std::string getTargetPort();
     std::string getSourcePort();
     friend class ExecutionGraph;
-    friend class ExecutionGraph2;
 };
 }
 
