@@ -187,8 +187,9 @@ void QueryProcessor::cleanUp() {
 void QueryProcessor::loadFromCache() {
     LOG_INFO("load items from cache");
     for (auto& qr:executionGraph.getQueryExecutions()) {
-        for (auto portName:qr->getPortNames()) {
-            string resultId = qr->getPortId(portName);
+        for (auto port:qr->getPorts()) {
+            string portName = port->getName();
+            string resultId = port->getId();
             if (cacheRegistry.exists(resultId)) {
                 File path(cacheRegistry.getPath(resultId));
                 if (path.exists()) {
@@ -526,7 +527,9 @@ void QueryProcessor::calculateExecutionIds() {
                 LOG_DEBUG("md5 of external " << query->getName() << " -> " << resultId);
                 exec->setId(resultId);
                 executionGraph.addQueryExecution(exec);
-                exec->setPortId("",resultId);
+                Port *port = new Port(resultId,"");
+                executionGraph.addPort(exec,port);
+                exec->getPort("")->setId(resultId);
             } else {
                 string md5data;
                 calculateExecutionId(*exec,md5data);
@@ -535,9 +538,12 @@ void QueryProcessor::calculateExecutionIds() {
                 LOG_DEBUG("md5 of query " << query->getName() << " -> " << exec->getId());
                 dump_md5_sources(query->getName(), exec->getId(), md5data);
                 executionGraph.addQueryExecution(exec);
-                for (auto portName:exec->getPortNames()) {
+                for (auto p:exec->getPorts()) {
+                    string portName = p->getName();
                     string resultId(md5hex(md5data + portName));
-                    exec->setPortId(portName,resultId);
+                    exec->getPort(portName)->setId(resultId);
+                    Port *port = new Port(resultId,portName);
+                    executionGraph.addPort(exec,port);
                 }
             }
         }
@@ -551,9 +557,11 @@ void QueryProcessor::calculateExecutionIds() {
             exec->setId(execId);
             dump_md5_sources(exec->getName(), exec->getId(), md5data);
             executionGraph.addQueryExecution(exec);
-            for (auto portName:exec->getPortNames()) {
+            for (auto p:exec->getPorts()) {
+                string portName = p->getName();
                 string resultId(md5hex(md5data+portName));
-                exec->setPortId(portName,resultId);
+                //exec->setPortId(portName,resultId);
+                p->setId(resultId);
             }
         }
     }
@@ -614,11 +622,17 @@ vector<QueryExecution*> QueryProcessor::findExecutables() {
 void QueryProcessor::cacheItem(QueryExecution& exec) {
     LOG_DEBUG("save cache item "+exec.getId());
     LOG_DEBUG("execution: " << exec.getName());
-    for (auto portName:exec.getPortNames()) {
-        LOG_DEBUG("save port '" << portName << "' with id " << exec.getPortId(portName));
+    for (auto port:exec.getPorts()) {
+        string portName = port->getName();
+        string portId = port->getId();
+        LOG_DEBUG("save '" << exec.getName() << "' port '" << portName << "' with id '" << port->getId() << "'");
+        LOG_DEBUG("port result is " << port->getResult());
+        if (!port->getResult()) {
+            LOG_ERROR("port '" << port->getName() << "' of '" << exec.getName() << "' is empty");
+            return;
+        }
         File linkPath{outputDir + "/" + exec.getName() + portName + ".csv"};
-        string portId = exec.getPortId(portName);
-        LOG_DEBUG("result = " << exec.getResult(portName) << " ports = '" << join(exec.getPortNames(),",") << "'");
+        //LOG_DEBUG("result = " << exec.getResult(portName) << " ports = '" << join(exec.getPortNames(),",") << "'");
         uint64_t rowCount = exec.getResult(portName)->getRowCount();
         cacheRegistry.registerItem(portId, exec.getId(), Time(),exec.getDuration(),linkPath.abspath(),"csv", rowCount);
         exec.getResult(portName)->save(cacheRegistry.getPath(portId));

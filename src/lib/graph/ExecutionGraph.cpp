@@ -16,89 +16,104 @@ namespace db_agg {
 
 DECLARE_LOGGER("ExecutionGraph")
 
+
 void ExecutionGraph::addQuery(Query *query) {
-	queries.push_back(query);
+	addCluster(query);
 }
 
 void ExecutionGraph::addQueryExecution(Query *query,QueryExecution *queryExecution) {
-    executionsByQuery[query].push_back(queryExecution);
-    executions.insert(queryExecution);
-    if (executionById.find(queryExecution->getId()) != executionById.end()) {
-    	THROW_EXC("execution with id " << queryExecution->getId() << " already added");
+    if (hasNode(queryExecution)) {
+        THROW_EXC("execution with id " << queryExecution->getName() << " already added.");
     }
-	executionById[queryExecution->getId()] = queryExecution;
+    addNode(query,queryExecution);
 }
 
-void ExecutionGraph::addQueryExecution(QueryExecution *exec) {
-    if (executionById.find(exec->getId()) != executionById.end()) {
-    	THROW_EXC("execution with id " << exec->getId() << " already added");
+void ExecutionGraph::addQueryExecution(QueryExecution *queryExecution) {
+    if (hasNode(queryExecution)) {
+        LOG_WARN("execution with id " << queryExecution->getName() << " already added.");
+        return;
     }
-	executions.insert(exec);
-	executionById[exec->getId()] = exec;
+    addNode(queryExecution);
 }
 
-vector<Query*>& ExecutionGraph::getQueries() {
+vector<Query*> ExecutionGraph::getQueries() {
+    vector<Query*> queries;
+    for (auto cluster:clusters) {
+        queries.push_back(cluster);
+    }
     return queries;
 }
 
-set<QueryExecution*>& ExecutionGraph::getQueryExecutions() {
-    return executions;
-}
-
-/*
-vector<QueryExecution*> ExecutionGraph::getTargets(Channel* sourceChannel) {
-    vector<QueryExecution*> targets;
-    for (auto channel:channels) {
-    	if (channel->)
+set<QueryExecution*> ExecutionGraph::getQueryExecutions() {
+    set<QueryExecution*> execs;
+    for (auto exec:nodes) {
+        execs.insert(exec);
     }
-    return targets;
+    return execs;
 }
-*/
 
 QueryExecution& ExecutionGraph::getQueryExecution(Query *query,int shardId) {
-	if (executionsByQuery.find(query) == executionsByQuery.end()) {
-		THROW_EXC("query " << query << " not found.");
-	}
-	vector<QueryExecution*>& executions = executionsByQuery[query];
-    //return *executionsByQuery[query][shardId];
-	if (shardId >= (int)executions.size()) {
-		THROW_EXC("invalid array index " << shardId);
-	}
-	return *executions.at(shardId);
+    if (!hasCluster(query)) {
+        THROW_EXC("query " << query << " not found.");
+    }
+    std::list<QueryExecution*> execs = cluster2nodes[query];
+    int idx = 0;
+    for (auto exec:execs) {
+        if (idx == shardId) {
+            return *exec;
+        }
+        idx++;
+    }
+    THROW_EXC("invalid array index " << shardId);
 }
 
-vector<QueryExecution*>& ExecutionGraph::getQueryExecutions(Query *query) {
-    return executionsByQuery[query];
+vector<QueryExecution*> ExecutionGraph::getQueryExecutions(Query *query) {
+    vector<QueryExecution*> execs;
+    for (auto exec:cluster2nodes[query]) {
+        execs.push_back(exec);
+    }
+    return execs;
 }
 
 
 void ExecutionGraph::createChannel(QueryExecution *source, std::string sourcePort, QueryExecution *target, std::string targetPort) {
+    LOG_DEBUG("create channel");
+
+    /*
+    Port *sp = new Port("",sourcePort);
+    source->addPort(sp);
+    addPort(source,sp);
+
+    Port *tp = new Port("",targetPort);
+    target->addPort(tp);
+    addPort(target,tp);
+    */
     Channel *channel = new Channel(source, sourcePort, target, targetPort);
     source->addChannel(channel);
-    channels.push_back(channel);
+    addEdge(channel);
 }
 
 bool ExecutionGraph::exists(std::string id) {
-	return executionById.find(id) != executionById.end();
+    for (auto exec:nodes) {
+        if (exec->getId() == id) {
+            return true;
+        }
+    }
+    return false;
 }
 
 QueryExecution& ExecutionGraph::getQueryExecution(std::string id) {
-    if (executionById.find(id)==executionById.end()) {
-        THROW_EXC("query execution with id " + id + " does not exist.");
+    for (auto exec:nodes) {
+        if (exec->getId() == id) {
+            return *exec;
+        }
     }
-    return *executionById[id];
+    THROW_EXC("query execution with id " + id + " does not exist.");
 }
-
-/*
-vector<Channel*>& ExecutionGraph::getOutputChannels(QueryExecution *exec) {
-    return execToTrans[exec];
-}
-*/
-
 
 vector<QueryExecution*> ExecutionGraph::getDependencies(QueryExecution *exec) {
     vector<QueryExecution*> dependencies;
-    for (auto channel:channels) {
+    for (auto channel:edges) {
     	QueryExecution *tgt = channel->target;
     	if (tgt == exec) {
     		QueryExecution *src = channel->source;
@@ -108,22 +123,8 @@ vector<QueryExecution*> ExecutionGraph::getDependencies(QueryExecution *exec) {
     		}
     	}
     }
-    /*
-    vector<Transition*> transitions = getIncomingTransitions(exec);
-    for (auto transition:transitions) {
-        vector<QueryExecution*> sources = getSources(transition);
-        for (QueryExecution *source:sources) {
-            dependencies.push_back(source);
-            vector<QueryExecution*> transientDependencies = getDependencies(source);
-            for (auto transientDependency:transientDependencies) {
-                dependencies.push_back(transientDependency);
-            }
-        }
-    }
-    */
     return dependencies;
 }
-
 
 void ExecutionGraph::dumpExecutionPlan(string outputDir) {
     LOG_INFO("dump execution plan");
@@ -134,7 +135,7 @@ void ExecutionGraph::dumpExecutionPlan(string outputDir) {
 
     // dump nodes
     int clusterNo = 0;
-    for (auto& query:queries) {
+    for (auto& query:clusters) {
         out << "    subgraph cluster_" << ++clusterNo <<  " {" << endl;
         out << "        label = \"" << query->getLocator().getQName() << " [" << query->getType() << "]\""<< endl;
         if (true) {
@@ -158,7 +159,7 @@ void ExecutionGraph::dumpExecutionPlan(string outputDir) {
         }
         out << " [fontsize=7.0, fontname=\"Courier new\", shape=note]" << endl;
         // out << "  \"" << query.first << "\" [label=\"" << query.second.getLocator().getQName() << "\", fillcolor=red]" << endl;
-        for (auto exec:executionsByQuery[query]) {
+        for (auto exec:cluster2nodes[query]) {
             string fillcolor = "yellow";
             if (exec->getState() == QueryExecutionState::DONE) {
                 fillcolor = "green";
@@ -168,7 +169,7 @@ void ExecutionGraph::dumpExecutionPlan(string outputDir) {
         out << "    }" << endl;
     }
 
-    for (auto exec:executions) {
+    for (auto exec:nodes) {
         string fillcolor = "yellow";
         if (exec->getState() == QueryExecutionState::DONE) {
             fillcolor = "green";
@@ -178,7 +179,7 @@ void ExecutionGraph::dumpExecutionPlan(string outputDir) {
     	}
     }
 
-    for (auto& channel:channels) {
+    for (auto& channel:edges) {
     	QueryExecution *source =  channel->source;
     	QueryExecution *target = channel->target;
     	out << "  \"" << source->getId() << "\" -> \"" << target->getId() << "\" [taillabel=\"" << channel->sourcePort << "\", headlabel=\"" << channel->targetPort << "\"]" << endl;
