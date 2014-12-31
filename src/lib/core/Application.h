@@ -15,9 +15,10 @@
 #include "core/QueryProcessor.h"
 #include "utils/SignalHandler.h"
 #include "table/TableData.h"
+#include "event/AsyncEvent.h"
 
 namespace db_agg {
-    class Application: public EventProducer, public EventListener, public SignalHandler {
+    class Application: public AsyncEventProducer, public EventListener, public SignalHandler {
         private:
             PasswordManager *passwordManager = nullptr;
             QueryProcessor *queryProcessor = nullptr;
@@ -38,11 +39,13 @@ namespace db_agg {
             virtual void handleEvent(std::shared_ptr<Event> event) override;
             void bootstrap(Configuration& config);
             bool run();
+            bool step();
             QueryParser& getQueryParser() {
                 return *queryParser;
             }
             virtual void handleSignal(int signal) override;
             ExecutionGraph& getExecutionGraph();
+            void stop();
     };
 }
 
