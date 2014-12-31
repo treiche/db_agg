@@ -25,8 +25,12 @@ enum class EventType {
     APPLICATION_CANCELED=7,
     RECEIVE_DATA=8,
     SENT_DATA=9,
-    CACHE_LOADED=10
+    CACHE_LOADED=10,
+    QUERY_PREPARED=11
 };
+
+std::ostream& operator<<(std::ostream& cout,const EventType t);
+
 
 class Event {
 public:
@@ -69,6 +73,15 @@ public:
         reason(reason) {
     }
     std::string reason;
+};
+
+class QueryPreparedEvent: public Event {
+public:
+    QueryPreparedEvent(std::string executionPlanFile):
+        Event(EventType::QUERY_PREPARED, ""),
+        executionPlanFile(executionPlanFile) {
+    }
+    std::string executionPlanFile;
 };
 
 class ReceiveDataEvent: public Event {

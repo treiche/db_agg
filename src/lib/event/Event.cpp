@@ -28,4 +28,46 @@ void EventProducer::fireEvent(shared_ptr<Event> event) {
     }
 }
 
+ostream& operator<<(std::ostream& cout,const EventType type) {
+    switch(type) {
+        case EventType::APPLICATION_INITIALIZED:
+            cout << "APPLICATION_INITIALIZED";
+            break;
+        case EventType::APPLICATION_FINISHED:
+            cout << "APPLICATION_FINISHED";
+            break;
+        case EventType::INITIALIZE:
+            cout << "INITIALIZE";
+            break;
+        case EventType::PROCESSED:
+            cout << "PROCESSED";
+            break;
+        case EventType::EXECUTION_STATE_CHANGE:
+            cout << "EXECUTION_STATE_CHANGE";
+            break;
+        case EventType::APPLICATION_FAILED:
+            cout << "APPLICATION_FAILED";
+            break;
+        case EventType::APPLICATION_CANCELED:
+            cout << "APPLICATION_CANCELED";
+            break;
+        case EventType::RECEIVE_DATA:
+            cout << "RECEIVE_DATA";
+            break;
+        case EventType::SENT_DATA:
+            cout << "SENT_DATA";
+            break;
+        case EventType::CACHE_LOADED:
+            cout << "CACHE_LOADED";
+            break;
+        case EventType::QUERY_PREPARED:
+            cout << "QUERY_PREPARED";
+            break;
+        default:
+            cout << "UNKNOWN";
+    }
+    return cout;
+
+}
+
 }
