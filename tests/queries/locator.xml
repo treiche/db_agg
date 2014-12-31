@@ -1,0 +1,39 @@
+<queries
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:noNamespaceSchemaLocation="../../etc/xml-query.xsd">
+
+    <execution name="one_shard" type="sqlite3" shardId="3">
+        <query>
+            select article_code, price
+              from price
+        </query>
+    </execution>
+
+    <execution name="all_shards" type="sqlite3">
+        <query>
+            select price, article_code
+              from price
+        </query>
+    </execution>
+
+
+    <execution name="join_one_shard" type="sqlite3">
+        <query>
+            select article_code, price
+              from one_shard
+              join article
+                on code = article_code
+        </query>
+    </execution>
+
+    <execution name="select_one_shard" type="sqlite3">
+        <query>
+            select article_code, price
+              from all_shards$4
+              join article
+                on code = article_code
+        </query>
+    </execution>
+
+
+</queries>
