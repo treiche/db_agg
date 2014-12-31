@@ -29,7 +29,7 @@ int ShardingStrategy::findShardColIndex(vector<pair<string,uint32_t>> columns) {
         string colName = columns[idx].first;
         vector<RegExp::match> matches = re.exec(colName);
         if (matches.size()>0) {
-            LOG_ERROR("found shard col index: " << colName << " matches '" << shardColExpr << "'");
+            LOG_DEBUG("found shard col index: " << colName << " matches '" << shardColExpr << "'");
             return idx;
         }
     }
