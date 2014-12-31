@@ -29,6 +29,7 @@ private:
     void getElementsById(xmlNodePtr node);
     void recurse(xmlNodePtr node, std::shared_ptr<Url> parentUrl, std::string environment);
     std::shared_ptr<Url> getUrl(xmlElementPtr element, std::string& serverId);
+    std::shared_ptr<Url> getWorker(std::string env, std::string type, std::string& serverId);
 public:
     UrlRegistry(std::string regfile);
     ~UrlRegistry();

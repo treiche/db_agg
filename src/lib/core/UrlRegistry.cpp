@@ -146,6 +146,20 @@ vector<shared_ptr<Url>> UrlRegistry::findUrls(string env, shared_ptr<Url> wcUrl)
     return matches;
 }
 
+shared_ptr<Url> UrlRegistry::getWorker(string env, string type, string& serverId) {
+    shared_ptr<Url> workerUrl;
+    string expr("/urls/environment[@name='" + env + "']//*[@type='" + type +"' and @worker='true']");
+    xmlXPathContextPtr xpathCtx = xmlXPathNewContext(this->document);
+    xmlXPathObjectPtr xpathObj = xmlXPathEvalExpression((const xmlChar*)expr.c_str(), xpathCtx);
+    xmlNodeSetPtr nodes = xpathObj->nodesetval;
+    LOG_DEBUG("found " << nodes->nodeNr << " matchers for env=" << env << " type=" << type);
+    if (nodes->nodeNr == 1) {
+        workerUrl = getUrl((xmlElementPtr)nodes->nodeTab[0],serverId);
+    }
+    return workerUrl;
+}
+
+
 vector<shared_ptr<Url>> UrlRegistry::findUrls(string env, string type, string query, string& sid) {
     vector<shared_ptr<Url>> matches;
     string expr("/urls/environment[@name='" + env + "']//match");
@@ -168,10 +182,20 @@ vector<shared_ptr<Url>> UrlRegistry::findUrls(string env, string type, string qu
         	}
         }
     }
+    if (matches.empty()) {
+        shared_ptr<Url> workerUrl = getWorker(env,type,sid);
+        if (workerUrl) {
+            matches.push_back(workerUrl);
+            serverIds.insert(sid);
+        }
+    }
+
     if (serverIds.size() > 1) {
         THROW_EXC("ambigous server id");
     }
-    sid = *(serverIds.begin());
+    if (!matches.empty()) {
+        sid = *(serverIds.begin());
+    }
     return matches;
 }
 

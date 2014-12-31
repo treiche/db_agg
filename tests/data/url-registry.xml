@@ -3,6 +3,39 @@
   xsi:noNamespaceSchemaLocation="../../etc/url-registry.xsd"
 >
     <environment name="local">
+        <protocol value="postgres">
+            <host value="localhost">
+                <port value="5432">
+                    <path value="local_unsharded_db" type="postgresql" worker="true">
+                        <match regexp="(from|join)\s+ns2"/>
+                    </path>
+                    <path value="local_sharded1_db">
+                        <match regexp="(from|join)\s+ns1"/>
+                    </path>
+                    <path value="local_sharded2_db">
+                        <match regexp="(from|join)\s+ns1"/>
+                    </path>
+                    <path value="local_sharded3_db">
+                        <match regexp="(from|join)\s+ns1"/>
+                    </path>
+                    <path value="local_sharded4_db">
+                        <match regexp="(from|join)\s+ns1"/>
+                    </path>
+                    <path value="local_sharded5_db">
+                        <match regexp="(from|join)\s+ns1"/>
+                    </path>
+                    <path value="local_sharded6_db">
+                        <match regexp="(from|join)\s+ns1"/>
+                    </path>
+                    <path value="local_sharded7_db">
+                        <match regexp="(from|join)\s+ns1"/>
+                    </path>
+                    <path value="local_sharded8_db">
+                        <match regexp="(from|join)\s+ns1"/>
+                    </path>
+                </port>
+            </host>
+        </protocol>
         <protocol value="file">
             <path value="/home/arnd/tmp/db_agg_installed/tests/data">
                 <path ref="unsharded" value="local_unsharded_db.sqlite3">
