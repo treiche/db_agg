@@ -63,5 +63,8 @@ QueryExecution* Channel::getTarget() {
 	return target;
 }
 
+QueryExecution* Channel::getSource() {
+    return source;
+}
 
 }

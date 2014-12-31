@@ -37,6 +37,7 @@ public:
     void close();
     ChannelState getState();
     QueryExecution* getTarget();
+    QueryExecution* getSource();
     std::string getTargetPort();
     std::string getSourcePort();
     friend class ExecutionGraph;
