@@ -55,6 +55,8 @@
            <xsd:element name="parameter" type="ParameterType"/>
            <xsd:element name="sharding-strategy" type="ShardingStrategyType"/>
         </xsd:choice>
+        <xsd:attribute name="worker" type="xsd:boolean"/>
+        <xsd:attribute name="type" type="xsd:string"/>
         <xsd:attribute name="value" type="xsd:string"/>
         <xsd:attribute name="ref" type="xsd:IDREF"/>
         <xsd:attribute name="id" type="xsd:ID"/>
