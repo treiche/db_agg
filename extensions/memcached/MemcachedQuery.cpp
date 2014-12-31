@@ -28,14 +28,14 @@ DECLARE_LOGGER("MemcachedQuery");
 
 
 bool MemcachedQuery::process() {
-    assert(getDependencies().size() == 1);
+    assert(getInPorts().size() == 1);
     assert(getArguments().size() == 1);
     LOG_DEBUG("process memcached query: " << getUrl()->getUrl() << " lastOffset " << lastOffset << " chunkSize = " << chunkSize);
 
     // initialization
     if (lastOffset == 0) {
-        map<string,shared_ptr<TableData>> deps = getDependencies();
-        this->sourceTable = (*deps.begin()).second;
+        auto deps = getInPorts();
+        this->sourceTable = deps[0]->getResult();
         this->keyColIdx = sourceTable->getColumnIndex(getArguments()[0]);
         vector<ColDef> resultCols;
         resultCols.push_back(ColDef{"mc_result",TEXT});

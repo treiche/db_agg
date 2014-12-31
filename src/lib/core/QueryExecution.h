@@ -22,6 +22,7 @@
 #include "injection/DependencyInjector.h"
 #include "graph/DataSender.h"
 #include "graph/Channel.h"
+#include "graph/Port.h"
 
 namespace db_agg {
 
@@ -37,14 +38,15 @@ enum class QueryExecutionState {
 
 class QueryExecution: public DataReceiver, public DataSender, public EventProducer {
     private:
-        std::map<std::string,std::shared_ptr<TableData>> results;
+        //std::map<std::string,std::shared_ptr<TableData>> results;
+        //std::map<std::string,std::string> portIds{{"",""}};
         std::string id;
         std::shared_ptr<Url> url;
         std::string sql;
         std::string name;
         QueryExecutionState state{QueryExecutionState::INITIAL};
-        std::map<std::string,std::shared_ptr<TableData>> dependencies;
-        std::map<std::string,std::string> portIds{{"",""}};
+        // std::map<std::string,std::shared_ptr<TableData>> dependencies;
+        // std::deque<Port*> dependencies;
         std::shared_ptr<DependencyInjector> dependencyInjector;
         std::chrono::system_clock::time_point startTime;
         std::chrono::system_clock::time_point endTime;
@@ -52,9 +54,11 @@ class QueryExecution: public DataReceiver, public DataSender, public EventProduc
         std::vector<std::string> arguments;
     protected:
         std::vector<std::string>& getArguments();
-        std::map<std::string,std::shared_ptr<TableData>>& getDependencies();
+        // std::map<std::string,std::shared_ptr<TableData>>& getDependencies();
         std::shared_ptr<DependencyInjector> getInjector();
-        void setPortNames(std::vector<std::string> portNames);
+        std::deque<Port*> outPorts;
+        std::deque<Port*> inPorts;
+        // void setPortNames(std::vector<std::string> portNames);
     public:
         QueryExecution();
         void init(std::string name,
@@ -79,9 +83,14 @@ class QueryExecution: public DataReceiver, public DataSender, public EventProduc
         std::string inject(std::string query, size_t copyThreshold);
         std::vector<Channel*> getChannels();
 
-        std::vector<std::string> getPortNames();
-        void setPortId(std::string portName, std::string portId);
-        std::string getPortId(std::string portName);
+        //std::vector<std::string> getPortNames();
+        //void setPortId(std::string portName, std::string portId);
+        //std::string getPortId(std::string portName);
+        std::deque<Port*>& getOutPorts();
+        Port* getOutPort(std::string name);
+        void addOutPort(Port *port);
+
+        std::deque<Port*>& getInPorts();
 
         virtual bool isTransition();
         virtual void stop();

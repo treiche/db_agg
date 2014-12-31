@@ -187,7 +187,7 @@ void QueryProcessor::cleanUp() {
 void QueryProcessor::loadFromCache() {
     LOG_INFO("load items from cache");
     for (auto& qr:executionGraph.getQueryExecutions()) {
-        for (auto port:qr->getPorts()) {
+        for (auto port:qr->getOutPorts()) {
             string portName = port->getName();
             string resultId = port->getId();
             if (cacheRegistry.exists(resultId)) {
@@ -529,7 +529,7 @@ void QueryProcessor::calculateExecutionIds() {
                 executionGraph.addQueryExecution(exec);
                 Port *port = new Port(resultId,"");
                 executionGraph.addPort(exec,port);
-                exec->getPort("")->setId(resultId);
+                exec->getOutPort("")->setId(resultId);
             } else {
                 string md5data;
                 calculateExecutionId(*exec,md5data);
@@ -538,10 +538,10 @@ void QueryProcessor::calculateExecutionIds() {
                 LOG_DEBUG("md5 of query " << query->getName() << " -> " << exec->getId());
                 dump_md5_sources(query->getName(), exec->getId(), md5data);
                 executionGraph.addQueryExecution(exec);
-                for (auto p:exec->getPorts()) {
+                for (auto p:exec->getOutPorts()) {
                     string portName = p->getName();
                     string resultId(md5hex(md5data + portName));
-                    exec->getPort(portName)->setId(resultId);
+                    exec->getOutPort(portName)->setId(resultId);
                     Port *port = new Port(resultId,portName);
                     executionGraph.addPort(exec,port);
                 }
@@ -557,7 +557,7 @@ void QueryProcessor::calculateExecutionIds() {
             exec->setId(execId);
             dump_md5_sources(exec->getName(), exec->getId(), md5data);
             executionGraph.addQueryExecution(exec);
-            for (auto p:exec->getPorts()) {
+            for (auto p:exec->getOutPorts()) {
                 string portName = p->getName();
                 string resultId(md5hex(md5data+portName));
                 //exec->setPortId(portName,resultId);
@@ -622,7 +622,7 @@ vector<QueryExecution*> QueryProcessor::findExecutables() {
 void QueryProcessor::cacheItem(QueryExecution& exec) {
     LOG_DEBUG("save cache item "+exec.getId());
     LOG_DEBUG("execution: " << exec.getName());
-    for (auto port:exec.getPorts()) {
+    for (auto port:exec.getOutPorts()) {
         string portName = port->getName();
         string portId = port->getId();
         LOG_DEBUG("save '" << exec.getName() << "' port '" << portName << "' with id '" << port->getId() << "'");

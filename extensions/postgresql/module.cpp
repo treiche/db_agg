@@ -8,6 +8,7 @@
 #include <memory>
 #include "db_agg.h"
 #include "PGQueryExecution.h"
+#include "PostgresqlExecution.h"
 
 #include <log4cplus/logger.h>
 
@@ -36,7 +37,8 @@ map<ComponentType,vector<string>> PostgresqlExtension::getProvidedComponents() {
 
 QueryExecution *PostgresqlExtension::getQueryExecution(std::string name) {
     if (name == "postgresql") {
-        return new db_agg::PGQueryExecution();
+        // return new db_agg::PGQueryExecution();
+        return new db_agg::PostgresqlExecution();
     }
     return nullptr;
 }

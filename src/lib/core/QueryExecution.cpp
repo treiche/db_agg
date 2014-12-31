@@ -40,28 +40,30 @@ namespace db_agg {
             setState(QueryExecutionState::COMPLETE);
         }
         for (auto& depName:depNames) {
-            dependencies[depName] = nullptr;
+            Port *inPort = new Port("",depName);
+            inPorts.push_back(inPort);
+            //dependencies[depName] = nullptr;
         }
+        Port *defaultPort = new Port("","");
+        outPorts.push_back(defaultPort);
     }
 
     QueryExecution::~QueryExecution() {
         LOG_TRACE("delete query execution");
-        for (auto& result:results) {
-            if (result.second.get() != nullptr) {
-                result.second.reset();
-            }
+        for (auto& port:outPorts) {
+            port->release();
         }
     }
 
     void QueryExecution::release() {
         LOG_INFO("use_count for result " << getName());
-        for (auto& result:results) {
-            LOG_INFO("result use_count before release = " << result.second.use_count() << " unique = " << result.second.unique());
-            result.second.reset();
+        for (auto& port:outPorts) {
+            port->release();
         }
-        for (auto& dependency:dependencies) {
-            LOG_INFO("dependency " << dependency.first << " use_count before release = " << dependency.second.use_count());
-            dependency.second.reset();
+        for (auto& inPort:inPorts) {
+            //LOG_INFO("dependency " << inPort->getName() << " use_count before release = " << dependency.second.use_count());
+            //dependency.second.reset();
+            inPort->release();
         }
         LOG_INFO("use_count injector = " << dependencyInjector.use_count());
         dependencyInjector.reset();
@@ -69,6 +71,13 @@ namespace db_agg {
 
 
     shared_ptr<TableData> QueryExecution::getResult(string shardId) {
+        for (auto port:outPorts) {
+            if (port->getName() == shardId) {
+                return port->getResult();
+            }
+        }
+        THROW_EXC("execution '" << getName() << "' does not have a result port '" << shardId << "'");
+        /*
         if (results.find(shardId) == results.end()) {
             for (auto result:results) {
                 LOG_INFO("result = " << result.first);
@@ -76,35 +85,64 @@ namespace db_agg {
             THROW_EXC("execution '" << getName() << "' does not have a result port '" << shardId << "' has " << results.size() << "candidates");
         }
         return results[shardId];
+        */
     }
 
     void QueryExecution::setResult(string shardId, shared_ptr<TableData> result) {
-        LOG_DEBUG("set result to " << result);
-        results[shardId] = result;
+        LOG_ERROR("set port '" << shardId << "' of " << getName() << " to " << result.get());
+        bool found = false;
+        for (auto port:outPorts) {
+            if (port->getName() == shardId) {
+                port->setResult(result);
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            vector<string> portNames;
+            for (auto port:outPorts) {
+                portNames.push_back(port->getName());
+            }
+            THROW_EXC("no port '" << shardId << "' found in exec '" << getName() << "'. candidates: " << join(portNames,","));
+        }
+        bool done = true;
+        for (auto port:outPorts) {
+            done &= port->getResult().get() != nullptr;
+        }
+        if (done && state != QueryExecutionState::DONE) {
+            LOG_DEBUG("all done. set state of " << getName() << " for port " << shardId)
+            setState(QueryExecutionState::DONE);
+        }
     }
 
     string QueryExecution::inject(string query, size_t copyThreshold) {
             assert(dependencyInjector != nullptr);
             LOG_DEBUG("called inject " << query << " di = " << dependencyInjector);
-            return dependencyInjector->inject(query,dependencies,copyThreshold);
+            return dependencyInjector->inject(query,inPorts,copyThreshold);
     }
 
     void QueryExecution::receive(string name, shared_ptr<TableData> data) {
-        LOG_DEBUG("receive data " << name << " [depsize=" << dependencies.size() << "]");
-        if (dependencies.find(name) == dependencies.end()) {
-            for (auto dep:dependencies) {
-                LOG_INFO("declared " << dep.first);
+        LOG_DEBUG("receive data " << name << " [depsize=" << inPorts.size() << "]");
+        Port *dep = nullptr;
+        for (auto inPort:inPorts) {
+            if (inPort->getName() == name) {
+                dep = inPort;
+            }
+        }
+        if (dep == nullptr) {
+            for (auto inPort:inPorts) {
+                LOG_INFO("declared " << inPort->getName());
             }
             THROW_EXC("no dependency '" + name + "' declared");
         }
-        dependencies[name] = data;
+        dep->setResult(data);
         // check if complete
         bool complete = true;
-        for (auto& dep:dependencies) {
-            complete &= (dep.second!=nullptr);
+        for (auto dep:inPorts) {
+            complete &= (dep->getResult().get() != nullptr);
         }
         if (complete) {
-            LOG_ERROR("set state of '" << name << "' to complete as all dependencies are there");
+            LOG_DEBUG("set state of '" << name << "' to complete as all dependencies are there");
             setState(QueryExecutionState::COMPLETE);
         }
     }
@@ -213,9 +251,11 @@ namespace db_agg {
         return arguments;
     }
 
+    /*
     map<string,shared_ptr<TableData>>& QueryExecution::getDependencies() {
         return dependencies;
     }
+    */
 
     shared_ptr<DependencyInjector> QueryExecution::getInjector() {
         return dependencyInjector;
@@ -237,6 +277,7 @@ namespace db_agg {
 
     void QueryExecution::stop() {}
 
+    /*
     void QueryExecution::setPortNames(vector<std::string> portNames) {
         portIds.clear();
         for (auto& portName:portNames) {
@@ -246,25 +287,53 @@ namespace db_agg {
 
     vector<string> QueryExecution::getPortNames() {
         vector<string> portNames;
-        for (auto port:portIds) {
-            portNames.push_back(port.first);
+        for (auto port:ports) {
+            portNames.push_back(port->getName());
         }
         return portNames;
     }
+    */
 
-    void QueryExecution::setPortId(string portName, string portId) {
-        if (portIds.find(portName) == portIds.end()) {
-            THROW_EXC("unknown port '" << portName << "'");
+    deque<Port*>& QueryExecution::getOutPorts() {
+        return outPorts;
+    }
+
+    deque<Port*>& QueryExecution::getInPorts() {
+        return inPorts;
+    }
+
+    Port *QueryExecution::getOutPort(string name) {
+        for (auto port:outPorts) {
+            if (port->getName() == name) {
+                return port;
+            }
         }
-        portIds[portName] = portId;
+        THROW_EXC("no port with name '" << name << "'");
+    }
+
+    void QueryExecution::addOutPort(Port *port) {
+        outPorts.push_back(port);
+    }
+
+/*
+    void QueryExecution::setPortId(string portName, string portId) {
+        for (auto port:ports) {
+            if (port->getName() == portName) {
+                port->setId(portId);
+                return;
+            }
+        }
+        THROW_EXC("unknown port '" << portName << "'");
     }
 
     string QueryExecution::getPortId(string portName) {
-        if (portIds.find(portName) == portIds.end()) {
-            THROW_EXC("unknown port '" << portName << "'");
+        for (auto port:ports) {
+            if (port->getName() == portName) {
+                return port->getId();
+            }
         }
-        return portIds[portName];
+        THROW_EXC("unknown port '" << portName << "'");
     }
-
+*/
 }
 

@@ -10,15 +10,17 @@
 
 #include <string>
 #include <map>
+#include <deque>
 #include <memory>
 #include "table/TableData.h"
 #include "ExecutionStep.h"
+#include "graph/Port.h"
 
 namespace db_agg {
 
 class DependencyInjector {
 public:
-    virtual std::string inject(std::string query, std::map<std::string,std::shared_ptr<TableData>> dependencies, size_t copyThreshold) = 0;
+    virtual std::string inject(std::string query, std::deque<Port*> dependencies, size_t copyThreshold) = 0;
     virtual ExecutionStep& getStep(int stepNo) = 0;
     virtual ~DependencyInjector() {}
 };

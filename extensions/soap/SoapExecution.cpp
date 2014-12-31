@@ -68,7 +68,7 @@ bool SoapExecution::process() {
         fireEvent(ev);
     }
 
-    auto& source = (*getDependencies().begin()).second;
+    auto source = getInPorts().at(0)->getResult();
 
     uint64_t row;
     for (row = lastOffset; row < lastOffset + chunkSize; row++) {
@@ -137,7 +137,7 @@ void SoapExecution::prepareQuery() {
     xmlNodePtr inputQuery = xmlDocCopyNode(inputNode,doc,1);
     xmlNodePtr outputQuery = xmlDocCopyNode(outputNode,doc,1);
 
-    assert(getDependencies().size() == 1);
+    assert(getInPorts().size() == 1);
 
     inputTemplate.setStylesheet(inputQuery);
     outputTemplate.setStylesheet(outputQuery);

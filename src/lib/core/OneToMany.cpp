@@ -22,16 +22,15 @@ OneToMany::OneToMany(vector<shared_ptr<ShardingStrategy>> sharders, short noShar
 	sharders(sharders),
 	noShards(noShards) {
 
-	vector<string> portNames;
+    outPorts.clear();
 	for (short idx = 0; idx < noShards; idx++) {
-		portNames.push_back(to_string(idx+1));
+		addOutPort(new Port("", to_string(idx+1)));
 	}
-	setPortNames(portNames);
 }
 
 bool OneToMany::process() {
-	assert(getDependencies().size() == 1);
-	shared_ptr<TableData> sourceTable = (*getDependencies().begin()).second;
+	assert(getInPorts().size() == 1);
+	shared_ptr<TableData> sourceTable = getInPorts()[0]->getResult(); // (*getDependencies().begin()).second;
 	uint64_t rows = sourceTable->getRowCount();
 
 	auto s = findShardColIndex(sourceTable->getColumns());

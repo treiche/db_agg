@@ -26,11 +26,11 @@ DefaultDependencyInjector::~DefaultDependencyInjector() {
     }
 }
 
-string DefaultDependencyInjector::inject(string query, map<string,shared_ptr<TableData>> dependencies, size_t copyThreshold) {
+string DefaultDependencyInjector::inject(string query, deque<Port*> dependencies, size_t copyThreshold) {
     LOG_DEBUG("called inject " << query);
     for (auto dep:dependencies) {
-        if (dep.second == nullptr) {
-            throw runtime_error("can't inject sql because of missing dependency '" + dep.first + "'");
+        if (dep->getResult().get() == nullptr) {
+            throw runtime_error("can't inject sql because of missing dependency '" + dep->getName() + "'");
         }
     }
     string sql;
@@ -39,20 +39,20 @@ string DefaultDependencyInjector::inject(string query, map<string,shared_ptr<Tab
     //sql += step;
     //steps.push_back(ExecutionStep{step,nullptr});
     // 1. Step
-    for (pair<string,shared_ptr<TableData>> dependency:dependencies) {
-        LOG_DEBUG("process dependency " << dependency.first);
-        step = "CREATE TEMPORARY TABLE " + dependency.first + "(\n";
-        step += dependency.second->toColumnDefinitions();
+    for (auto dependency:dependencies) {
+        LOG_DEBUG("process dependency " << dependency->getName());
+        step = "CREATE TEMPORARY TABLE " + dependency->getName() + "(\n";
+        step += dependency->getResult()->toColumnDefinitions();
         step += ") ON COMMIT DROP;\n";
         sql += step;
         steps.push_back(ExecutionStep{Action::COMMAND,step,nullptr});
-        if (dependency.second->getRowCount() > 0) {
-            if (dependency.second->getRowCount() < copyThreshold) {
-                step = "INSERT INTO " + dependency.first + " VALUES " + dependency.second->toSqlValues() + ";\n";
-                steps.push_back(ExecutionStep{Action::PUSH_DEPENDENCY, step,dependency.second});
+        if (dependency->getResult()->getRowCount() > 0) {
+            if (dependency->getResult()->getRowCount() < copyThreshold) {
+                step = "INSERT INTO " + dependency->getName() + " VALUES " + dependency->getResult()->toSqlValues() + ";\n";
+                steps.push_back(ExecutionStep{Action::PUSH_DEPENDENCY, step,dependency->getResult()});
             } else {
-                step = "COPY " + dependency.first + " FROM STDIN;\n";
-                steps.push_back(ExecutionStep{Action::PUSH_DEPENDENCY,step,dependency.second});
+                step = "COPY " + dependency->getName() + " FROM STDIN;\n";
+                steps.push_back(ExecutionStep{Action::PUSH_DEPENDENCY,step,dependency->getResult()});
             }
             sql += step;
         }

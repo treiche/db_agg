@@ -6,6 +6,7 @@ find_package(PostgreSQL REQUIRED)
 include_directories(${POSTGRESQL_INCLUDE_DIR})
 
 add_library(postgresql SHARED
+    PostgresqlExecution.cpp
     PGQueryExecution.cpp
     AsyncQueryExecutor.cpp
     PGConnection.cpp

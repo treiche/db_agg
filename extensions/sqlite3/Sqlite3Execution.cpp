@@ -51,9 +51,9 @@ bool Sqlite3Execution::process() {
             THROW_EXC("only protocol 'file' supported yet");
         }
 
-        for (auto& dep : getDependencies()) {
-            LOG_DEBUG("register dependency " << dep.first);
-            registerTableData(dep.first, dep.second);
+        for (auto dep : getInPorts()) {
+            LOG_DEBUG("register dependency " << dep->getName());
+            registerTableData(dep->getName(), dep->getResult());
         }
 
         sqlite3_auto_extension((void (*)(void))xEntryPoint);
@@ -67,16 +67,16 @@ bool Sqlite3Execution::process() {
         sqlite3_enable_load_extension(db, 0);
         //string sql = getSql() + "; create virtual table tbl using csvfile(/home/arnd/scratchpad/db_agg_github/tmp/csvfile/test.csv);";
 
-        for (auto& dep : getDependencies()) {
-            string sql = "create virtual table if not exists " + dep.first
-                    + " using dbagg(" + dep.first + ");";
+        for (auto dep : getInPorts()) {
+            string sql = "create virtual table if not exists " + dep->getName()
+                    + " using dbagg(" + dep->getName() + ");";
 
             LOG_DEBUG("execute '" << sql << "'")
             rc = sqlite3_exec(db, sql.c_str(), nullptr, nullptr, &zErrMsg);
             if (rc != SQLITE_OK) {
                 THROW_EXC("err = " << zErrMsg);
             }
-            shared_ptr<Event> evs(new SentDataEvent(getId(),dep.second->getRowCount()));
+            shared_ptr<Event> evs(new SentDataEvent(getId(),dep->getResult()->getRowCount()));
             fireEvent(evs);
         }
 
@@ -158,9 +158,9 @@ bool Sqlite3Execution::process() {
     fireEvent(rde);
 
     if (queryDone) {
-        LOG_DEBUG("drop virtual tables " << getDependencies().size());
-        for (auto& dep : getDependencies()) {
-            string sql = "drop table " + dep.first + ";";
+        LOG_DEBUG("drop virtual tables " << getInPorts().size());
+        for (auto dep : getInPorts()) {
+            string sql = "drop table " + dep->getName() + ";";
             LOG_DEBUG(sql);
             zErrMsg = nullptr;
             rc = sqlite3_exec(db, sql.c_str(), nullptr, nullptr, &zErrMsg);
