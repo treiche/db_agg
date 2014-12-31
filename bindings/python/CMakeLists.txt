@@ -1,0 +1,30 @@
+
+FIND_PACKAGE(SWIG REQUIRED)
+INCLUDE(${SWIG_USE_FILE})
+
+FIND_PACKAGE(PythonLibs 2.7)
+INCLUDE_DIRECTORIES(${PYTHON_INCLUDE_PATH})
+
+message("python include = ${PYTHON_INCLUDE_PATH}")
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR} ../../src/lib)
+
+SET(CMAKE_SWIG_FLAGS "-c++")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -g -std=c++11 -fPIC")
+
+
+SET_SOURCE_FILES_PROPERTIES(db_agg.i PROPERTIES CPLUSPLUS ON)
+SET_SOURCE_FILES_PROPERTIES(db_agg.i PROPERTIES SWIG_FLAGS "-c++")
+
+SWIG_ADD_MODULE(db_agg python db_agg.i)
+
+SWIG_LINK_LIBRARIES(db_agg 
+    libdbagg
+    -lxml2
+    -llog4cplus
+    -lpcre
+    -ljansson
+    -lzip
+    -lxslt
+)
+

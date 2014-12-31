@@ -54,6 +54,7 @@ add_subdirectory("extensions/memcached")
 add_subdirectory("extensions/sqlite3")
 add_subdirectory("extensions/soap")
 add_subdirectory("extensions/postgresql")
+add_subdirectory("bindings/python")
 
 include_directories("${PROJECT_BINARY_DIR}")
 include_directories("${PROJECT_SOURCE_DIR}/src/lib")
