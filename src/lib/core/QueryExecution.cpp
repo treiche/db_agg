@@ -198,7 +198,7 @@ namespace db_agg {
 
     void QueryExecution::setState(QueryExecutionState state) {
         if (this->state == state) {
-            THROW_EXC("state " << state << " is already set !");
+            //THROW_EXC("state " << state << " is already set !");
             return;
         }
 

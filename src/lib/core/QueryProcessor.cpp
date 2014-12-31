@@ -79,7 +79,7 @@ void QueryProcessor::prepare(string query, string url, string environment) {
         executionGraph.addQuery(query);
     }
     LOG_DEBUG("parse query done");
-    populateUrls(environment);
+    populateUrls2(environment);
     populateTransitions();
     calculateExecutionIds();
     shared_ptr<Event> event(new Event(EventType::APPLICATION_INITIALIZED,""));
