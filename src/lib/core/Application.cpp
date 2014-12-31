@@ -205,10 +205,6 @@ void Application::handleEvent(shared_ptr<Event> event) {
     LOG_DEBUG("fired event");
 }
 
-bool Application::step() {
-    return queryProcessor->step2();
-}
-
 bool Application::run() {
     LOG_DEBUG("run application");
     try {
@@ -231,6 +227,11 @@ bool Application::run() {
     }*/
     return false;
 }
+
+QueryParser& Application::getQueryParser() {
+    return *queryParser;
+}
+
 
 ExecutionGraph& Application::getExecutionGraph() {
     return queryProcessor->getExecutionGraph();

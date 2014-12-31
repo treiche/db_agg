@@ -39,10 +39,7 @@ namespace db_agg {
             virtual void handleEvent(std::shared_ptr<Event> event) override;
             void bootstrap(Configuration& config);
             bool run();
-            bool step();
-            QueryParser& getQueryParser() {
-                return *queryParser;
-            }
+            QueryParser& getQueryParser();
             virtual void handleSignal(int signal) override;
             ExecutionGraph& getExecutionGraph();
             void stop();

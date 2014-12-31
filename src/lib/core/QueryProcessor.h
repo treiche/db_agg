@@ -73,7 +73,6 @@ public:
     void prepare(std::string query, std::string url, std::string environment);
     void process();
     bool step();
-    bool step2();
     void handleEvent(std::shared_ptr<Event> event) override;
     void stop();
     ExecutionGraph& getExecutionGraph();

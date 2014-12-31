@@ -92,43 +92,6 @@ void QueryProcessor::prepare(string query, string url, string environment) {
     fireEvent(qpe);
 }
 
-bool QueryProcessor::step2() {
-    auto execs = findExecutables();
-    if (!execs.empty()) {
-        try {
-            QueryExecution *exec = execs.at(0);
-            QueryExecutionState state = exec->getState();
-            if (
-                state == QueryExecutionState::COMPLETE ||
-                state == QueryExecutionState::SCHEDULED ||
-                state == QueryExecutionState::RUNNING
-               ) {
-
-                if (state == QueryExecutionState::COMPLETE) {
-                    exec->schedule();
-                }
-
-                bool execDone = exec->process();
-                if (execDone) {
-                    outputResult(*exec);
-                }
-            }
-        } catch(CancelException& ce) {
-            cleanUp();
-            throw ce;
-        }
-    }
-    bool done = true;
-    for (auto exec:executionGraph.getQueryExecutions()) {
-        if (exec->getState() != QueryExecutionState::DONE) {
-            // cout << "exec " << exec->getName() << " is not done yet " << exec->getState() << endl;
-            done = false;
-        }
-    }
-    return done;
-}
-
-
 bool QueryProcessor::step() {
     set<QueryExecution*> runningQueries;
     bool done;
