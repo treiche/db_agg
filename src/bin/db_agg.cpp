@@ -86,13 +86,13 @@ int main(int argc, char **argv) {
     signal(SIGINT,&cancel);
     signal(SIGHUP,&cancel);
     Application& app = *new Application();
-    app.bootstrap(config);
     CursesListener *cl = nullptr;
     if (config.getShowProgress()) {
         disableConsoleLogging();
         cl = new CursesListener(app);
         app.addEventListener(cl);
     }
+    app.bootstrap(config);
     GlobalSignalHandler::getInstance().addHandler(&app);
     app.run();
     if (cl!=nullptr) {

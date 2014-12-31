@@ -12,7 +12,7 @@ extern "C" {
 namespace db_agg {
 
 xmlDocPtr parseDoc(std::string document, std::string baseUri, bool resolveXIncludes = false);
-void validateDoc(xmlDocPtr doc, std::string schemaFile);
+void validateDoc(xmlDocPtr doc, std::string baseUri, std::string schemaFile);
 std::string as_string(xmlNodePtr node);
 
 

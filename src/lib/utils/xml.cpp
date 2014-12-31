@@ -59,12 +59,12 @@ xmlDocPtr parseDoc(std::string document, std::string baseUri, bool resolveXInclu
     LOG_INFO("using schema '" << schemaUrl << "' for validating");
     char *absUri = (char*)xmlBuildURI((xmlChar*)schemaUrl.c_str(),(xmlChar*)baseUri.c_str());
     if (!schemaUrl.empty()) {
-        validateDoc(doc,string(absUri));
+        validateDoc(doc,baseUri, string(absUri));
     }
     return doc;
 }
 
-void validateDoc(xmlDocPtr doc, std::string schemaFile) {
+void validateDoc(xmlDocPtr doc, std::string baseUri, std::string schemaFile) {
     xmlSchemaParserCtxtPtr ctx = xmlSchemaNewParserCtxt(schemaFile.c_str());
     if (ctx) {
         xmlSchemaSetParserErrors(ctx,(xmlSchemaValidityErrorFunc)errorHandler,(xmlSchemaValidityWarningFunc)warningHandler,nullptr);
@@ -77,7 +77,7 @@ void validateDoc(xmlDocPtr doc, std::string schemaFile) {
         xmlSchemaFreeValidCtxt(vctx);
         xmlSchemaFree(schema);
         if (ret != 0) {
-            THROW_EXC("xml query file is not valid");
+            THROW_EXC("xml file '" << baseUri << "' is not valid");
         }
     }
 }
