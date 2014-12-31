@@ -89,7 +89,7 @@ namespace db_agg {
     }
 
     void QueryExecution::setResult(string shardId, shared_ptr<TableData> result) {
-        LOG_ERROR("set port '" << shardId << "' of " << getName() << " to " << result.get());
+        LOG_TRACE("set port '" << shardId << "' of " << getName() << " to " << result.get());
         bool found = false;
         for (auto port:outPorts) {
             if (port->getName() == shardId) {
@@ -157,7 +157,6 @@ namespace db_agg {
     }
 
     std::ostream& operator<<(std::ostream& cout,const QueryExecutionState state) {
-        cout << "State[";
         switch(state) {
             case QueryExecutionState::INITIAL:
                 cout << "INITIAL";
@@ -180,7 +179,6 @@ namespace db_agg {
             default:
                 cout << "UNKNOWN";
         }
-        cout << "]";
         return cout;
     }
 
@@ -197,8 +195,9 @@ namespace db_agg {
     }
 
     void QueryExecution::setState(QueryExecutionState state) {
+        LOG_DEBUG("set state of '" << getName() << "' to " << state);
         if (this->state == state) {
-            THROW_EXC("state " << state << " is already set !");
+            LOG_ERROR("state " << state << " is already set for execution '" << getName() << "'!");
             return;
         }
 

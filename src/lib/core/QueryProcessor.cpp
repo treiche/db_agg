@@ -79,14 +79,105 @@ void QueryProcessor::prepare(string query, string url, string environment) {
         executionGraph.addQuery(query);
     }
     LOG_DEBUG("parse query done");
-    populateUrls(environment);
+    populateUrls2(environment);
     populateTransitions();
     calculateExecutionIds();
     shared_ptr<Event> event(new Event(EventType::APPLICATION_INITIALIZED,""));
     fireEvent(event);
     loadFromCache();
     executionGraph.dumpExecutionPlan(outputDir);
+    //executionGraph.dumpGraphML(outputDir);
     LOG_DEBUG("got " << executionGraph.getQueryExecutions().size() << " executions");
+    shared_ptr<Event> qpe(new QueryPreparedEvent(outputDir + "/executionPlan.svg"));
+    fireEvent(qpe);
+}
+
+bool QueryProcessor::step2() {
+    auto execs = findExecutables();
+    if (!execs.empty()) {
+        try {
+            QueryExecution *exec = execs.at(0);
+            QueryExecutionState state = exec->getState();
+            if (
+                state == QueryExecutionState::COMPLETE ||
+                state == QueryExecutionState::SCHEDULED ||
+                state == QueryExecutionState::RUNNING
+               ) {
+
+                if (state == QueryExecutionState::COMPLETE) {
+                    exec->schedule();
+                }
+
+                bool execDone = exec->process();
+                if (execDone) {
+                    outputResult(*exec);
+                }
+            }
+        } catch(CancelException& ce) {
+            cleanUp();
+            throw ce;
+        }
+    }
+    bool done = true;
+    for (auto exec:executionGraph.getQueryExecutions()) {
+        if (exec->getState() != QueryExecutionState::DONE) {
+            // cout << "exec " << exec->getName() << " is not done yet " << exec->getState() << endl;
+            done = false;
+        }
+    }
+    return done;
+}
+
+
+bool QueryProcessor::step() {
+    set<QueryExecution*> runningQueries;
+    bool done;
+    for (auto exec:executionGraph.getQueryExecutions()) {
+        try {
+            QueryExecutionState state = exec->getState();
+            LOG_DEBUG("state of '" << exec->getName() << "' -> " << state);
+            if (
+                state == QueryExecutionState::COMPLETE ||
+                state == QueryExecutionState::SCHEDULED ||
+                state == QueryExecutionState::RUNNING
+               ) {
+
+                if (state == QueryExecutionState::COMPLETE) {
+                    exec->schedule();
+                }
+
+                if (runningQueries.size() < maxParallelExecutions || runningQueries.find(exec) != runningQueries.end()) {
+                    runningQueries.insert(exec);
+                    bool execDone = exec->process();
+                    LOG_DEBUG("exec " << exec->getName() << " returns " << execDone << " state = " << exec->getState());
+                    if (execDone) {
+                        runningQueries.erase(exec);
+                        outputResult(*exec);
+                    }
+                    done &= execDone;
+                } else {
+                    LOG_DEBUG("exec " << exec->getName() << " skipped as maxExecution limit (" << maxParallelExecutions << ") is reached");
+                }
+            }
+
+            done = true;
+            for (auto exec:executionGraph.getQueryExecutions()) {
+                if (exec->getState() != QueryExecutionState::DONE) {
+                    // cout << "exec " << exec->getName() << ": done = " << exec->isDone() << " complete = "  << exec->isComplete() << endl;
+                    done = false;
+                }
+            }
+
+            if (stopped) {
+                throw CancelException("got cancellation request");
+            }
+        } catch(CancelException& ce) {
+            cleanUp();
+            throw ce;
+        }
+        findExecutables();
+    }
+    return done;
 }
 
 void QueryProcessor::process() {
@@ -100,6 +191,7 @@ void QueryProcessor::process() {
     bool done = false;
     do {
         done = true;
+        /*
         for (auto exec:executionGraph.getQueryExecutions()) {
             try {
                 QueryExecutionState state = exec->getState();
@@ -135,12 +227,16 @@ void QueryProcessor::process() {
             }
             findExecutables();
         }
+        */
+        done = step();
+        /*
         for (auto exec:executionGraph.getQueryExecutions()) {
             if (exec->getState() != QueryExecutionState::DONE) {
                 // cout << "exec " << exec->getName() << ": done = " << exec->isDone() << " complete = "  << exec->isComplete() << endl;
                 done = false;
             }
         }
+        */
     } while(!done);
     for (auto kk:executionGraph.getQueryExecutions()) {
         if (kk->getState() != QueryExecutionState::DONE) {
@@ -197,7 +293,8 @@ void QueryProcessor::loadFromCache() {
                     if (!disableCache) {
                         shared_ptr<TableData> data = cacheRegistry.getData(resultId);
                         qr->setResult(portName, data);
-                        qr->setState(QueryExecutionState::DONE);
+                        LOG_INFO("set state of " << portName << " done [current = " << qr->getState() << "]");
+                        //qr->setState(QueryExecutionState::DONE);
                         // close all incoming channels here
                         // executionGraph.getSources(qr);
                         //qr.second->doTransitions();
@@ -351,7 +448,8 @@ void QueryProcessor::populateUrls(string environment) {
         // get credentials
         for (size_t idx=0; idx<urls.size(); idx++) {
             shared_ptr<Url> url = urls[idx];
-            string resultId = md5hex(url->getUrl(false,false,false) + query->getQuery());
+            string md5src = url->getUrl(false,false,false) + query->getQuery();
+            string resultId = md5hex(md5src);
             if (query->getType() == "postgresql") {
                 pair<string,string> c = passwordManager.getCredential(url.get());
                 url->setUser(c.first);
@@ -467,7 +565,8 @@ void QueryProcessor::populateTransitions() {
                     }
                 } else {
                     LOG_DEBUG("prepare one-to-many transition");
-                    auto sharderConfigs = urlRegistry.getShardingStrategies(targetQuery.getDatabaseId());
+                    //auto sharderConfigs = urlRegistry.getShardingStrategies(targetQuery.getDatabaseId());
+                    auto sharderConfigs = databaseRegistry.getShardingStrategies(targetQuery.getDatabaseId());
                     auto sharders = resolveShardingStrategies(sharderConfigs,dstSize);
                     if (sharders.empty()) {
                         LOG_WARN("no sharding strategy for database '" << targetQuery.getDatabaseId() << "'");
@@ -579,7 +678,7 @@ void QueryProcessor::checkConnections() {
                     shared_ptr<Event> event(new ExecutionStateChangeEvent(exec->getId(),"OK"));
                     fireEvent(event);
                 } else {
-                    THROW_EXC("resource " + exec->getUrl()->getUrl(false,false,true) + " is not available.");
+                    THROW_EXC("resource " + exec->getUrl()->getUrl(true,true,false) + " is not available.");
                 }
             }
         }
@@ -605,7 +704,7 @@ vector<QueryExecution*> QueryProcessor::findExecutables() {
     vector<QueryExecution*> executables;
     for (auto& exec:executionGraph.getQueryExecutions()) {
         QueryExecutionState state = exec->getState();
-        if (state == QueryExecutionState::COMPLETE) {
+        if (state == QueryExecutionState::COMPLETE || state == QueryExecutionState::SCHEDULED || state == QueryExecutionState::RUNNING) {
             executables.push_back(exec);
         }
     }
@@ -613,7 +712,9 @@ vector<QueryExecution*> QueryProcessor::findExecutables() {
         LOG_DEBUG("found " << executables.size() << " executables");
         for (auto result:executables) {
             LOG_DEBUG("schedule executable  " << result->getSql());
-            result->schedule();
+            if (result->getState() != QueryExecutionState::SCHEDULED) {
+                result->schedule();
+            }
         }
     }
     return executables;
@@ -628,7 +729,7 @@ void QueryProcessor::cacheItem(QueryExecution& exec) {
         LOG_DEBUG("save '" << exec.getName() << "' port '" << portName << "' with id '" << port->getId() << "'");
         LOG_DEBUG("port result is " << port->getResult());
         if (!port->getResult()) {
-            LOG_ERROR("port '" << port->getName() << "' of '" << exec.getName() << "' is empty");
+            LOG_WARN("port '" << port->getName() << "' of '" << exec.getName() << "' is empty");
             return;
         }
         File linkPath{outputDir + "/" + exec.getName() + portName + ".csv"};
