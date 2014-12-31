@@ -17,3 +17,5 @@ add_library(postgresql SHARED
 target_link_libraries(postgresql
     ${POSTGRESQL_LIBRARIES}
 )
+
+install(TARGETS postgresql DESTINATION extensions)
