@@ -171,7 +171,7 @@ bool AsyncQueryExecutor::processTask(int taskNo) {
                     task->state = PGQueryExecutionState::CONNECTED;
                     fireStateChangeEvent(taskNo, "CONNECTED");
                 } else {
-                    THROW_EXC("connecting to " << task->connectionUrl << " failed");
+                    THROW_EXC("connecting to " << maskPassword(task->connectionUrl) << " failed");
                 }
             } else {
                 task->conn = PGConnection::connectStart(connectionUrl.c_str());
@@ -187,7 +187,7 @@ bool AsyncQueryExecutor::processTask(int taskNo) {
         } else if (task->state == PGQueryExecutionState::CONNECTING) {
             PostgresPollingStatusType ppst = conn.connectPoll();
             if (ppst == PGRES_POLLING_FAILED) {
-                THROW_EXC("failed to connect to " << task->connectionUrl << ". postgres message: " << conn.errorMessage());
+                THROW_EXC("failed to connect to " << maskPassword(task->connectionUrl) << ". postgres message: " << conn.errorMessage());
             }
             if (ppst == PGRES_POLLING_OK) {
                 task->state = PGQueryExecutionState::CONNECTED;
@@ -196,7 +196,7 @@ bool AsyncQueryExecutor::processTask(int taskNo) {
         } else if (task->state == PGQueryExecutionState::CONNECTED) {
             LOG_DEBUG("about to send query");
             if (!task->conn.sendQuery(task->query)) {
-                THROW_EXC("sending query  " << task->query << " failed. message = " << task->conn.errorMessage() << " connection = " << task->connectionUrl);
+                THROW_EXC("sending query  " << task->query << " failed. message = " << task->conn.errorMessage() << " connection = " << maskPassword(task->connectionUrl));
             }
             task->state = PGQueryExecutionState::QUERY_SENDING;
             fireStateChangeEvent(taskNo, "QUERY_SENDING");
