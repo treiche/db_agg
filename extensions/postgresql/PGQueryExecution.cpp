@@ -10,6 +10,7 @@
 #include "utils/logging.h"
 
 #include "type/oids.h"
+#include "utils/utility.h"
 #include "table/TableDataFactory.h"
 #include "PGConnection.h"
 
@@ -41,7 +42,7 @@ namespace db_agg {
     }
 
     void PGQueryExecution::handleCopyOut(size_t stepNo,string _data) {
-         getResult("")->appendRaw((void*)_data.c_str(),_data.size());
+         resultTable->appendRaw((void*)_data.c_str(),_data.size());
     }
 
     void PGQueryExecution::handleTuples(size_t step, vector<pair<string, uint32_t> >& columns) {
@@ -55,7 +56,7 @@ namespace db_agg {
                 cleaned.push_back(column);
             }
         }
-        setResult("", TableDataFactory::getInstance().create("text",cleaned));
+        resultTable = TableDataFactory::getInstance().create("text",cleaned);
     }
 
     void PGQueryExecution::stop() {
@@ -70,7 +71,11 @@ namespace db_agg {
 
     bool PGQueryExecution::process() {
         LOG_DEBUG("process postgres query '" << getName() << "'");
-        return queryExecutor.process();
+        bool done = queryExecutor.process();
+        if (done) {
+            setResult("",resultTable);
+        }
+        return done;
     }
 
     // EventListener
@@ -95,15 +100,6 @@ namespace db_agg {
         if (url->hasParameter("search_path")) {
             options.push_back("search_path");
         }
-        /*
-        if (!options.empty()) {
-            pgurl += " options='";
-            for (size_t idx = 0; idx < options.size(); idx++) {
-
-            }
-            pgurl += "'";
-        }
-        */
         if (url->hasParameter("statementTimeout") || url->hasParameter("search_path")) {
             pgurl += " options='";
             if (url->hasParameter("statementTimeout")) {
@@ -113,7 +109,6 @@ namespace db_agg {
                 pgurl += " --search-path=" + url->getParameter("search_path");
             }
             pgurl += "'";
-            // --pgurl += " options='--statement-timeout=" + url->getParameter("statementTimeout")+"'";
         }
         return pgurl;
     }
@@ -121,7 +116,7 @@ namespace db_agg {
     bool PGQueryExecution::isResourceAvailable() {
         LOG_INFO("check connection " + getUrl()->getUrl(false,true,false));
         string pgurl = toPostgresUrl(getUrl());
-        LOG_INFO("check:\n"+pgurl)
+        LOG_INFO("check:\n" + maskPassword(pgurl))
         return PGConnection::ping(pgurl);
     }
 }

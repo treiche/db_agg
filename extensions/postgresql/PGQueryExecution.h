@@ -20,6 +20,7 @@ class PGQueryExecution: public ExecutionHandler, public QueryExecution, public E
 private:
     AsyncQueryExecutor queryExecutor;
     std::string toPostgresUrl(std::shared_ptr<Url> url);
+    std::shared_ptr<TableData> resultTable;
 public:
     // ExecutionHandler
     PGQueryExecution();
