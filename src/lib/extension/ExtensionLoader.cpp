@@ -34,18 +34,27 @@ namespace db_agg {
     }
 
     void ExtensionLoader::loadExtensions(std::string extensionDir) {
-        LOG_DEBUG("load extensions from " << extensionDir);
         File extDir(extensionDir);
-        vector<string> childs;
-        extDir.getChilds(childs);
-        for (auto& child:childs) {
-            LOG_DEBUG("load extension " << child);
+        vector<File> childFiles;
+        extDir.getChildFiles(childFiles);
+        LOG_DEBUG("load extensions in dir '" << extensionDir << "'");
+        for (auto& childFile:childFiles) {
+            string child = childFile.getName();
+            if (childFile.getType() == File::FileType::DIRECTORY) {
+                loadExtensions(childFile.realpath());
+                continue;
+            }
+            if (childFile.getExtension() != ".so") {
+                continue;
+            }
+            LOG_TRACE("load extension " << childFile.getPath() << " type = " << (char)childFile.getType());
             string path = extensionDir + "/" + child;
             void *handle = dlopen(path.c_str(),RTLD_NOW);
             if (!handle) {
                 LOG_WARN("loading extension " << child << " failed. error: " << dlerror());
                 continue;
             }
+            LOG_DEBUG("extension " << child << " loaded. path = " << childFile.getPath());
             Extension *(*getExtension)() = (Extension *(*)())dlsym(handle,"getExtension");
             if (!getExtension) {
                 LOG_WARN("no method getExtension found: " << dlerror());
