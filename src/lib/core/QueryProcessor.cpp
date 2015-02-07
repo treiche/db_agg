@@ -90,10 +90,15 @@ void QueryProcessor::prepare(string query, string url, string environment) {
     LOG_DEBUG("got " << executionGraph.getQueryExecutions().size() << " executions");
     shared_ptr<Event> qpe(new QueryPreparedEvent(outputDir + "/executionPlan.svg"));
     fireEvent(qpe);
+    LOG_DEBUG("preparing done. executions:");
+    for (auto exec:executionGraph.getQueryExecutions()) {
+        LOG_DEBUG("    " << exec->getName() << " state = " << exec->getState());
+    }
 }
 
 bool QueryProcessor::step() {
     set<QueryExecution*> runningQueries;
+    // cout << "step " << executionGraph.getQueryExecutions().size() << endl;
     bool done;
     for (auto exec:executionGraph.getQueryExecutions()) {
         try {
@@ -144,6 +149,7 @@ bool QueryProcessor::step() {
 }
 
 void QueryProcessor::process() {
+    assert(executionGraph.getQueryExecutions().size() > 0);
     if (dontExecute) {
         shared_ptr<Event> fe(new Event(EventType::APPLICATION_FINISHED,""));
         fireEvent(fe);
@@ -261,9 +267,11 @@ void QueryProcessor::loadFromCache() {
                         // close all incoming channels here
                         // executionGraph.getSources(qr);
                         //qr.second->doTransitions();
-                        File linkPath(outputDir + "/" + qr->getName() + portName + ".csv");
-                        if (!linkPath.exists()) {
-                            linkPath.linkTo(path);
+                        if (!qr->isTransition()) {
+                            File linkPath(outputDir + "/" + qr->getName() + portName + ".csv");
+                            if (!linkPath.exists()) {
+                                linkPath.linkTo(path);
+                            }
                         }
                         shared_ptr<Event> event(new ExecutionStateChangeEvent(qr->getId(),"CACHED"));
                         fireEvent(event);
@@ -319,6 +327,8 @@ void QueryProcessor::populateUrls2(string environment) {
             THROW_EXC("no url found for " <<  query->getName());
         }
 
+        // cout << "found " << urls.size() << " urls for query with type " << query->getType() << endl;
+
         vector<string> deps;
         for (auto& dep:query->getDependencies()) {
             deps.push_back(dep.getLocator().getQName());
@@ -326,6 +336,7 @@ void QueryProcessor::populateUrls2(string environment) {
 
         for (size_t idx=0; idx<urls.size(); idx++) {
             shared_ptr<Url> url = urls[idx];
+            // cout << "init query" << endl;
             if (query->getType() == "postgresql") {
                 pair<string,string> c = passwordManager.getCredential(url.get());
                 url->setUser(c.first);
@@ -337,6 +348,7 @@ void QueryProcessor::populateUrls2(string environment) {
             }
             string resultId = md5hex(url->getUrl(false,false,false) + query->getQuery());
             QueryExecution *exec = extensionLoader.getQueryExecution(query->getType());
+            // cout << "exec for type " << query->getType() << " is " << exec << endl;
             string injectorName = query->getMetaData("injector","default");
             shared_ptr<DependencyInjector> di = extensionLoader.getDependencyInjector(injectorName);
             exec->init(linkPath, resultId, url ,query->getNormalizedQuery(),deps,di, query->getArguments());
@@ -547,8 +559,8 @@ void QueryProcessor::populateTransitions() {
                     depNames.push_back(sourceExecution->getName());
                     vector<string> args;
                     shared_ptr<DependencyInjector> di = extensionLoader.getDependencyInjector("default");
-                    o2m->init(sourceExecution->getName() + ":splitted",id,sourceExecution->getUrl(),"query",depNames,di,args);
                     if (!execExists) {
+                        o2m->init(sourceExecution->getName() + ":splitted",id,sourceExecution->getUrl(),"query",depNames,di,args);
                         o2m->addEventListener(this);
                         executionGraph.addQueryExecution(o2m);
                         executionGraph.createChannel(sourceExecution,"",o2m,sourceExecution->getName());
