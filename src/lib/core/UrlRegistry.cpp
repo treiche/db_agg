@@ -148,7 +148,7 @@ vector<shared_ptr<Url>> UrlRegistry::findUrls(string env, shared_ptr<Url> wcUrl)
 
 shared_ptr<Url> UrlRegistry::getWorker(string env, string type, string& serverId) {
     shared_ptr<Url> workerUrl;
-    string expr("/urls/environment[@name='" + env + "']//*[@type='" + type +"' and @worker='true']");
+    string expr("/urls/environment//*[@type='" + type +"' and @worker='true']");
     xmlXPathContextPtr xpathCtx = xmlXPathNewContext(this->document);
     xmlXPathObjectPtr xpathObj = xmlXPathEvalExpression((const xmlChar*)expr.c_str(), xpathCtx);
     xmlNodeSetPtr nodes = xpathObj->nodesetval;
