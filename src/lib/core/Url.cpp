@@ -119,9 +119,13 @@ string Url::getPath() {
     return "/" + join(path,"/");
 }
 
-void Url::setPath(string path) {
+void Url::setPath(string p) {
     this->path.clear();
-    split(path, '/', this->path);
+    size_t idx = 0;
+    while (p[idx] == '/' && idx < p.size()) {
+        idx++;
+    }
+    split(p.substr(idx), '/', this->path);
 }
 
 
@@ -176,7 +180,7 @@ string Url::getUrl(bool includeParameters, bool includeCredentials, bool maskPas
     if (!port.empty()) {
         url += ":" + port;
     }
-    url +=  join(path,"/");
+    url +=  "/" + join(path,"/");
     if (includeParameters && !parameters.empty()) {
         url += "?";
         int len = parameters.size();
@@ -254,7 +258,7 @@ string Url::decode(std::string data) {
 
 
 shared_ptr<Url> Url::getWildcardUrl() {
-    return shared_ptr<Url>(new Url("*","*","*","*","*"));
+    return shared_ptr<Url>(new Url("","","","",""));
 }
 
 }
