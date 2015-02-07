@@ -8,4 +8,9 @@ add_library(soap SHARED
 )
 
 target_link_libraries(soap "/usr/lib/x86_64-linux-gnu/libcurl.so")
-install(TARGETS soap DESTINATION extensions)
+
+if (dpkg_build)
+    install(TARGETS soap DESTINATION ${libdir}/db_agg/extensions)
+else()
+    install(TARGETS soap DESTINATION extensions)
+endif()

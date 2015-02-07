@@ -18,4 +18,8 @@ target_link_libraries(postgresql
     ${POSTGRESQL_LIBRARIES}
 )
 
-install(TARGETS postgresql DESTINATION extensions)
+if (dpkg_build)
+    install(TARGETS postgresql DESTINATION ${libdir}/db_agg/extensions)
+else()
+    install(TARGETS postgresql DESTINATION extensions)
+endif()

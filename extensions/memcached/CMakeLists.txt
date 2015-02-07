@@ -9,4 +9,9 @@ add_library(memcached SHARED
 )
 
 target_link_libraries(memcached "/usr/lib/x86_64-linux-gnu/libmemcached.so")
-install(TARGETS memcached DESTINATION extensions)
+
+if (dpkg_build)
+    install(TARGETS memcached DESTINATION ${libdir}/db_agg/extensions)
+else()
+    install(TARGETS memcached DESTINATION extensions)
+endif()
