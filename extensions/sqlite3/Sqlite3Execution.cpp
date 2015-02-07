@@ -33,6 +33,9 @@ static int xEntryPoint(sqlite3 *db, const char **pzErrMsg,
 }
 
 bool Sqlite3Execution::isResourceAvailable() {
+    if (getUrl()->getPath() == "/:memory:") {
+        return true;
+    }
     string path = getUrl()->getPath();
     LOG_DEBUG("check if " << path << " exists");
     File dbFile(path);
@@ -52,12 +55,17 @@ bool Sqlite3Execution::process() {
         }
 
         for (auto dep : getInPorts()) {
-            LOG_DEBUG("register dependency " << dep->getName());
+            LOG_DEBUG("register dependency " << dep->getName() << " result = " << dep->getResult());
             registerTableData(dep->getName(), dep->getResult());
         }
 
         sqlite3_auto_extension((void (*)(void))xEntryPoint);
-        string dbFile = "/" + getUrl()->getPath();
+        string dbFile = "";
+        if (getUrl()->getPath() == "/:memory:") {
+            dbFile = ":memory:";
+        } else {
+            dbFile = "/" + getUrl()->getPath();
+        }
         LOG_DEBUG("open db " << dbFile);
         rc = sqlite3_open_v2(dbFile.c_str(), &db, SQLITE_OPEN_READWRITE, nullptr);
         LOG_DEBUG("process db = " << db);
@@ -109,6 +117,7 @@ bool Sqlite3Execution::process() {
     int n;
     bool queryDone = false;
     for (row = lastOffset; row < lastOffset + chunkSize; row++) {
+        LOG_DEBUG("current row " << row);
         int rc = sqlite3_step(stmt);
         if (rc == SQLITE_DONE) {
             sqlite3_finalize(stmt);
