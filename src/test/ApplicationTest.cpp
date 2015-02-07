@@ -95,7 +95,7 @@ INSTANTIATE_TEST_CASE_P(TestQueries, ApplicationTest,
 
 
 TEST_P(ApplicationTest, SmokeTest) {
-    runQuery("tests/queries/" + GetParam() + ".xml");
+    runQuery(TEST_DATA_DIR + "/queries/" + GetParam() + ".xml");
 }
 
 
