@@ -21,10 +21,9 @@ void registerTableData(std::string name,
     tables[name] = tabledata;
 }
 
-static shared_ptr<db_agg::TableData> currentTable;
-
 typedef struct {
     sqlite3_vtab vtab;
+    shared_ptr<db_agg::TableData> tableData;
 } tabledata_vtab;
 
 typedef struct {
@@ -44,7 +43,7 @@ static int tabledata_connect(sqlite3* db, void *pAux, int argc,
         THROW_EXC("table '" << depName << "' is not registered");
     }
     LOG_DEBUG("depName = " << depName);
-    currentTable = tables[depName];
+    shared_ptr<db_agg::TableData> currentTable = tables[depName];
     LOG_DEBUG("tableData = " << currentTable->getRowCount());
 
     string schema = "CREATE TABLE x(";
@@ -65,8 +64,8 @@ static int tabledata_connect(sqlite3* db, void *pAux, int argc,
         THROW_EXC("schema declaration failed");
     }
 
-    tabledata_vtab * vtab = (tabledata_vtab *) calloc(1,
-            sizeof(tabledata_vtab));
+    tabledata_vtab * vtab = (tabledata_vtab *) calloc(1,sizeof(tabledata_vtab));
+    vtab->tableData = currentTable;
     *ppVTab = &vtab->vtab;
     return SQLITE_OK;
 }
@@ -120,17 +119,20 @@ static int tabledata_close(sqlite3_vtab_cursor* pCursor) {
 
 static int tabledata_filter(sqlite3_vtab_cursor* pCursor, int idxNum,
         const char *idxStr, int argc, sqlite3_value **argv) {
-    LOG_DEBUG("tabledata_filter");
+    LOG_DEBUG("tabledata_filter " << idxNum << "," << idxStr);
+    tabledata_cursor * cur = (tabledata_cursor *) pCursor;
+    cur->pos = 0;
     return SQLITE_OK;
 }
 
 static
 int tabledata_eof(sqlite3_vtab_cursor* pCursor) {
     tabledata_cursor * cur = (tabledata_cursor *) pCursor;
+    tabledata_vtab * tab = (tabledata_vtab *) cur->cursor.pVtab;
 
     LOG_DEBUG("tabledata_eof " << cur->pos);
 
-    if (cur->pos >= currentTable->getRowCount()) {
+    if (cur->pos >= tab->tableData->getRowCount()) {
         return 1;
     }
 
@@ -157,9 +159,9 @@ int tabledata_column(sqlite3_vtab_cursor* pCursor, sqlite3_context* ctx,
         int n) {
     LOG_DEBUG("tabledata_column " << n);
     tabledata_cursor * cur = (tabledata_cursor *) pCursor;
-    // tabledata_vtab * tab = (tabledata_vtab *) cur->cursor.pVtab;
+    tabledata_vtab * tab = (tabledata_vtab *) cur->cursor.pVtab;
 
-    string value = currentTable->getValue(cur->pos, n);
+    string value = tab->tableData->getValue(cur->pos, n);
     LOG_DEBUG("value = " << value);
     if (value == "\\N") {
         sqlite3_result_null(ctx);
