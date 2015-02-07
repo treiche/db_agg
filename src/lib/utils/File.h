@@ -25,6 +25,7 @@ public:
     };
     File(std::string path);
     std::string getName();
+    std::string getPath();
     FileType getType();
     bool exists();
     bool mkdir();
@@ -32,9 +33,11 @@ public:
     std::string abspath();
     std::string realpath();
     std::string getParent();
+    std::string getExtension();
     bool rmdir();
     bool remove();
     void getChilds(std::vector<std::string>& childs);
+    void getChildFiles(std::vector<File>& childs);
     void linkTo(File source);
 };
 

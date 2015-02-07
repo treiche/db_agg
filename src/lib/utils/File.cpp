@@ -95,7 +95,9 @@ string File::abspath() {
     }
     char buffer[512];
     string pwd = getcwd(buffer,512);
-    if (path[0] != '.') {
+    if (path[0] == '.') {
+        return pwd + path.substr(1);
+    } else if (path[0] != '.') {
         return pwd + '/' + path;
     } else if (path[1] == '/') {
         return pwd + path.substr(1);
@@ -143,6 +145,23 @@ bool File::remove() {
     return true;
 }
 
+string File::getExtension() {
+    auto idx = path.rfind(".");
+    if (idx == string::npos) {
+        return "";
+    }
+    return path.substr(idx);
+}
+
+void File::getChildFiles(std::vector<File>& childFiles) {
+    vector<string> childs;
+    getChilds(childs);
+    for (auto child:childs) {
+        childFiles.push_back(File(path + "/" + child));
+    }
+}
+
+
 void File::getChilds(vector<string>& childs) {
     DIR *dp;
     struct dirent *dirp;
@@ -169,5 +188,10 @@ string File::getName() {
     int lastSlash = path.rfind("/");
     return path.substr(lastSlash+1);
 }
+
+string File::getPath() {
+    return path;
+}
+
 
 }
