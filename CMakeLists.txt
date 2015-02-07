@@ -12,10 +12,14 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 find_package(PCRE REQUIRED)
 find_package(Jansson REQUIRED)
 find_package(LibZip REQUIRED)
+find_package(Sqlite3)
+
+#message("sqlite3 = ${SQLITE3_FOUND} ${SQLITE3_INCLUDE_DIR} $ENV{SHELL} ")
 #find_package(Log4cplus REQUIRED)
 
 set(LOG4CPLUS_LIBRARIES "/usr/lib/liblog4cplus.so")
 
+set(CURSES_NEED_WIDE "True")
 find_package(Curses REQUIRED)
 find_package(LibXml2 REQUIRED)
 find_package(LibXslt REQUIRED)
@@ -34,7 +38,8 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -g -std=c++11 -fPIC")
 if (NOT dpkg_build)
 
     SET(prefix ${CMAKE_INSTALL_PREFIX})
-    SET(libdir "\${prefix}/libs")
+    SET(multiarchlibdir "\${prefix}/lib")
+    SET(libdir "\${prefix}/lib")
     SET(sysconfdir "\${prefix}/etc")
     SET(includedir "\${prefix}/include")
     SET(mandir "\${prefix}/share/man")
@@ -74,13 +79,7 @@ add_executable(db_agg
 )
 
 target_link_libraries(db_agg libdbagg
-    ${LIBXML2_LIBRARIES}
-    ${PCRE_LIBRARIES}
-    ${LOG4CPLUS_LIBRARIES}
-    ${JANSSON_LIBRARIES}
     ${CURSES_LIBRARIES}
-    ${LIBZIP_LIBRARY}
-    ${LIBXSLT_LIBRARIES}
 )
 
 add_executable(db_agg_config
@@ -90,13 +89,7 @@ add_executable(db_agg_config
 )
 
 target_link_libraries(db_agg_config libdbagg
-    ${LIBXML2_LIBRARIES}
-    ${PCRE_LIBRARIES}
-    ${LOG4CPLUS_LIBRARIES}
-    ${JANSSON_LIBRARIES}
     ${CURSES_LIBRARIES}
-    ${LIBZIP_LIBRARY}
-    ${LIBXSLT_LIBRARIES}
 )
 
 
@@ -152,3 +145,6 @@ else()
 endif()
 
 install(FILES src/lib/db_agg.h "${PROJECT_BINARY_DIR}/installation.h" DESTINATION include/${CMAKE_PROJECT_NAME})
+
+enable_testing()
+add_test(NAME testrunner COMMAND testrunner --gtest_filter=TestQueries/ApplicationTest.SmokeTest/*)
