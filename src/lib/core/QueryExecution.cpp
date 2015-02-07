@@ -44,8 +44,12 @@ namespace db_agg {
             inPorts.push_back(inPort);
             //dependencies[depName] = nullptr;
         }
-        Port *defaultPort = new Port("","");
-        outPorts.push_back(defaultPort);
+        // the execution might have already set ports so only put default port if
+        // none exist
+        if (outPorts.size() == 0) {
+            Port *defaultPort = new Port("","");
+            outPorts.push_back(defaultPort);
+        }
     }
 
     QueryExecution::~QueryExecution() {
@@ -123,8 +127,10 @@ namespace db_agg {
 
     void QueryExecution::receive(string name, shared_ptr<TableData> data) {
         LOG_DEBUG("receive data " << name << " [depsize=" << inPorts.size() << "]");
+        LOG_DEBUG("available ports:");
         Port *dep = nullptr;
         for (auto inPort:inPorts) {
+            LOG_DEBUG("port = '" << inPort->getName() << "'");
             if (inPort->getName() == name) {
                 dep = inPort;
             }
@@ -195,7 +201,7 @@ namespace db_agg {
     }
 
     void QueryExecution::setState(QueryExecutionState state) {
-        LOG_DEBUG("set state of '" << getName() << "' to " << state);
+        LOG_DEBUG("set state of '" << getName() << "' to " << state << " current = " << this->state);
         if (this->state == state) {
             LOG_ERROR("state " << state << " is already set for execution '" << getName() << "'!");
             return;
