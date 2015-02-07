@@ -37,6 +37,11 @@ protected:
     Configuration config;
 
     virtual void SetUp() {
+        File testlink("/var/tmp/db_agg");
+        if (!testlink.exists()) {
+            File wd(".");
+            testlink.linkTo(wd);
+        }
         File rd("build/testresults/" + GetParam());
         if (rd.exists()) {
             if (!rd.rmdir()) {
