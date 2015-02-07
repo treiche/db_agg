@@ -12,7 +12,7 @@
 
 
 extern "C" {
-#include "curses.h"
+#include "cursesw.h"
 #include <signal.h>
 }
 
