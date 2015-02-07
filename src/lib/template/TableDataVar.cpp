@@ -8,11 +8,14 @@
 
 #include "TableDataVar.h"
 #include "utils/string.h"
+#include "utils/logging.h"
 
 using namespace std;
 
 
 namespace db_agg {
+
+DECLARE_LOGGER("TableDataVar")
 
 TableDataVar::TableDataVar(shared_ptr<TableData> table): table(table) {}
 
@@ -53,6 +56,7 @@ VarType TableDataVar::type(string path) {
 			}
 		}
 	}
+	THROW_EXC("variable '" << path << "' has unknown type");
 }
 
 string TableDataVar::get_string(string path) {
@@ -71,7 +75,7 @@ string TableDataVar::get_string(string path) {
 }
 
 bool TableDataVar::get_bool(string path) {
-
+    THROW_EXC("not supported yet");
 }
 
 int TableDataVar::get_integer(string path) {
@@ -83,10 +87,11 @@ int TableDataVar::get_integer(string path) {
 			return table->getColumns()[idx].second;
 		}
 	}
+    THROW_EXC("get_integer for var '" << path << "' not supported yet");
 }
 
 double TableDataVar::get_double(string path) {
-
+    THROW_EXC("not supported yet");
 }
 
 

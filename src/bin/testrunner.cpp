@@ -45,7 +45,7 @@ string findTestDir(string homeDir) {
         return sameDir;
     } else {
         // search one level up
-        int idx = homeDir.rfind("/");
+        string::size_type idx = homeDir.rfind("/");
         if (idx == string::npos) {
             throw runtime_error("can't find test directory");
         }

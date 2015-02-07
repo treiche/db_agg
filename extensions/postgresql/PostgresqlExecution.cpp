@@ -31,6 +31,8 @@ bool PostgresqlExecution::process() {
             communicate();
             return true;
             break;
+        case ConnectionState::FAILED:
+            break;
     }
     return false;
 }

@@ -148,7 +148,7 @@ void JsonVar::createList(std::string path) {
 	auto idx = path.rfind(".");
 	string parentPath = path.substr(0,idx);
 	string childName = path.substr(idx + 1, path.size() - idx - 1);
-	any& parent = get(parentPath);
+	// any& parent = get(parentPath);
 }
 
 void JsonVar::fromJson(std::string path, json_t *json) {
@@ -354,7 +354,7 @@ ostream& operator<<(ostream& os, any value) {
 	} else if (value.type() == typeid(map<string,any>)) {
 		os << "{";
 		map<string,any>& v = any_cast<map<string,any>&>(value);
-		int len = v.size();
+		size_t len = v.size();
 		size_t idx = 0;
 		for (auto& p:v) {
 			os << p.first << ":" << p.second;

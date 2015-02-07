@@ -93,7 +93,7 @@ bool DbAggProcessingApi::run(bool async) {
         pImpl->t = new std::thread(&Application::run,pImpl->app);
         pImpl->t->detach();
     } else {
-        bool done = pImpl->app->run();
+        return pImpl->app->run();
     }
     return true;
 }
