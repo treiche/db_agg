@@ -3,7 +3,7 @@
 
 .PHONY: override_dh_strip
 override_dh_strip:
-	dh_strip --dbg-package=db-agg-dbg
+	dh_strip --dbg-package=libdb-agg-dbg
 
 multiarch=$(shell /usr/bin/dpkg-architecture -qDEB_HOST_MULTIARCH)
 
@@ -16,7 +16,8 @@ override_dh_auto_configure:
        -Dinfodir="/usr/share/info"\
        -Dsysconfdir="/etc"\
        -Dlocalstatedir="/var"\
-       -Dlibdir=/usr/lib/$(multiarch)
+       -Dmultiarchlibdir=/usr/lib/$(multiarch) \
+       -Dlibdir=/usr/lib
 
 %:
 	dh $@ --buildsystem=cmake

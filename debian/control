@@ -8,7 +8,7 @@ Homepage: https://github.com/zalando/db_agg
 #Vcs-Git: git://git.debian.org/collab-maint/db-agg.git
 #Vcs-Browser: http://git.debian.org/?p=collab-maint/db-agg.git;a=summary
 
-Package: db-agg
+Package: libdb-agg
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Pre-Depends: ${misc:Pre-Depends}
@@ -18,27 +18,71 @@ Description: join multiple datasources with a single query
  consisting of multiple common table expressions (WITH statements) 
  that are referring to different databases.
 
-Package: db-agg-dev
+Package: db-agg
 Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, libdb-agg (= ${binary:Version})
+Pre-Depends: ${misc:Pre-Depends}
+Multi-Arch: same
+Description: db_agg command line client
+
+Package: libdb-agg-dev
+Architecture: any
+Section: libdevel
 Multi-Arch: same
 Depends:
-    db-agg (= ${binary:Version}),
+    libdb-agg (= ${binary:Version}),
     ${misc:Depends}
 Description: join multiple datasources with a single query
  db_agg is a commandline tool which processes a single postgres sql query
  consisting of multiple common table expressions (WITH statements) 
  that are referring to different databases.
 
-Package: db-agg-dbg
+Package: libdb-agg-dbg
 Section: debug
 Priority: extra
 Architecture: any
 Multi-Arch: same
 Depends:
-    db-agg (= ${binary:Version}),
+    libdb-agg (= ${binary:Version}),
     ${misc:Depends}
 Description: join multiple datasources with a single query
  db_agg is a commandline tool which processes a single postgres sql query
  consisting of multiple common table expressions (WITH statements)
  that are referring to different databases.
  This package provides the debugging symbols for db_agg.
+
+Package: db-agg-sqlite3
+Architecture: any
+Multi-Arch: same
+Depends:
+    libdb-agg (= ${binary:Version}),
+    ${misc:Depends},
+    ${shlibs:Depends}
+Description: db_agg sqlite3 extension
+
+Package: db-agg-postgresql
+Architecture: any
+Multi-Arch: same
+Depends:
+    libdb-agg (= ${binary:Version}),
+    ${misc:Depends},
+    ${shlibs:Depends}
+Description: db_agg postgresql extension
+
+Package: db-agg-soap
+Architecture: any
+Multi-Arch: same
+Depends:
+    libdb-agg (= ${binary:Version}),
+    ${misc:Depends},
+    ${shlibs:Depends}
+Description: db_agg soap extension
+
+Package: db-agg-memcached
+Architecture: any
+Multi-Arch: same
+Depends:
+    libdb-agg (= ${binary:Version}),
+    ${misc:Depends},
+    ${shlibs:Depends}
+Description: db_agg memcached extension
