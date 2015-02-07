@@ -47,6 +47,8 @@ class CLDef:
         for el in root:
             if el.tag == "name":
                 self.data["name"] = el.text
+            if el.tag == "default":
+                self.data["default"] = el.text
             if el.tag == "bean":
                 self.data["bean"] = el.text
             if el.tag == "parser":
@@ -109,6 +111,7 @@ parser.add_argument('clidef', help='the cli definition file')
 parser.add_argument('-b','--bean-output-dir', help='the output directory for the bean class')
 parser.add_argument('-p','--parser-output-dir', help='the output directory for the parser class')
 parser.add_argument('-a','--asciidoc-output-dir', help='the output directory for the asciidoc file')
+parser.add_argument('-g','--gtk-output-dir', help='the output directory for the gtk builder file')
 args = parser.parse_args()
 
 clidef = CLDef(args.clidef)
@@ -126,4 +129,6 @@ if args.parser_output_dir:
 if args.asciidoc_output_dir:
     outputFile = args.asciidoc_output_dir + "/cli.asciidoc"
     createTemplate(clidef, outputFile, "cli.asciidoc.jinja")
-    
+if args.gtk_output_dir:
+    outputFile = args.gtk_output_dir + "/configDialog.xml"
+    createTemplate(clidef, outputFile, "gtk.builder.jinja")
