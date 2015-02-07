@@ -12,7 +12,6 @@
     </execution>
 
     <execution name="target" type="sqlite3">
-        <url>../data/local_unsharded_db.sqlite3</url>
         <query>
             select ad.code, ad.name 
               from article as ad
@@ -22,6 +21,5 @@
                 by ad.code
         </query>
     </execution>
-
 
 </queries>

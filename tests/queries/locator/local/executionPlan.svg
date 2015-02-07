@@ -33,18 +33,18 @@
 <text text-anchor="start" x="24" y="-82.4" font-family="Courier new" font-size="7.00">select article_code, price</text>
 <text text-anchor="start" x="24" y="-74.4" font-family="Courier new" font-size="7.00">              from price</text>
 </g>
-<!-- c817c43a1b8cd7b4efabcd5d982f5bd1 -->
-<g id="node2" class="node"><title>c817c43a1b8cd7b4efabcd5d982f5bd1</title>
+<!-- 4c8b39c9f26b12c49642a75899143799 -->
+<g id="node2" class="node"><title>4c8b39c9f26b12c49642a75899143799</title>
 <polygon fill="yellow" stroke="black" points="104,-33.5 42,-33.5 42,-16.5 104,-16.5 104,-33.5"/>
 <text text-anchor="middle" x="73" y="-26.7" font-family="Times,serif" font-size="8.50">one_shard$3</text>
 </g>
-<!-- 30fd5a7a417bfe21c855cb7fa65d1125 -->
-<g id="node9" class="node"><title>30fd5a7a417bfe21c855cb7fa65d1125</title>
+<!-- 27b0613097593a8bd971e608d25aac8b -->
+<g id="node9" class="node"><title>27b0613097593a8bd971e608d25aac8b</title>
 <polygon fill="yellow" stroke="black" points="283.5,-33.5 212.5,-33.5 212.5,-16.5 283.5,-16.5 283.5,-33.5"/>
 <text text-anchor="middle" x="248" y="-26.7" font-family="Times,serif" font-size="8.50">join_one_shard</text>
 </g>
-<!-- c817c43a1b8cd7b4efabcd5d982f5bd1&#45;&gt;30fd5a7a417bfe21c855cb7fa65d1125 -->
-<g id="edge1" class="edge"><title>c817c43a1b8cd7b4efabcd5d982f5bd1&#45;&gt;30fd5a7a417bfe21c855cb7fa65d1125</title>
+<!-- 4c8b39c9f26b12c49642a75899143799&#45;&gt;27b0613097593a8bd971e608d25aac8b -->
+<g id="edge1" class="edge"><title>4c8b39c9f26b12c49642a75899143799&#45;&gt;27b0613097593a8bd971e608d25aac8b</title>
 <path fill="none" stroke="black" d="M104.134,-25C131.271,-25 171.516,-25 202.383,-25"/>
 <polygon fill="black" stroke="black" points="202.459,-28.5001 212.459,-25 202.458,-21.5001 202.459,-28.5001"/>
 <text text-anchor="middle" x="184.459" y="-13.8" font-family="Times,serif" font-size="14.00">one_shard</text>
@@ -57,33 +57,33 @@
 <text text-anchor="start" x="24" y="-310.4" font-family="Courier new" font-size="7.00">select price, article_code</text>
 <text text-anchor="start" x="24" y="-302.4" font-family="Courier new" font-size="7.00">              from price</text>
 </g>
-<!-- 9a3cfbf2b70ccbbcc1f17b3455dc84ec -->
-<g id="node4" class="node"><title>9a3cfbf2b70ccbbcc1f17b3455dc84ec</title>
+<!-- e7583a34e167d9773ab7743b9a581706 -->
+<g id="node4" class="node"><title>e7583a34e167d9773ab7743b9a581706</title>
 <polygon fill="yellow" stroke="black" points="103,-261.5 43,-261.5 43,-244.5 103,-244.5 103,-261.5"/>
 <text text-anchor="middle" x="73" y="-254.7" font-family="Times,serif" font-size="8.50">all_shards_1</text>
 </g>
-<!-- b3e115637851bef71ac25d94f67426c2 -->
-<g id="node5" class="node"><title>b3e115637851bef71ac25d94f67426c2</title>
+<!-- cf2a6c1efe56f71d3a73b1eec962340d -->
+<g id="node5" class="node"><title>cf2a6c1efe56f71d3a73b1eec962340d</title>
 <polygon fill="yellow" stroke="black" points="103,-226.5 43,-226.5 43,-209.5 103,-209.5 103,-226.5"/>
 <text text-anchor="middle" x="73" y="-219.7" font-family="Times,serif" font-size="8.50">all_shards_2</text>
 </g>
-<!-- b96cbc1ad05df3f33ba2fc433f530802 -->
-<g id="node6" class="node"><title>b96cbc1ad05df3f33ba2fc433f530802</title>
+<!-- f3201e301239ba1371b2870f5c02edf5 -->
+<g id="node6" class="node"><title>f3201e301239ba1371b2870f5c02edf5</title>
 <polygon fill="yellow" stroke="black" points="103,-191.5 43,-191.5 43,-174.5 103,-174.5 103,-191.5"/>
 <text text-anchor="middle" x="73" y="-184.7" font-family="Times,serif" font-size="8.50">all_shards_3</text>
 </g>
-<!-- 669c33390dae992d552f8823bd22eba9 -->
-<g id="node7" class="node"><title>669c33390dae992d552f8823bd22eba9</title>
+<!-- 22a2a76bf7940c9dd8e6295e8816ee26 -->
+<g id="node7" class="node"><title>22a2a76bf7940c9dd8e6295e8816ee26</title>
 <polygon fill="yellow" stroke="black" points="103,-156.5 43,-156.5 43,-139.5 103,-139.5 103,-156.5"/>
 <text text-anchor="middle" x="73" y="-149.7" font-family="Times,serif" font-size="8.50">all_shards_4</text>
 </g>
-<!-- a39dba6f57ecd5b2d55313c662d45d17 -->
-<g id="node11" class="node"><title>a39dba6f57ecd5b2d55313c662d45d17</title>
+<!-- fad7dc1d2538c44b8a0ec44803d8346d -->
+<g id="node11" class="node"><title>fad7dc1d2538c44b8a0ec44803d8346d</title>
 <polygon fill="yellow" stroke="black" points="286,-156.5 210,-156.5 210,-139.5 286,-139.5 286,-156.5"/>
 <text text-anchor="middle" x="248" y="-149.7" font-family="Times,serif" font-size="8.50">select_one_shard</text>
 </g>
-<!-- 669c33390dae992d552f8823bd22eba9&#45;&gt;a39dba6f57ecd5b2d55313c662d45d17 -->
-<g id="edge2" class="edge"><title>669c33390dae992d552f8823bd22eba9&#45;&gt;a39dba6f57ecd5b2d55313c662d45d17</title>
+<!-- 22a2a76bf7940c9dd8e6295e8816ee26&#45;&gt;fad7dc1d2538c44b8a0ec44803d8346d -->
+<g id="edge2" class="edge"><title>22a2a76bf7940c9dd8e6295e8816ee26&#45;&gt;fad7dc1d2538c44b8a0ec44803d8346d</title>
 <path fill="none" stroke="black" d="M103.347,-148C129.763,-148 169.052,-148 199.867,-148"/>
 <polygon fill="black" stroke="black" points="199.962,-151.5 209.962,-148 199.962,-144.5 199.962,-151.5"/>
 <text text-anchor="middle" x="175.462" y="-136.8" font-family="Times,serif" font-size="14.00">all_shards$4</text>

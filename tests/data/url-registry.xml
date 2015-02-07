@@ -37,7 +37,8 @@
             </host>
         </protocol>
         <protocol value="file">
-            <path value="/home/arnd/tmp/db_agg_installed/tests/data">
+            <path value=":memory:" type="sqlite3" worker="true"/>
+            <path value="/var/tmp/db_agg/tests/data">
                 <path ref="unsharded" value="local_unsharded_db.sqlite3">
                     <match regexp="(from|join)\s+article"/>
                 </path>

@@ -4,21 +4,21 @@ digraph plan {
     subgraph cluster_1 {
         label = "source [sqlite3]"
         "select code, name\l              from article\l             order\l                by 1\l" [fontsize=7.0, fontname="Courier new", shape=note]
-        "ebe7edca5b799432d2e4ff0d387cc166" [label="source", fillcolor=yellow, height=0.2, fontsize=8.5]
+        "e214a1681476d64d615c75aa9c5f7181" [label="source", fillcolor=yellow, height=0.2, fontsize=8.5]
     }
     subgraph cluster_2 {
         label = "target [sqlite3]"
         "select code, name, price\l              from price as p\l              join source as s\l                on p.article_code = s.code\l             order\l                by 1\l" [fontsize=7.0, fontname="Courier new", shape=note]
-        "791602fe0d91c07f320daee9b0397e28" [label="target_1", fillcolor=yellow, height=0.2, fontsize=8.5]
-        "c65dcfb02c70afb764a928a16947b4c0" [label="target_2", fillcolor=yellow, height=0.2, fontsize=8.5]
-        "a71cdc0b1bc025b6d593705f988b377a" [label="target_3", fillcolor=yellow, height=0.2, fontsize=8.5]
-        "f88f71492165a227ecd41ce5e8274cbf" [label="target_4", fillcolor=yellow, height=0.2, fontsize=8.5]
+        "8a60165abbe0407182f0974f153120a4" [label="target_1", fillcolor=yellow, height=0.2, fontsize=8.5]
+        "d1d252f638b01b32c3d82451e368caae" [label="target_2", fillcolor=yellow, height=0.2, fontsize=8.5]
+        "984f8ef934a7798a7e05c5095aaf34dc" [label="target_3", fillcolor=yellow, height=0.2, fontsize=8.5]
+        "2e6b70fa0e493624d6f6401031af4d3c" [label="target_4", fillcolor=yellow, height=0.2, fontsize=8.5]
     }
-        "92d5ef6f64f2e2be07b2bdf895a481e2" [label="source:splitted", fillcolor=yellow, height=0.2, fontsize=8.5]
-  "ebe7edca5b799432d2e4ff0d387cc166" -> "92d5ef6f64f2e2be07b2bdf895a481e2" [taillabel="", headlabel="source"]
-  "92d5ef6f64f2e2be07b2bdf895a481e2" -> "791602fe0d91c07f320daee9b0397e28" [taillabel="1", headlabel="source"]
-  "92d5ef6f64f2e2be07b2bdf895a481e2" -> "c65dcfb02c70afb764a928a16947b4c0" [taillabel="2", headlabel="source"]
-  "92d5ef6f64f2e2be07b2bdf895a481e2" -> "a71cdc0b1bc025b6d593705f988b377a" [taillabel="3", headlabel="source"]
-  "92d5ef6f64f2e2be07b2bdf895a481e2" -> "f88f71492165a227ecd41ce5e8274cbf" [taillabel="4", headlabel="source"]
+        "4af3ac1f657f69b5f151cc1a8d45e824" [label="source:splitted", fillcolor=yellow, height=0.2, fontsize=8.5]
+  "e214a1681476d64d615c75aa9c5f7181" -> "4af3ac1f657f69b5f151cc1a8d45e824" [taillabel="", headlabel="source"]
+  "4af3ac1f657f69b5f151cc1a8d45e824" -> "8a60165abbe0407182f0974f153120a4" [taillabel="1", headlabel="source"]
+  "4af3ac1f657f69b5f151cc1a8d45e824" -> "d1d252f638b01b32c3d82451e368caae" [taillabel="2", headlabel="source"]
+  "4af3ac1f657f69b5f151cc1a8d45e824" -> "984f8ef934a7798a7e05c5095aaf34dc" [taillabel="3", headlabel="source"]
+  "4af3ac1f657f69b5f151cc1a8d45e824" -> "2e6b70fa0e493624d6f6401031af4d3c" [taillabel="4", headlabel="source"]
 
 }

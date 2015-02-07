@@ -4,21 +4,21 @@ digraph plan {
     subgraph cluster_1 {
         label = "source [sqlite3]"
         "select article_code, price\l              from price\l             order\l                by 1\l" [fontsize=7.0, fontname="Courier new", shape=note]
-        "830643f4cfd4f509789ce6cb7bdd137e" [label="source_1", fillcolor=yellow, height=0.2, fontsize=8.5]
-        "dc57cdc520934445d53a94a1cbabc341" [label="source_2", fillcolor=yellow, height=0.2, fontsize=8.5]
-        "565961d9dce1ed85bfcb55639acbe43a" [label="source_3", fillcolor=yellow, height=0.2, fontsize=8.5]
-        "bc76f5049493a8818a20302cbff56420" [label="source_4", fillcolor=yellow, height=0.2, fontsize=8.5]
+        "90c9ad930e522eae58c40ebaab32e7d3" [label="source_1", fillcolor=yellow, height=0.2, fontsize=8.5]
+        "388455de0ca2e9550aeda5d2728198fe" [label="source_2", fillcolor=yellow, height=0.2, fontsize=8.5]
+        "e67f33561ac19a82c59879030c46f5cc" [label="source_3", fillcolor=yellow, height=0.2, fontsize=8.5]
+        "6c027227e7f3f7af54ce3d779d5c40cf" [label="source_4", fillcolor=yellow, height=0.2, fontsize=8.5]
     }
     subgraph cluster_2 {
         label = "target [sqlite3]"
         "select code, name, price\l              from source p\l              join article a\l                on p.article_code = a.code\l             order\l                by 1\l" [fontsize=7.0, fontname="Courier new", shape=note]
-        "254a9fd59f9efce487a86e16394ba393" [label="target", fillcolor=yellow, height=0.2, fontsize=8.5]
+        "2929846e39332f7d39163349daec174f" [label="target", fillcolor=yellow, height=0.2, fontsize=8.5]
     }
-        "7b3dca1bb8afa627f28a3913d970a0f9" [label="source:joined", fillcolor=yellow, height=0.2, fontsize=8.5]
-  "830643f4cfd4f509789ce6cb7bdd137e" -> "7b3dca1bb8afa627f28a3913d970a0f9" [taillabel="", headlabel="1"]
-  "dc57cdc520934445d53a94a1cbabc341" -> "7b3dca1bb8afa627f28a3913d970a0f9" [taillabel="", headlabel="2"]
-  "565961d9dce1ed85bfcb55639acbe43a" -> "7b3dca1bb8afa627f28a3913d970a0f9" [taillabel="", headlabel="3"]
-  "bc76f5049493a8818a20302cbff56420" -> "7b3dca1bb8afa627f28a3913d970a0f9" [taillabel="", headlabel="4"]
-  "7b3dca1bb8afa627f28a3913d970a0f9" -> "254a9fd59f9efce487a86e16394ba393" [taillabel="", headlabel="source"]
+        "60141408adcd5bb4ab0618d3d93cef0a" [label="source:joined", fillcolor=yellow, height=0.2, fontsize=8.5]
+  "90c9ad930e522eae58c40ebaab32e7d3" -> "60141408adcd5bb4ab0618d3d93cef0a" [taillabel="", headlabel="1"]
+  "388455de0ca2e9550aeda5d2728198fe" -> "60141408adcd5bb4ab0618d3d93cef0a" [taillabel="", headlabel="2"]
+  "e67f33561ac19a82c59879030c46f5cc" -> "60141408adcd5bb4ab0618d3d93cef0a" [taillabel="", headlabel="3"]
+  "6c027227e7f3f7af54ce3d779d5c40cf" -> "60141408adcd5bb4ab0618d3d93cef0a" [taillabel="", headlabel="4"]
+  "60141408adcd5bb4ab0618d3d93cef0a" -> "2929846e39332f7d39163349daec174f" [taillabel="", headlabel="source"]
 
 }
