@@ -24,21 +24,21 @@ protected:
     TableData();
 public:
     virtual ~TableData();
-    virtual uint64_t getRowCount();
-    virtual uint32_t getColCount();
-    virtual std::vector<ColDef>& getColumns();
+    virtual uint64_t getRowCount() const;
+    virtual uint32_t getColCount() const;
+    virtual const std::vector<ColDef>& getColumns() const;
     virtual void appendRaw(void *data, uint64_t size) = 0;
-    virtual void getRows(uint64_t startRow, uint64_t rows, std::vector<DataChunk>& chunks) = 0;
+    virtual void getRows(uint64_t startRow, uint64_t rows, std::vector<DataChunk>& chunks) const = 0;
     virtual void save(std::string filePath);
-    virtual std::string calculateMD5Sum() = 0;
-    virtual std::string toSqlValues();
-    virtual std::string toColumnDefinitions();
-    virtual DataChunk getColumn(uint64_t row, uint32_t col) = 0;
+    virtual std::string calculateMD5Sum() const = 0;
+    virtual std::string toSqlValues() const;
+    virtual std::string toColumnDefinitions() const;
+    virtual DataChunk getColumn(uint64_t row, uint32_t col) const = 0;
     virtual void addRow(std::vector<std::string> row);
-    uint32_t getColumnIndex(std::string colName);
-    ColDef getColumn(std::string colName);
-    bool hasColumn(std::string colName);
-    std::string getValue(uint64_t row, uint32_t col);
+    uint32_t getColumnIndex(std::string colName) const;
+    ColDef getColumn(std::string colName) const;
+    bool hasColumn(std::string colName) const;
+    std::string getValue(uint64_t row, uint32_t col) const;
 };
 }
 

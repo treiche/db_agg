@@ -53,7 +53,7 @@ void ExtendedTableData::appendRaw(void *data, uint64_t size) {
     throw runtime_error("appendRaw not supported");
 }
 
-void ExtendedTableData::getRows(uint64_t startRow, uint64_t rows, std::vector<DataChunk>& chunks) {
+void ExtendedTableData::getRows(uint64_t startRow, uint64_t rows, std::vector<DataChunk>& chunks) const {
     DataChunk delimiter((char*)"\t",1);
     DataChunk eol((char*)"\n",1);
     for (uint64_t row = startRow; row < startRow + rows; row++) {
@@ -72,11 +72,11 @@ void ExtendedTableData::save(string filePath) {
     TableData::save(filePath);
 }
 
-string ExtendedTableData::calculateMD5Sum() {
+string ExtendedTableData::calculateMD5Sum() const {
     throw runtime_error("calculateMD5Sum not supported");
 }
 
-DataChunk ExtendedTableData::getColumn(uint64_t row, uint32_t col) {
+DataChunk ExtendedTableData::getColumn(uint64_t row, uint32_t col) const {
     return colRefs[col].getTable()->getColumn(row,colRefs[col].getColIdx());
 }
 

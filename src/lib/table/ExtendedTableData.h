@@ -25,10 +25,10 @@ private:
 public:
     virtual ~ExtendedTableData();
     virtual void appendRaw(void *data, uint64_t size) override;
-    virtual void getRows(uint64_t startRow, uint64_t rows, std::vector<DataChunk>& chunks) override;
+    virtual void getRows(uint64_t startRow, uint64_t rows, std::vector<DataChunk>& chunks) const override;
     virtual void save(std::string filePath) override;
-    virtual std::string calculateMD5Sum() override;
-    virtual DataChunk getColumn(uint64_t row, uint32_t col) override;
+    virtual std::string calculateMD5Sum() const override;
+    virtual DataChunk getColumn(uint64_t row, uint32_t col) const override;
     friend class TableDataFactory;
 };
 }

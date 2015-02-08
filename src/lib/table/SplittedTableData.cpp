@@ -27,7 +27,7 @@ void SplittedTableData::appendRaw(void *data, uint64_t size) {
     throw runtime_error("appendRaw not supported");
 }
 
-void SplittedTableData::getRows(uint64_t startRow, uint64_t count, std::vector<DataChunk>& chunks) {
+void SplittedTableData::getRows(uint64_t startRow, uint64_t count, std::vector<DataChunk>& chunks) const {
     for (uint64_t row = startRow; row < startRow + count; row++) {
         source->getRows(rows[row],1,chunks);
     }
@@ -38,11 +38,11 @@ void SplittedTableData::save(string filePath) {
     TableData::save(filePath);
 }
 
-string SplittedTableData::calculateMD5Sum() {
+string SplittedTableData::calculateMD5Sum() const {
     throw runtime_error("calculateMD5Sum not supported");
 }
 
-DataChunk SplittedTableData::getColumn(uint64_t row, uint32_t col) {
+DataChunk SplittedTableData::getColumn(uint64_t row, uint32_t col) const {
     return source->getColumn(rows[row], col);
 }
 

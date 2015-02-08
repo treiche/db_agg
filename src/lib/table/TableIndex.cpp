@@ -48,7 +48,7 @@ void TableIndex::load(std::string fileName) {
     is.close();
 }
 
-uint64_t TableIndex::getOffset(uint64_t row, uint32_t col) {
+uint64_t TableIndex::getOffset(uint64_t row, uint32_t col) const {
     assert(row < rowCount);
     assert(col < colCount);
     return offsets[(row * colCount) + col];

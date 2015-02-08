@@ -29,7 +29,7 @@ void TableDataRange::appendRaw(void *data, uint64_t size) {
     throw runtime_error("appendRaw not supported");
 }
 
-void TableDataRange::getRows(uint64_t startRow, uint64_t count, std::vector<DataChunk>& chunks) {
+void TableDataRange::getRows(uint64_t startRow, uint64_t count, std::vector<DataChunk>& chunks) const {
     for (uint64_t row = startRow; row < startRow + count; row++) {
         LOG_ERROR("getRows(" << row << ")");
         source->getRows(this->startRow + startRow,1,chunks);
@@ -41,11 +41,11 @@ void TableDataRange::save(string filePath) {
     TableData::save(filePath);
 }
 
-string TableDataRange::calculateMD5Sum() {
+string TableDataRange::calculateMD5Sum() const {
     throw runtime_error("calculateMD5Sum not supported");
 }
 
-DataChunk TableDataRange::getColumn(uint64_t row, uint32_t col) {
+DataChunk TableDataRange::getColumn(uint64_t row, uint32_t col) const {
     return source->getColumn(this->startRow + row, col);
 }
 

@@ -16,11 +16,11 @@ ColRef::ColRef(std::shared_ptr<TableData> table, uint32_t colIdx):
         colIdx(colIdx) {}
 
 
-shared_ptr<TableData> ColRef::getTable() {
+shared_ptr<TableData> ColRef::getTable() const {
     return table;
 }
 
-uint32_t ColRef::getColIdx() {
+uint32_t ColRef::getColIdx() const {
     return colIdx;
 }
 

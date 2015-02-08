@@ -52,6 +52,7 @@ namespace db_agg {
 
     CsvTableData::CsvTableData(string csvFile) {
         fileName = csvFile;
+        readData();
     }
 
     CsvTableData::~CsvTableData() {
@@ -61,8 +62,7 @@ namespace db_agg {
         }
     }
 
-    string CsvTableData::calculateMD5Sum() {
-        loadOnDemand("calculateMD5Sum");
+    string CsvTableData::calculateMD5Sum() const {
         MD5 digest;
         string cols;
         for (uint32_t idx = 0;idx < getColCount(); idx++) {
@@ -80,22 +80,15 @@ namespace db_agg {
         return digest.hexdigest();
     }
 
-    uint64_t CsvTableData::getRowCount() {
-        loadOnDemand("getRowCount");
+    uint64_t CsvTableData::getRowCount() const {
         return TableData::getRowCount();
     }
 
-    uint32_t CsvTableData::getColCount() {
-        if (data == nullptr && !fileName.empty() && getColumns().empty()) {
-            loadColumns();
-        }
+    uint32_t CsvTableData::getColCount() const {
         return TableData::getColCount();
     }
 
-    vector<ColDef>& CsvTableData::getColumns() {
-        if (data == nullptr && !fileName.empty() && TableData::getColumns().empty()) {
-            loadColumns();
-        }
+    const vector<ColDef>& CsvTableData::getColumns() const {
         return TableData::getColumns();
     }
 
@@ -119,6 +112,7 @@ namespace db_agg {
     }
 
     void CsvTableData::readData() {
+        cout << "load data " << fileName << endl;
         LOG_DEBUG("load file " << fileName);
         LOG_DEBUG("read data from file '" << fileName << "'");
         ifstream is{fileName,ios::in | ios::binary | ios::ate};
@@ -190,7 +184,10 @@ namespace db_agg {
     }
 
     void CsvTableData::readColumns(string firstLine) {
-        TableData::getColumns().clear();
+        if (TableData::getColumns().size() > 0) {
+            LOG_WARN("read columns called again");
+            return;
+        }
         LOG_DEBUG("firstLine = " << firstLine);
         vector<string> cols;
         vector<ColDef> colDefs;
@@ -219,11 +216,9 @@ namespace db_agg {
                 typeId = ti->oid;
             }
             LOG_DEBUG("push column " << name << "[" << typeId << "]");
-            //columns.push_back(pair<string,uint32_t>(name,typeId));
             colDefs.push_back(ColDef(name,typeId));
         }
         LOG_DEBUG("found " << colDefs.size() << " columns");
-        //colCount = columns.size();
         setColumns(colDefs);
     }
 
@@ -275,9 +270,9 @@ namespace db_agg {
         }
     }
 
-    void CsvTableData::getRows(uint64_t startRow, uint64_t rows, std::vector<DataChunk>& chunks) {
+    void CsvTableData::getRows(uint64_t startRow, uint64_t rows, std::vector<DataChunk>& chunks) const {
         assert(startRow + rows <= getRowCount());
-        loadOnDemand("getRows");
+        // loadOnDemand("getRows");
         uint64_t startOffset = index.getOffset(startRow,0);
         uint64_t endOffset = 0;
         if (startRow + rows == getRowCount()) {
@@ -288,14 +283,7 @@ namespace db_agg {
         chunks.push_back(DataChunk(data + startOffset, endOffset - startOffset));
     }
 
-    inline void CsvTableData::loadOnDemand(string reason) {
-        if (data == nullptr && !fileName.empty()) {
-            LOG_DEBUG("load on demand -> " << reason);
-            readData();
-        }
-    }
-
-    DataChunk CsvTableData::getColumn(uint64_t row, uint32_t col) {
+    DataChunk CsvTableData::getColumn(uint64_t row, uint32_t col) const {
         uint64_t startIndex = index.getOffset(row,col);
         int len = 0;
         while (data[startIndex+len] != '\n' && data[startIndex+len] != '\t' && startIndex+len < size) {

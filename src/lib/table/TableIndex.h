@@ -23,13 +23,13 @@ public:
     void setRowCount(uint64_t rowCount) {
         this->rowCount = rowCount;
     }
-    uint64_t getRowCount() {
+    uint64_t getRowCount() const {
         return rowCount;
     }
     void setColCount(uint32_t colCount) {
         this->colCount = colCount;
     }
-    uint64_t getColCount() {
+    uint64_t getColCount() const {
         return colCount;
     }
     void save(std::string fileName);
@@ -39,7 +39,7 @@ public:
         rowCount = 0;
         colCount = 0;
     }
-    uint64_t getOffset(uint64_t row, uint32_t col);
+    uint64_t getOffset(uint64_t row, uint32_t col) const;
 };
 }
 

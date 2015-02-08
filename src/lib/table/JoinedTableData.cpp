@@ -36,7 +36,7 @@ void JoinedTableData::appendRaw(void *data, uint64_t size) {
     throw runtime_error("not supported");
 }
 
-void JoinedTableData::getRows(uint64_t startRow, uint64_t rows, std::vector<DataChunk>& chunks) {
+void JoinedTableData::getRows(uint64_t startRow, uint64_t rows, std::vector<DataChunk>& chunks) const {
    for (uint64_t row = startRow; row < startRow + rows; row++) {
        int sourceIdx;
        uint64_t relRow;
@@ -50,11 +50,11 @@ void JoinedTableData::save(string filePath) {
 	TableData::save(filePath);
 }
 
-string JoinedTableData::calculateMD5Sum() {
+string JoinedTableData::calculateMD5Sum() const {
     throw runtime_error("not supported");
 }
 
-void JoinedTableData::calculateRelativeRow(uint64_t row,int& sourceIdx,uint64_t& relativeRow) {
+void JoinedTableData::calculateRelativeRow(uint64_t row,int& sourceIdx,uint64_t& relativeRow) const {
     for (size_t idx=0;idx<offsets.size()-1;idx++) {
         uint64_t offset = offsets[idx];
         if (row >= offset && row < offsets[idx+1]) {
@@ -69,7 +69,7 @@ void JoinedTableData::calculateRelativeRow(uint64_t row,int& sourceIdx,uint64_t&
     throw runtime_error("row out of bounds");
 }
 
-DataChunk JoinedTableData::getColumn(uint64_t row, uint32_t col) {
+DataChunk JoinedTableData::getColumn(uint64_t row, uint32_t col) const {
     int sourceIdx;
     uint64_t relRow;
     calculateRelativeRow(row, sourceIdx, relRow);

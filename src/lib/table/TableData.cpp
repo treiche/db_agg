@@ -36,25 +36,25 @@ void TableData::setRowCount(uint64_t rowCount) {
     this->rowCount = rowCount;
 }
 
-uint64_t TableData::getRowCount() {
+uint64_t TableData::getRowCount() const {
     return rowCount;
 }
 
-uint32_t TableData::getColCount()  {
+uint32_t TableData::getColCount() const {
     return colCount;
 }
 
-void TableData::setColumns(std::vector<ColDef> columns) {
+void TableData::setColumns(const vector<ColDef> columns) {
     this->columns = columns;
     this->colCount = columns.size();
 }
 
 
-vector<ColDef>& TableData::getColumns() {
+const vector<ColDef>& TableData::getColumns() const {
     return columns;
 }
 
-string TableData::getValue(uint64_t row, uint32_t col) {
+string TableData::getValue(uint64_t row, uint32_t col) const {
     DataChunk chunk = getColumn(row,col);
     return string(chunk.getPtr(),chunk.getSize());
 }
@@ -83,7 +83,7 @@ void TableData::save(std::string filePath) {
     os.close();
 }
 
-string TableData::toSqlValues() {
+string TableData::toSqlValues() const {
     string values;
     size_t rows = getRowCount();
     size_t cols = getColCount();
@@ -134,7 +134,7 @@ string TableData::toSqlValues() {
     return values;
 }
 
-std::string TableData::toColumnDefinitions() {
+std::string TableData::toColumnDefinitions() const {
     string sql;
     auto cols = getColumns();
     size_t len = cols.size();
@@ -159,7 +159,7 @@ std::string TableData::toColumnDefinitions() {
     return sql;
 }
 
-uint32_t TableData::getColumnIndex(string colName) {
+uint32_t TableData::getColumnIndex(string colName) const {
     for (uint32_t idx = 0; idx < columns.size(); idx++) {
         if (columns[idx].first == colName) {
             return idx;
@@ -172,7 +172,7 @@ uint32_t TableData::getColumnIndex(string colName) {
     THROW_EXC("column with name '" << colName << "' not found. available columns: " << join(availableColumns,","));
 }
 
-ColDef TableData::getColumn(string colName) {
+ColDef TableData::getColumn(string colName) const {
     return getColumns()[getColumnIndex(colName)];
 }
 
@@ -180,7 +180,7 @@ void TableData::addRow(std::vector<std::string> row) {
     throw runtime_error("not supported");
 }
 
-bool TableData::hasColumn(std::string colName) {
+bool TableData::hasColumn(std::string colName) const {
     for (uint32_t idx = 0; idx < columns.size(); idx++) {
         if (columns[idx].first == colName) {
             return true;

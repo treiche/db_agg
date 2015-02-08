@@ -18,8 +18,8 @@ private:
     uint32_t colIdx;
 public:
     ColRef(std::shared_ptr<TableData> table, uint32_t colIdx);
-    std::shared_ptr<TableData> getTable();
-    uint32_t getColIdx();
+    std::shared_ptr<TableData> getTable() const;
+    uint32_t getColIdx() const;
 };
 
 
