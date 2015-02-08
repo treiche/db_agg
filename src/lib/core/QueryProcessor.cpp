@@ -233,9 +233,11 @@ void QueryProcessor::outputResult(QueryExecution& result) {
     LOG_DEBUG("doTransitions");
     //vector<Channel*> outputChannels = executionGraph.getOutputChannels(&result);
     for (auto channel:result.getChannels()) {
-        channel->open();
-        channel->send(result.getResult(channel->getSourcePort()));
-        channel->close();
+        if (channel->getTarget()->getState() != QueryExecutionState::DONE) {
+            channel->open();
+            channel->send(result.getResult(channel->getSourcePort()));
+            channel->close();
+        }
     }
     LOG_DEBUG("cacheItem " << result.getId());
     cacheItem(result);
