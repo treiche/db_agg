@@ -60,7 +60,7 @@ protected:
         config.setDisableCache(true);
         config.setCacheDir("build/testresults/cache");
         config.setCopyThreshold(100000);
-        config.setExtensionDir(TEST_DATA_DIR + "/../extensions");
+        config.setExtensionDir("extensions");
         config.setOutputDir("build/testresults");
         config.setDontExecute(false);
 

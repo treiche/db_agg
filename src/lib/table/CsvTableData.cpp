@@ -112,7 +112,6 @@ namespace db_agg {
     }
 
     void CsvTableData::readData() {
-        cout << "load data " << fileName << endl;
         LOG_DEBUG("load file " << fileName);
         LOG_DEBUG("read data from file '" << fileName << "'");
         ifstream is{fileName,ios::in | ios::binary | ios::ate};
