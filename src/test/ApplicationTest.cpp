@@ -15,31 +15,22 @@
 #include "sharding/MD5ShardingStrategy.h"
 #include "sharding/ModuloShardingStrategy.h"
 
+#include "utils/Diff.h"
+
 using namespace std;
 using namespace db_agg;
 using namespace testing;
 
-static bool system_diff(std::string path1, std::string path2) {
-    string cmd = "diff  -r " + path1 + " " + path2;
-    int exitCode = system(cmd.c_str());
-
-    if (exitCode == 0) {
-        return true;
-    }
-    cout << "diff exit code = " << exitCode << endl;
-    return false;
-}
-
-
 class ApplicationTest: public ::testing::Test, public ::testing::WithParamInterface<string> {
 protected:
+    string RESULT_DIR = "build/testresults/";
     Application& app = *new Application();
     Configuration config;
 
     virtual void SetUp() {
         File testlink("/var/tmp/db_agg");
         if (!testlink.exists()) {
-            File wd(".");
+            File wd(TEST_DATA_DIR + "/..");
             testlink.linkTo(wd);
         }
         File rd("build/testresults/" + GetParam());
@@ -69,7 +60,7 @@ protected:
         });
     }
 
-    void runQuery(string queryFile) {
+    bool runQuery(string queryFile) {
         /*
         vector<string> keys = {"JEA","TSH","SHO","SCA","RIN","BAL","PAN","HAT"};
         MD5ShardingStrategy md5ss;
@@ -80,9 +71,7 @@ protected:
         */
         config.setQueryFile(queryFile);
         app.bootstrap(config);
-        bool success = app.run();
-        ASSERT_TRUE(success) << "running query failed";
-        ASSERT_TRUE(system_diff("build/testresults/" + GetParam(), TEST_DATA_DIR + "/queries/" + GetParam()));
+        return app.run();
     }
 
 };
@@ -95,8 +84,28 @@ INSTANTIATE_TEST_CASE_P(TestQueries, ApplicationTest,
 
 
 TEST_P(ApplicationTest, SmokeTest) {
-    runQuery(TEST_DATA_DIR + "/queries/" + GetParam() + ".xml");
+    bool success = runQuery(TEST_DATA_DIR + "/queries/" + GetParam() + ".xml");
+    ASSERT_TRUE(success) << "running query failed";
+    // ASSERT_TRUE(system_diff(RESULT_DIR + GetParam(), TEST_DATA_DIR + "/queries/" + GetParam(),""));
+    Diff diff{RESULT_DIR + GetParam(),TEST_DATA_DIR + "/queries/" + GetParam()};
+    ASSERT_TRUE(diff.compare(".*\\.svg")) << "result differs";
 }
 
-
+TEST_P(ApplicationTest, RunTwice) {
+    runQuery(TEST_DATA_DIR + "/queries/" + GetParam() + ".xml");
+    if (GetParam() == "one_to_one") {
+        cout << "remove source" << endl;
+        // target
+        //File f(RESULT_DIR + "cache/5bb5a2805f9c6bd32693989cdf52648c.csv");
+        // source
+        File f(RESULT_DIR + "cache/038f34c63f94a6ab560326884fa27d80.csv");
+        f.remove();
+    }
+    config.setDisableCache(false);
+    bool success = runQuery(TEST_DATA_DIR + "/queries/" + GetParam() + ".xml");
+    ASSERT_TRUE(success) << "running query failed";
+    Diff diff{RESULT_DIR + GetParam(),TEST_DATA_DIR + "/queries/" + GetParam()};
+    ASSERT_TRUE(diff.compare(".*\\.[svg|dot]"));
+    ASSERT_FALSE(diff.compare(".*\\.csv"));
+}
 

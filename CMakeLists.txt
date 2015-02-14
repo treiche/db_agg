@@ -148,3 +148,5 @@ install(FILES src/lib/db_agg.h "${PROJECT_BINARY_DIR}/installation.h" DESTINATIO
 
 enable_testing()
 add_test(NAME testrunner COMMAND testrunner --gtest_filter=TestQueries/ApplicationTest.SmokeTest/*)
+add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND}
+                  DEPENDS testrunner)

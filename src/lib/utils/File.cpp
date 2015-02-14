@@ -29,9 +29,10 @@ DECLARE_LOGGER("File");
 File::File(string path) : path(path) {
 }
 
-File::FileType File::getType() {
+File::FileType File::getType() const {
     struct stat info;
     int ret = stat(path.c_str(), &info);
+    // cout << "stat " << path << " returned " << ret << endl;
     if (ret==-1) {
         ret = lstat(path.c_str(), &info);
         if (ret == -1) {
@@ -48,7 +49,7 @@ File::FileType File::getType() {
     throw runtime_error("unhandled file type " + info.st_mode);
 }
 
-bool File::exists() {
+bool File::exists() const {
     struct stat info;
     int ret = stat(path.c_str(), &info);
     if (ret == 0) {
@@ -57,7 +58,7 @@ bool File::exists() {
     return false;
 }
 
-bool File::mkdir() {
+bool File::mkdir() const {
     int ret = ::mkdir(path.c_str(), 0777);
     if (ret==-1) {
         return false;
@@ -65,7 +66,7 @@ bool File::mkdir() {
     return true;
 }
 
-bool File::mkdirs() {
+bool File::mkdirs() const {
     vector<string> spl;
     string abs = abspath();
     split(abs.c_str(),'/',spl);
@@ -81,7 +82,7 @@ bool File::mkdirs() {
     return success;
 }
 
-string File::getParent() {
+string File::getParent() const {
     string abs = abspath();
     vector<string> spl;
     split(abs.c_str(),'/',spl);
@@ -89,7 +90,7 @@ string File::getParent() {
     return join(spl,"/");
 }
 
-string File::abspath() {
+string File::abspath() const {
     if (path[0]=='/') {
         return path;
     }
@@ -105,7 +106,7 @@ string File::abspath() {
     return pwd + path;
 }
 
-string File::realpath() {
+string File::realpath() const {
     char *ap = ::realpath(path.c_str(),nullptr);
     if (ap == nullptr) {
         THROW_EXC("unable to get realpath for '" << path << "'");
@@ -115,7 +116,7 @@ string File::realpath() {
     return res;
 }
 
-bool File::rmdir() {
+bool File::rmdir() const {
     vector<string> childs;
     getChilds(childs);
     for (auto& child:childs) {
@@ -133,7 +134,7 @@ bool File::rmdir() {
     return false;
 }
 
-bool File::remove() {
+bool File::remove() const {
     FileType type = getType();
     if (type == FileType::DIRECTORY) {
         throw runtime_error("can't remove file '" + path + "' [type = " + (char)type + "]");
@@ -145,7 +146,7 @@ bool File::remove() {
     return true;
 }
 
-string File::getExtension() {
+string File::getExtension() const {
     auto idx = path.rfind(".");
     if (idx == string::npos) {
         return "";
@@ -153,7 +154,7 @@ string File::getExtension() {
     return path.substr(idx);
 }
 
-void File::getChildFiles(std::vector<File>& childFiles) {
+void File::getChildFiles(std::vector<File>& childFiles) const {
     vector<string> childs;
     getChilds(childs);
     for (auto child:childs) {
@@ -162,10 +163,10 @@ void File::getChildFiles(std::vector<File>& childFiles) {
 }
 
 
-void File::getChilds(vector<string>& childs) {
+void File::getChilds(vector<string>& childs) const {
     DIR *dp;
     struct dirent *dirp;
-    if((dp  = opendir(path.c_str())) == NULL) {
+    if((dp  = opendir(abspath().c_str())) == NULL) {
         throw runtime_error("can't open directory '" + path + "'");
     }
     while ((dirp = readdir(dp)) != NULL) {
@@ -176,7 +177,7 @@ void File::getChilds(vector<string>& childs) {
     closedir(dp);
 }
 
-void File::linkTo(File source) {
+void File::linkTo(File source) const {
     unlink(abspath().c_str());
     if (symlink(source.abspath().c_str(),abspath().c_str()) == -1) {
         string message = "symlink failed: " + abspath() + " -> " + source.abspath();
@@ -184,14 +185,30 @@ void File::linkTo(File source) {
     }
 }
 
-string File::getName() {
+string File::getName() const {
     int lastSlash = path.rfind("/");
     return path.substr(lastSlash+1);
 }
 
-string File::getPath() {
+string File::getPath() const {
     return path;
 }
 
+ostream& operator<<(ostream& out, const File& file) {
+    out << file.getPath();
+    return out;
+}
+
+void FileWalker::walk(const File& file, function<void (const File&)> visit) {
+    visit(file);
+    // cout << "file " << file.getName() << " type is " << (char)file.getType() << endl;
+    if (file.getType() == File::FileType::DIRECTORY) {
+        vector<File> childs;
+        file.getChildFiles(childs);
+        for (auto child:childs) {
+            walk(child,visit);
+        }
+    }
+}
 
 }
